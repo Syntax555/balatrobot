@@ -5,7 +5,8 @@ description = "A framework for Balatro bot development"
 readme = "README.md"
 authors = [
   { name = "S1M0N38", email = "bertolottosimone@gmail.com" },
-  { name = "giewev", email = "giewev@gmail.com" },
+  { name = "stirby" },
+  { name = "giewev" },
   { name = "besteon" },
   { name = "phughesion" },
 ]
