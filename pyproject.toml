@@ -38,9 +38,6 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 [tool.pyright]
 typeCheckingMode = "basic"
 
-[tool.pytest.ini_options]
-addopts = "--cov=src/balatrobot --cov-report=term-missing --cov-report=html --cov-report=xml"
-
 [dependency-groups]
 dev = [
   "basedpyright>=1.29.5",
