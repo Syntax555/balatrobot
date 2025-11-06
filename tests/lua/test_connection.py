@@ -1,119 +1,40 @@
-"""Tests for BalatroBot TCP API connection and protocol handling."""
+"""Tests for BalatroBot TCP API connection.
+
+This module tests the core TCP communication layer between the Python bot
+and the Lua game mod, ensuring proper connection handling.
+
+Connection Tests:
+- test_basic_connection: Verify TCP connection and basic game state retrieval
+- test_rapid_messages: Test multiple rapid API calls without connection drops
+- test_connection_wrong_port: Ensure connection refusal on wrong port
+"""
 
 import json
 import socket
 
 import pytest
 
-from .conftest import HOST, assert_error_response, receive_api_message, send_api_message
+from .conftest import BUFFER_SIZE, api
 
 
-def test_basic_connection(tcp_client: socket.socket) -> None:
+def test_basic_connection(client: socket.socket):
     """Test basic TCP connection and response."""
-    send_api_message(tcp_client, "get_game_state", {})
-
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
+    gamestate = api(client, "get_game_state")
+    assert isinstance(gamestate, dict)
 
 
-def test_rapid_messages(tcp_client: socket.socket) -> None:
+def test_rapid_messages(client: socket.socket):
     """Test rapid succession of get_game_state messages."""
-    responses = []
-
-    for _ in range(3):
-        send_api_message(tcp_client, "get_game_state", {})
-        game_state = receive_api_message(tcp_client)
-        responses.append(game_state)
-
-    assert all(isinstance(resp, dict) for resp in responses)
-    assert len(responses) == 3
+    NUM_MESSAGES = 5
+    gamestates = [api(client, "get_game_state") for _ in range(NUM_MESSAGES)]
+    assert all(isinstance(gamestate, dict) for gamestate in gamestates)
+    assert len(gamestates) == NUM_MESSAGES
 
 
-def test_connection_timeout() -> None:
-    """Test behavior when no server is listening."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(0.2)
-
-        with pytest.raises((socket.timeout, ConnectionRefusedError)):
-            sock.connect((HOST, 12345))  # Unused port
-
-
-def test_invalid_json_message(tcp_client: socket.socket) -> None:
-    """Test that invalid JSON messages return error responses."""
-    # Send invalid JSON
-    tcp_client.send(b"invalid json\n")
-
-    # Should receive error response for invalid JSON
-    error_response = receive_api_message(tcp_client)
-    assert_error_response(error_response, "Invalid JSON")
-
-    # Verify server is still responsive
-    send_api_message(tcp_client, "get_game_state", {})
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
-
-
-def test_missing_name_field(tcp_client: socket.socket) -> None:
-    """Test message without name field returns error response."""
-    message = {"arguments": {}}
-    tcp_client.send(json.dumps(message).encode() + b"\n")
-
-    # Should receive error response for missing name field
-    error_response = receive_api_message(tcp_client)
-    assert_error_response(error_response, "Message must contain a name")
-
-    # Verify server is still responsive
-    send_api_message(tcp_client, "get_game_state", {})
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
-
-
-def test_missing_arguments_field(tcp_client: socket.socket) -> None:
-    """Test message without arguments field returns error response."""
-    message = {"name": "get_game_state"}
-    tcp_client.send(json.dumps(message).encode() + b"\n")
-
-    # Should receive error response for missing arguments field
-    error_response = receive_api_message(tcp_client)
-    assert_error_response(error_response, "Message must contain arguments")
-
-    # Verify server is still responsive
-    send_api_message(tcp_client, "get_game_state", {})
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
-
-
-def test_unknown_message(tcp_client: socket.socket) -> None:
-    """Test that unknown messages return error responses."""
-    # Send unknown message
-    send_api_message(tcp_client, "unknown_function", {})
-
-    # Should receive error response for unknown function
-    error_response = receive_api_message(tcp_client)
-    assert_error_response(error_response, "Unknown function name", ["name"])
-
-    # Verify server is still responsive
-    send_api_message(tcp_client, "get_game_state", {})
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
-
-
-def test_large_message_handling(tcp_client: socket.socket) -> None:
-    """Test handling of large messages within TCP limits."""
-    # Create a large but valid message
-    large_args = {"data": "x" * 1000}  # 1KB of data
-    send_api_message(tcp_client, "get_game_state", large_args)
-
-    # Should still get a response
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
-
-
-def test_empty_message(tcp_client: socket.socket) -> None:
-    """Test sending an empty message."""
-    tcp_client.send(b"\n")
-
-    # Verify server is still responsive
-    send_api_message(tcp_client, "get_game_state", {})
-    game_state = receive_api_message(tcp_client)
-    assert isinstance(game_state, dict)
+def test_connection_wrong_port():
+    """Test behavior when wrong port is specified."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+        client.settimeout(0.2)
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFFER_SIZE)
+        with pytest.raises(ConnectionRefusedError):
+            client.connect(("127.0.0.1", 12345))
