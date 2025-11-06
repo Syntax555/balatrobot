@@ -22,6 +22,10 @@ BALATRO_SCRIPT := ./balatro.sh
 # Test ports for parallel testing
 TEST_PORTS := 12346 12347 12348 12349
 
+# Helper variables for comma-separated port list
+comma := ,
+space := $(subst ,, )
+
 help: ## Show this help message
 	@echo "$(BLUE)BalatroBot Development Makefile$(RESET)"
 	@echo ""
@@ -71,7 +75,7 @@ test: ## Run tests with single Balatro instance (auto-starts if needed)
 	@echo "$(YELLOW)Running tests...$(RESET)"
 	@if ! $(BALATRO_SCRIPT) --status | grep -q "12346"; then \
 		echo "Starting Balatro on port 12346..."; \
-		$(BALATRO_SCRIPT) --headless --fast -p 12346; \
+		$(BALATRO_SCRIPT) --headless --fast --ports 12346; \
 		sleep 1; \
 	fi
 	$(PYTEST)
@@ -81,7 +85,7 @@ test-parallel: ## Run tests in parallel on 4 instances (auto-starts if needed)
 	@running_count=$$($(BALATRO_SCRIPT) --status | grep -E "($(word 1,$(TEST_PORTS))|$(word 2,$(TEST_PORTS))|$(word 3,$(TEST_PORTS))|$(word 4,$(TEST_PORTS)))" | wc -l); \
 	if [ "$$running_count" -ne 4 ]; then \
 		echo "Starting Balatro instances on ports: $(TEST_PORTS)"; \
-		$(BALATRO_SCRIPT) --headless --fast -p $(word 1,$(TEST_PORTS)) -p $(word 2,$(TEST_PORTS)) -p $(word 3,$(TEST_PORTS)) -p $(word 4,$(TEST_PORTS)); \
+		$(BALATRO_SCRIPT) --headless --fast --ports $(subst $(space),$(comma),$(TEST_PORTS)); \
 		sleep 1; \
 	fi
 	$(PYTEST) -n 4 --port $(word 1,$(TEST_PORTS)) --port $(word 2,$(TEST_PORTS)) --port $(word 3,$(TEST_PORTS)) --port $(word 4,$(TEST_PORTS)) tests/lua/
@@ -91,7 +95,7 @@ test-migrate: ## Run replay.py on all JSONL files in tests/runs/ using 4 paralle
 	@running_count=$$($(BALATRO_SCRIPT) --status | grep -E "($(word 1,$(TEST_PORTS))|$(word 2,$(TEST_PORTS))|$(word 3,$(TEST_PORTS))|$(word 4,$(TEST_PORTS)))" | wc -l); \
 	if [ "$$running_count" -ne 4 ]; then \
 		echo "Starting Balatro instances on ports: $(TEST_PORTS)"; \
-		$(BALATRO_SCRIPT) --headless --fast -p $(word 1,$(TEST_PORTS)) -p $(word 2,$(TEST_PORTS)) -p $(word 3,$(TEST_PORTS)) -p $(word 4,$(TEST_PORTS)); \
+		$(BALATRO_SCRIPT) --headless --fast --ports $(subst $(space),$(comma),$(TEST_PORTS)); \
 		sleep 1; \
 	fi
 	@jsonl_files=$$(find tests/runs -name "*.jsonl" -not -name "*.skip" | sort); \
