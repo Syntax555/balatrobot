@@ -34,6 +34,12 @@ def client(
         yield sock
 
 
+@pytest.fixture
+def port() -> int:
+    """Return the default Balatro server port."""
+    return 12346
+
+
 def api(
     client: socket.socket,
     name: str,
