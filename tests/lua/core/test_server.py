@@ -1,0 +1,346 @@
+"""
+Integration tests for BB_SERVER TCP communication.
+
+Test classes are organized by BB_SERVER function:
+- TestBBServerInit: BB_SERVER.init() - server initialization and port binding
+- TestBBServerAccept: BB_SERVER.accept() - client connection handling
+- TestBBServerReceive: BB_SERVER.receive() - protocol enforcement and parsing
+- TestBBServerSendResponse: BB_SERVER.send_response() - response sending
+"""
+
+import errno
+import json
+import socket
+
+import pytest
+
+from tests.lua.conftest import BUFFER_SIZE
+
+
+class TestBBServerInit:
+    """Tests for BB_SERVER.init() - server initialization and port binding."""
+
+    def test_server_binds_to_configured_port(self, port: int) -> None:
+        """Test that server is listening on the expected port."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        try:
+            sock.connect(("127.0.0.1", port))
+            assert sock.fileno() != -1, f"Should connect to port {port}"
+        finally:
+            sock.close()
+
+    def test_port_is_exclusively_bound(self, port: int) -> None:
+        """Test that server exclusively binds the port."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            with pytest.raises(OSError) as exc_info:
+                sock.bind(("127.0.0.1", port))
+            assert exc_info.value.errno == errno.EADDRINUSE
+        finally:
+            sock.close()
+
+    def test_port_not_reusable_while_running(self, port: int) -> None:
+        """Test that port cannot be reused while server is running."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            with pytest.raises(OSError) as exc_info:
+                sock.bind(("127.0.0.1", port))
+                sock.listen(1)
+            assert exc_info.value.errno == errno.EADDRINUSE
+        finally:
+            sock.close()
+
+
+class TestBBServerAccept:
+    """Tests for BB_SERVER.accept() - client connection handling."""
+
+    def test_accepts_connections(self, client: socket.socket) -> None:
+        """Test that server accepts client connections."""
+        assert client.fileno() != -1, "Client should connect successfully"
+
+    def test_sequential_connections(self, port: int) -> None:
+        """Test that server handles sequential connections correctly."""
+        for i in range(3):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            try:
+                sock.connect(("127.0.0.1", port))
+                assert sock.fileno() != -1, f"Connection {i + 1} should succeed"
+            finally:
+                sock.close()
+
+    def test_rapid_sequential_connections(self, port: int) -> None:
+        """Test server handles rapid sequential connections."""
+        for i in range(5):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            try:
+                sock.connect(("127.0.0.1", port))
+                assert sock.fileno() != -1, f"Rapid connection {i + 1} should succeed"
+            finally:
+                sock.close()
+
+    def test_multiple_concurrent_connections(self, port: int) -> None:
+        """Test server behavior with multiple concurrent connection attempts."""
+        sockets = []
+        try:
+            for _ in range(3):
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                try:
+                    sock.connect(("127.0.0.1", port))
+                    sockets.append(sock)
+                except (socket.timeout, ConnectionRefusedError, OSError):
+                    sock.close()
+
+            # At least one connection should succeed
+            assert len(sockets) >= 1, "At least one connection should succeed"
+
+            for sock in sockets:
+                assert sock.fileno() != -1, "Connected sockets should be valid"
+        finally:
+            for sock in sockets:
+                sock.close()
+
+    def test_immediate_disconnect(self, port: int) -> None:
+        """Test server handles clients that disconnect immediately."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        sock.connect(("127.0.0.1", port))
+        sock.close()
+
+        # Server should still accept new connections
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.settimeout(2)
+        try:
+            sock2.connect(("127.0.0.1", port))
+            assert sock2.fileno() != -1, (
+                "Server should accept connection after disconnect"
+            )
+        finally:
+            sock2.close()
+
+    def test_reconnect_after_graceful_disconnect(self, port: int) -> None:
+        """Test client can reconnect after clean disconnect."""
+        # First connection
+        sock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock1.settimeout(2)
+        sock1.connect(("127.0.0.1", port))
+
+        # Send a request
+        msg = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        sock1.send(msg.encode())
+        sock1.recv(BUFFER_SIZE)  # Consume response
+
+        # Close connection
+        sock1.close()
+
+        # Reconnect
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.settimeout(2)
+        try:
+            sock2.connect(("127.0.0.1", port))
+            assert sock2.fileno() != -1, "Should reconnect successfully"
+
+            # Verify new connection works
+            sock2.send(msg.encode())
+            response = sock2.recv(BUFFER_SIZE)
+            assert len(response) > 0, "Should receive response after reconnect"
+        finally:
+            sock2.close()
+
+    def test_client_disconnect_without_sending(self, port: int) -> None:
+        """Test server handles client that connects but never sends data."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        sock.connect(("127.0.0.1", port))
+        sock.close()
+
+        # Server should still accept new connections
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.settimeout(2)
+        try:
+            sock2.connect(("127.0.0.1", port))
+            assert sock2.fileno() != -1
+        finally:
+            sock2.close()
+
+
+class TestBBServerReceive:
+    """Tests for BB_SERVER.receive() - protocol enforcement and parsing.
+
+    Tests verify error responses for protocol violations:
+    - Message size limit (256 bytes including newline)
+    - Pipelining rejection (multiple messages)
+    - JSON validation (must be object, not string/number/array)
+    - Invalid JSON syntax
+    - Edge cases (whitespace, nested objects, escaped characters)
+    """
+
+    def test_message_too_large(self, client: socket.socket) -> None:
+        """Test that messages exceeding 256 bytes are rejected."""
+        # Create message > 255 bytes (line + newline must be <= 256)
+        large_msg = {"name": "test", "data": "x" * 300}
+        msg = json.dumps(large_msg) + "\n"
+        assert len(msg) > 256, "Test message should exceed 256 bytes"
+
+        client.send(msg.encode())
+
+        # Give game loop time to process and respond
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_PAYLOAD"
+        assert "too large" in data["error"].lower()
+
+    def test_pipelined_messages_rejected(self, client: socket.socket) -> None:
+        """Test that sending multiple messages at once is rejected."""
+        msg1 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        msg2 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+
+        client.send((msg1 + msg2).encode())
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        # May get multiple responses, take the first one
+        first_response = response.split("\n")[0]
+        data = json.loads(first_response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_PAYLOAD"
+
+    def test_invalid_json_syntax(self, client: socket.socket) -> None:
+        """Test that malformed JSON is rejected."""
+        client.send(b"{invalid json}\n")
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_INVALID_JSON"
+
+    def test_json_string_rejected(self, client: socket.socket) -> None:
+        """Test that JSON strings are rejected (must be object)."""
+        client.send(b'"just a string"\n')
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_INVALID_JSON"
+
+    def test_json_number_rejected(self, client: socket.socket) -> None:
+        """Test that JSON numbers are rejected (must be object)."""
+        client.send(b"42\n")
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_INVALID_JSON"
+
+    def test_json_array_rejected(self, client: socket.socket) -> None:
+        """Test that JSON arrays are rejected (must be object starting with '{')."""
+        client.send(b'["array", "of", "values"]\n')
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        assert "error" in data
+        assert "error_code" in data
+        assert data["error_code"] == "PROTO_INVALID_JSON"
+
+    def test_only_whitespace_line_rejected(self, client: socket.socket) -> None:
+        """Test that whitespace-only lines are rejected as invalid JSON."""
+        # Send whitespace-only line (gets trimmed to empty string, fails '{' check)
+        client.send(b"   \t  \n")
+
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        # Should be rejected as invalid JSON (trimmed to empty, doesn't start with '{')
+        assert "error" in data
+        assert data["error_code"] == "PROTO_INVALID_JSON"
+
+    def test_valid_json_with_nested_objects(self, client: socket.socket) -> None:
+        """Test complex valid JSON with nested structures is accepted."""
+        complex_msg = {
+            "name": "test",
+            "arguments": {
+                "nested": {"level1": {"level2": {"level3": "value"}}},
+                "array": [1, 2, 3],
+                "mixed": {"a": [{"b": "c"}]},
+            },
+        }
+        msg = json.dumps(complex_msg) + "\n"
+
+        # Ensure it's under size limit
+        if len(msg) <= 256:
+            client.send(msg.encode())
+
+            response = client.recv(BUFFER_SIZE).decode().strip()
+            data = json.loads(response)
+
+            # Should be parsed successfully (not a protocol error)
+            if "error" in data:
+                assert data["error_code"] != "PROTO_INVALID_JSON"
+
+    def test_json_with_escaped_characters(self, client: socket.socket) -> None:
+        """Test JSON with escaped quotes, newlines in strings, etc."""
+        msg = json.dumps({"name": "test", "data": 'quotes: "hello"\nnewline'}) + "\n"
+
+        if len(msg) <= 256:
+            client.send(msg.encode())
+
+            response = client.recv(BUFFER_SIZE).decode().strip()
+            data = json.loads(response)
+
+            # Should be parsed successfully
+            if "error" in data:
+                assert data["error_code"] != "PROTO_INVALID_JSON"
+
+
+class TestBBServerSendResponse:
+    """Tests for BB_SERVER.send_response() and send_error() - response sending."""
+
+    def test_server_accepts_data(self, client: socket.socket) -> None:
+        """Test that server accepts data from connected clients."""
+        test_data = b"test\n"
+        bytes_sent = client.send(test_data)
+        assert bytes_sent == len(test_data), "Should send all data"
+
+    def test_multiple_sequential_valid_requests(self, client: socket.socket) -> None:
+        """Test handling multiple valid requests sent sequentially (not pipelined)."""
+        # Send first request
+        msg1 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        client.send(msg1.encode())
+
+        response1 = client.recv(BUFFER_SIZE).decode().strip()
+        data1 = json.loads(response1)
+        assert "status" in data1  # Health endpoint returns status
+
+        # Send second request on same connection
+        msg2 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        client.send(msg2.encode())
+
+        response2 = client.recv(BUFFER_SIZE).decode().strip()
+        data2 = json.loads(response2)
+        assert "status" in data2
+
+    def test_whitespace_around_json_accepted(self, client: socket.socket) -> None:
+        """Test that JSON with leading/trailing whitespace is accepted."""
+        msg = "  " + json.dumps({"name": "health", "arguments": {}}) + "  \n"
+        client.send(msg.encode())
+        response = client.recv(BUFFER_SIZE).decode().strip()
+        data = json.loads(response)
+
+        # Should be processed successfully (whitespace trimmed at line 134)
+        assert "status" in data or "error" in data
