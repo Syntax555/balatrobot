@@ -38,6 +38,9 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 [tool.pyright]
 typeCheckingMode = "basic"
 
+[tool.pytest.ini_options]
+addopts = "--reruns 5"
+
 [dependency-groups]
 dev = [
   "basedpyright>=1.29.5",
@@ -49,6 +52,7 @@ dev = [
   "mkdocstrings[python]>=0.29.1",
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
+  "pytest-rerunfailures>=16.1",
   "pytest-xdist[psutil]>=3.8.0",
   "ruff>=0.12.2",
 ]
