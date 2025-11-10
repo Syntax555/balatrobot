@@ -204,6 +204,7 @@ end
 --- Initializes and applies all BalatroBot settings based on environment variables
 --- Orchestrates configuration of love.update, game settings, and optional features
 --- (headless, render-on-api, fast mode, audio)
+---@return nil
 BB_SETTINGS.setup = function()
   configure_love_update()
   configure_settings()
