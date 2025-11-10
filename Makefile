@@ -39,8 +39,8 @@ quality: lint typecheck format ## Run all code quality checks
 
 test: ## Run tests head-less
 	@echo "$(YELLOW)Running tests...$(RESET)"
-	./balatro.sh --fast --headless --ports 12346
-	pytest
+	python balatro.py start --fast --debug
+	pytest tests/lua
 
 all: lint format typecheck test ## Run all code quality checks and tests
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
