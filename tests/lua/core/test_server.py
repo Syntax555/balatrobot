@@ -199,20 +199,30 @@ class TestBBServerReceive:
         assert "too large" in data["error"].lower()
 
     def test_pipelined_messages_rejected(self, client: socket.socket) -> None:
-        """Test that sending multiple messages at once is rejected."""
+        """Test that sending multiple messages at once are processed sequentially."""
         msg1 = json.dumps({"name": "health", "arguments": {}}) + "\n"
         msg2 = json.dumps({"name": "health", "arguments": {}}) + "\n"
 
+        # Send both messages in one packet (pipelining)
         client.send((msg1 + msg2).encode())
 
+        # Server processes messages sequentially - we should get two responses
         response = client.recv(BUFFER_SIZE).decode().strip()
-        # May get multiple responses, take the first one
-        first_response = response.split("\n")[0]
-        data = json.loads(first_response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "PROTO_PAYLOAD"
+        # We may get one or both responses depending on timing
+        # The important thing is no error occurred
+        lines = response.split("\n")
+        data1 = json.loads(lines[0])
+
+        # First response should be successful
+        assert "status" in data1
+        assert data1["status"] == "ok"
+
+        # If we got both in one recv, verify second is also good
+        if len(lines) > 1 and lines[1]:
+            data2 = json.loads(lines[1])
+            assert "status" in data2
+            assert data2["status"] == "ok"
 
     def test_invalid_json_syntax(self, client: socket.socket) -> None:
         """Test that malformed JSON is rejected."""

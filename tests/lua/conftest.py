@@ -6,38 +6,48 @@ from typing import Any, Generator
 
 import pytest
 
+# ============================================================================
+# Constants
+# ============================================================================
+
+HOST: str = "127.0.0.1"  # Default host for Balatro server
+PORT: int = 12346  # Default port for Balatro server
 BUFFER_SIZE: int = 65536  # 64KB buffer for TCP messages
 
 
+@pytest.fixture(scope="session")
+def host() -> str:
+    """Return the default Balatro server host."""
+    return HOST
+
+
 @pytest.fixture
-def client(
-    host: str = "127.0.0.1",
-    port: int = 12346,
-    timeout: float = 60,
-    buffer_size: int = BUFFER_SIZE,
-) -> Generator[socket.socket, None, None]:
+def client(host: str, port: int) -> Generator[socket.socket, None, None]:
     """Create a TCP socket client connected to Balatro game instance.
 
     Args:
-        host: The hostname or IP address of the Balatro game server (default: "127.0.0.1").
-        port: The port number the Balatro game server is listening on (default: 12346).
-        timeout: Socket timeout in seconds for connection and operations (default: 60).
-        buffer_size: Size of the socket receive buffer (default: 65536, i.e. 64KB).
+        host: The hostname or IP address of the Balatro game server.
+        port: The port number the Balatro game server is listening on.
 
     Yields:
         A connected TCP socket for communicating with the game.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(timeout)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
+        sock.settimeout(60)  # 60 second timeout for operations
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFFER_SIZE)
         sock.connect((host, port))
         yield sock
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def port() -> int:
     """Return the default Balatro server port."""
-    return 12346
+    return PORT
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
 
 
 def api(
@@ -48,7 +58,7 @@ def api(
     """Send an API call to the Balatro game and get the response.
 
     Args:
-        sock: The TCP socket connected to the game.
+        client: The TCP socket connected to the game.
         name: The name of the API function to call.
         arguments: Dictionary of arguments to pass to the API function (default: {}).
 
@@ -62,96 +72,105 @@ def api(
     return gamestate
 
 
-# import platform
-# from pathlib import Path
-# import shutil
-# def assert_error_response(
-#     response,
-#     expected_error_text,
-#     expected_context_keys=None,
-#     expected_error_code=None,
-# ):
-#     """
-#     Helper function to assert the format and content of an error response.
-#
-#     Args:
-#         response (dict): The response dictionary to validate. Must contain at least
-#             the keys "error", "state", and "error_code".
-#         expected_error_text (str): The expected error message text to check within
-#             the "error" field of the response.
-#         expected_context_keys (list, optional): A list of keys expected to be present
-#             in the "context" field of the response, if the "context" field exists.
-#         expected_error_code (str, optional): The expected error code to check within
-#             the "error_code" field of the response.
-#
-#     Raises:
-#         AssertionError: If the response does not match the expected format or content.
-#     """
-#     assert isinstance(response, dict)
-#     assert "error" in response
-#     assert "state" in response
-#     assert "error_code" in response
-#     assert expected_error_text in response["error"]
-#     if expected_error_code:
-#         assert response["error_code"] == expected_error_code
-#     if expected_context_keys:
-#         assert "context" in response
-#         for key in expected_context_keys:
-#             assert key in response["context"]
-#
-#
-# def prepare_checkpoint(sock: socket.socket, checkpoint_path: Path) -> dict[str, Any]:
-#     """Prepare a checkpoint file for loading and load it into the game.
-#
-#     This function copies a checkpoint file to Love2D's save directory and loads it
-#     directly without requiring a game restart.
-#
-#     Args:
-#         sock: Socket connection to the game.
-#         checkpoint_path: Path to the checkpoint .jkr file to load.
-#
-#     Returns:
-#         Game state after loading the checkpoint.
-#
-#     Raises:
-#         FileNotFoundError: If checkpoint file doesn't exist.
-#         RuntimeError: If loading the checkpoint fails.
-#     """
-#     if not checkpoint_path.exists():
-#         raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
-#
-#     # First, get the save directory from the game
-#     game_state = send_and_receive_api_message(sock, "get_save_info", {})
-#
-#     # Determine the Love2D save directory
-#     # On Linux with Steam, convert Windows paths
-#
-#     save_dir_str = game_state["save_directory"]
-#     if platform.system() == "Linux" and save_dir_str.startswith("C:"):
-#         # Replace C: with Linux Steam Proton prefix
-#         linux_prefix = (
-#             Path.home() / ".steam/steam/steamapps/compatdata/2379780/pfx/drive_c"
-#         )
-#         save_dir_str = str(linux_prefix) + "/" + save_dir_str[3:]
-#
-#     save_dir = Path(save_dir_str)
-#
-#     # Copy checkpoint to a test profile in Love2D save directory
-#     test_profile = "test_checkpoint"
-#     test_dir = save_dir / test_profile
-#     test_dir.mkdir(parents=True, exist_ok=True)
-#
-#     dest_path = test_dir / "save.jkr"
-#     shutil.copy2(checkpoint_path, dest_path)
-#
-#     # Load the save using the new load_save API function
-#     love2d_path = f"{test_profile}/save.jkr"
-#     game_state = send_and_receive_api_message(
-#         sock, "load_save", {"save_path": love2d_path}
-#     )
-#
-#     # Check for errors
-#     if "error" in game_state:
-#         raise RuntimeError(f"Failed to load checkpoint: {game_state['error']}")
-#
-#     return game_state
+def send_request(sock: socket.socket, name: str, arguments: dict[str, Any]) -> None:
+    """Send a JSON request to the server.
+
+    Args:
+        sock: The TCP socket connected to the game.
+        name: The name of the endpoint to call.
+        arguments: Dictionary of arguments to pass to the endpoint.
+    """
+    request = {"name": name, "arguments": arguments}
+    message = json.dumps(request) + "\n"
+    sock.sendall(message.encode())
+
+
+def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict[str, Any]:
+    """Receive and parse JSON response from server.
+
+    Args:
+        sock: The TCP socket connected to the game.
+        timeout: Socket timeout in seconds (default: 3.0).
+
+    Returns:
+        The parsed JSON response as a dictionary.
+    """
+    sock.settimeout(timeout)
+    response = sock.recv(BUFFER_SIZE)
+    decoded = response.decode()
+
+    # Parse first complete message
+    first_newline = decoded.find("\n")
+    if first_newline != -1:
+        first_message = decoded[:first_newline]
+    else:
+        first_message = decoded.strip()
+
+    return json.loads(first_message)
+
+
+# ============================================================================
+# Assertion Helpers
+# ============================================================================
+
+
+def assert_success_response(response: dict[str, Any]) -> None:
+    """Validate success response structure.
+
+    Args:
+        response: The response dictionary to validate.
+
+    Raises:
+        AssertionError: If the response is not a valid success response.
+    """
+    assert "success" in response, "Success response must have 'success' field"
+    assert response["success"] is True, "'success' field must be True"
+    assert "error" not in response, "Success response should not have 'error' field"
+    assert "error_code" not in response, (
+        "Success response should not have 'error_code' field"
+    )
+
+
+def assert_error_response(
+    response: dict[str, Any],
+    expected_error_code: str | None = None,
+    expected_message_contains: str | None = None,
+) -> None:
+    """Validate error response structure and content.
+
+    Args:
+        response: The response dictionary to validate.
+        expected_error_code: The expected error code (optional).
+        expected_message_contains: Substring expected in error message (optional).
+
+    Raises:
+        AssertionError: If the response is not a valid error response or doesn't match expectations.
+    """
+    assert "error" in response, "Error response must have 'error' field"
+    assert "error_code" in response, "Error response must have 'error_code' field"
+
+    assert isinstance(response["error"], str), "'error' must be a string"
+    assert isinstance(response["error_code"], str), "'error_code' must be a string"
+
+    if expected_error_code:
+        assert response["error_code"] == expected_error_code, (
+            f"Expected error_code '{expected_error_code}', got '{response['error_code']}'"
+        )
+
+    if expected_message_contains:
+        assert expected_message_contains.lower() in response["error"].lower(), (
+            f"Expected error message to contain '{expected_message_contains}', got '{response['error']}'"
+        )
+
+
+def assert_health_response(response: dict[str, Any]) -> None:
+    """Validate health response structure.
+
+    Args:
+        response: The response dictionary to validate.
+
+    Raises:
+        AssertionError: If the response is not a valid health response.
+    """
+    assert "status" in response, "Health response must have 'status' field"
+    assert response["status"] == "ok", "Health response 'status' must be 'ok'"
