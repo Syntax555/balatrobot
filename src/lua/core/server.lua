@@ -80,6 +80,12 @@ function BB_SERVER.accept()
     return false
   end
   if client and not err then
+    -- Close previous client socket if exists (single-client model)
+    if BB_SERVER.client_socket then
+      BB_SERVER.client_socket:close()
+      BB_SERVER.client_socket = nil
+    end
+
     client:settimeout(0) -- Non-blocking
     BB_SERVER.client_socket = client
     sendDebugMessage("Client connected", "BB.SERVER")
@@ -92,7 +98,7 @@ end
 --- Receive and parse a single JSON request from client
 --- Ultra-simple protocol: JSON + '\n' (nothing else allowed)
 --- Max payload: 256 bytes
---- Rejects pipelined/multiple messages
+--- Non-blocking: returns empty array if no complete request available
 --- @return table[] requests Array with at most one parsed JSON request object
 function BB_SERVER.receive()
   if not BB_SERVER.client_socket then
@@ -101,27 +107,20 @@ function BB_SERVER.receive()
 
   -- Read one line (non-blocking)
   BB_SERVER.client_socket:settimeout(0)
-  local line, _ = BB_SERVER.client_socket:receive("*l")
+  local line, err = BB_SERVER.client_socket:receive("*l")
 
   if not line then
+    -- If connection closed, clean up the socket reference
+    if err == "closed" then
+      BB_SERVER.client_socket:close()
+      BB_SERVER.client_socket = nil
+    end
     return {} -- No data available or connection closed
   end
 
   -- Check message size (line doesn't include the \n, so +1 for newline)
   if #line + 1 > 256 then
     BB_SERVER.send_error("Request too large: maximum 256 bytes including newline", "PROTO_PAYLOAD")
-    return {}
-  end
-
-  -- Check if there's additional data waiting (pipelined requests)
-  BB_SERVER.client_socket:settimeout(0)
-  local peek, _ = BB_SERVER.client_socket:receive(1)
-  if peek then
-    -- There's more data! This means client sent multiple messages
-    BB_SERVER.send_error(
-      "Invalid request: data after newline (pipelining/multiple messages not supported)",
-      "PROTO_PAYLOAD"
-    )
     return {}
   end
 
@@ -164,7 +163,7 @@ function BB_SERVER.send_response(response)
 
   -- Send with newline delimiter
   local data = json_str .. "\n"
-  local bytes, err = BB_SERVER.client_socket:send(data)
+  local _, err = BB_SERVER.client_socket:send(data)
 
   if err then
     sendDebugMessage("Failed to send response: " .. err, "BB.SERVER")
