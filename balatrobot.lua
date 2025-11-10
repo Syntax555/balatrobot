@@ -1,17 +1,41 @@
--- Load minimal required files
-assert(SMODS.load_file("src/lua/utils.lua"))()
-assert(SMODS.load_file("src/lua/api.lua"))()
-assert(SMODS.load_file("src/lua/log.lua"))()
-assert(SMODS.load_file("src/lua/settings.lua"))()
+-- Load required files
+assert(SMODS.load_file("src/lua/settings.lua"))() -- define BB_SETTINGS
 
--- Apply all configuration and Love2D patches FIRST
--- This must run before API.init() to set G.BALATROBOT_PORT
-SETTINGS.setup()
+-- Configure Balatro with appropriate settings from environment variables
+BB_SETTINGS.setup()
 
--- Initialize API (depends on G.BALATROBOT_PORT being set)
-API.init()
+-- Endpoints for the BalatroBot API
+BB_ENDPOINTS = {
+  "src/lua/endpoints/health.lua",
+  -- If debug mode is enabled, debugger.lua will load test endpoints
+}
 
--- Initialize Logger
-LOG.init()
+-- Enable debug mode
+if BB_SETTINGS.debug then
+  assert(SMODS.load_file("src/lua/utils/debugger.lua"))() -- define BB_DEBUG
+  BB_DEBUG.setup()
+end
 
-sendInfoMessage("BalatroBot loaded - version " .. SMODS.current_mod.version, "BALATROBOT")
+-- Load core modules
+assert(SMODS.load_file("src/lua/core/server.lua"))() -- define BB_SERVER
+assert(SMODS.load_file("src/lua/core/dispatcher.lua"))() -- define BB_DISPATCHER
+
+-- Initialize Server
+local server_success = BB_SERVER.init()
+if not server_success then
+  return
+end
+
+local dispatcher_ok = BB_DISPATCHER.init(BB_SERVER, BB_ENDPOINTS)
+if not dispatcher_ok then
+  return
+end
+
+-- Hook into love.update to run server update loop
+local love_update = love.update
+love.update = function(dt) ---@diagnostic disable-line: duplicate-set-field
+  love_update(dt)
+  BB_SERVER.update(BB_DISPATCHER)
+end
+
+sendInfoMessage("BalatroBot loaded - version " .. SMODS.current_mod.version, "BB.BALATROBOT")
