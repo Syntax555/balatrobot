@@ -101,7 +101,7 @@ function BB_SERVER.receive()
 
   -- Read one line (non-blocking)
   BB_SERVER.client_socket:settimeout(0)
-  local line, err = BB_SERVER.client_socket:receive("*l")
+  local line, _ = BB_SERVER.client_socket:receive("*l")
 
   if not line then
     return {} -- No data available or connection closed
@@ -115,7 +115,7 @@ function BB_SERVER.receive()
 
   -- Check if there's additional data waiting (pipelined requests)
   BB_SERVER.client_socket:settimeout(0)
-  local peek, peek_err = BB_SERVER.client_socket:receive(1)
+  local peek, _ = BB_SERVER.client_socket:receive(1)
   if peek then
     -- There's more data! This means client sent multiple messages
     BB_SERVER.send_error(
@@ -224,5 +224,3 @@ function BB_SERVER.close()
     sendDebugMessage("Server closed", "BB.SERVER")
   end
 end
-
-return BB_SERVER
