@@ -10,3 +10,7 @@ dump
 coverage.xml
 .coverage
 balatro
+src/lua_oldish
+tests/lua_old
+balatrobot_oldish.lua
+balatro_oldish.sh
