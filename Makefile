@@ -40,6 +40,7 @@ quality: lint typecheck format ## Run all code quality checks
 test: ## Run tests head-less
 	@echo "$(YELLOW)Running tests...$(RESET)"
 	python balatro.py start --fast --debug
+	@command -v aerospace >/dev/null 2>&1 && aerospace workspace 3
 	pytest tests/lua
 
 all: lint format typecheck test ## Run all code quality checks and tests
