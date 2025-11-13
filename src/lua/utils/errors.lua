@@ -20,7 +20,13 @@
 ---@field SCHEMA_INVALID_ARRAY_ITEMS string
 ---@field STATE_INVALID_STATE string
 ---@field STATE_NOT_READY string
+---@field GAME_NOT_IN_RUN string
+---@field GAME_INVALID_STATE string
 ---@field EXEC_INTERNAL_ERROR string
+---@field EXEC_FILE_NOT_FOUND string
+---@field EXEC_FILE_READ_ERROR string
+---@field EXEC_FILE_WRITE_ERROR string
+---@field EXEC_INVALID_SAVE_FORMAT string
 
 ---@type ErrorCodes
 return {
@@ -40,8 +46,16 @@ return {
   STATE_INVALID_STATE = "STATE_INVALID_STATE", -- Action not allowed in current state
   STATE_NOT_READY = "STATE_NOT_READY", -- Server/dispatcher not initialized
 
+  -- GAME_* : Game logic errors (game rules violations)
+  GAME_NOT_IN_RUN = "GAME_NOT_IN_RUN", -- Action requires active run
+  GAME_INVALID_STATE = "GAME_INVALID_STATE", -- Action not allowed in current game state
+
   -- EXEC_* : Execution errors (runtime failures)
   EXEC_INTERNAL_ERROR = "EXEC_INTERNAL_ERROR", -- Unexpected runtime error
+  EXEC_FILE_NOT_FOUND = "EXEC_FILE_NOT_FOUND", -- File does not exist
+  EXEC_FILE_READ_ERROR = "EXEC_FILE_READ_ERROR", -- Failed to read file
+  EXEC_FILE_WRITE_ERROR = "EXEC_FILE_WRITE_ERROR", -- Failed to write file
+  EXEC_INVALID_SAVE_FORMAT = "EXEC_INVALID_SAVE_FORMAT", -- Invalid save file format
 
   -- TODO: Define future error codes as needed:
   --
