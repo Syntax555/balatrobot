@@ -2,6 +2,9 @@
 
 import json
 import socket
+import tempfile
+import uuid
+from pathlib import Path
 from typing import Any, Generator
 
 import pytest
@@ -107,6 +110,30 @@ def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict[str, Any
         first_message = decoded.strip()
 
     return json.loads(first_message)
+
+
+def get_fixture_path(endpoint: str, fixture_name: str) -> Path:
+    """Get path to a test fixture file.
+
+    Args:
+        endpoint: The endpoint directory (e.g., "save", "load").
+        fixture_name: Name of the fixture file (e.g., "start.jkr").
+
+    Returns:
+        Path to the fixture file in tests/fixtures/<endpoint>/.
+    """
+    fixtures_dir = Path(__file__).parent.parent / "fixtures"
+    return fixtures_dir / endpoint / fixture_name
+
+
+def create_temp_save_path() -> Path:
+    """Create a temporary path for save files.
+
+    Returns:
+        Path to a temporary .jkr file in the system temp directory.
+    """
+    temp_dir = Path(tempfile.gettempdir())
+    return temp_dir / f"balatrobot_test_{uuid.uuid4().hex[:8]}.jkr"
 
 
 # ============================================================================
