@@ -7,6 +7,8 @@ BB_SETTINGS.setup()
 -- Endpoints for the BalatroBot API
 BB_ENDPOINTS = {
   "src/lua/endpoints/health.lua",
+  "src/lua/endpoints/save.lua",
+  "src/lua/endpoints/load.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
