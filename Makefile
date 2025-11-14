@@ -37,13 +37,15 @@ typecheck: ## Run type checker
 quality: lint typecheck format ## Run all code quality checks
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
 
+fixtures: ## Generate fixtures
+	@echo "$(YELLOW)Generating fixtures...$(RESET)"
+	python tests/fixtures/generate.py
+
 test: ## Run tests head-less
 	@echo "$(YELLOW)Starting Balatro...$(RESET)"
 	python balatro.py start --fast --debug
-	@echo "$(YELLOW)Generating fixtures...$(RESET)"
-	python tests/fixtures/generate.py
-	@echo "$(YELLOW)Running tests...$(RESET)"
 	@command -v aerospace >/dev/null 2>&1 && aerospace workspace 3
+	@echo "$(YELLOW)Running tests...$(RESET)"
 	pytest tests/lua
 
 all: lint format typecheck test ## Run all code quality checks and tests
