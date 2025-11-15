@@ -44,7 +44,6 @@ fixtures: ## Generate fixtures
 test: ## Run tests head-less
 	@echo "$(YELLOW)Starting Balatro...$(RESET)"
 	python balatro.py start --fast --debug
-	@command -v aerospace >/dev/null 2>&1 && aerospace workspace 3
 	@echo "$(YELLOW)Running tests...$(RESET)"
 	pytest tests/lua
 

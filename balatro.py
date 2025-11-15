@@ -108,10 +108,15 @@ def start(args):
         )
 
     # Verify it started
-    time.sleep(5)
+    time.sleep(4)
     if process.poll() is not None:
         print(f"ERROR: Balatro failed to start. Check {log_file}")
         sys.exit(1)
+
+    subprocess.Popen(
+        "command -v aerospace >/dev/null 2>&1 && aerospace workspace 3",
+        shell=True,
+    )
 
     print(f"Port {args.port}, PID {process.pid}, Log: {log_file}")
 
