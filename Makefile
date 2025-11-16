@@ -29,6 +29,8 @@ format: ## Run ruff and mdformat formatters
 	ruff format .
 	@echo "$(YELLOW)Running mdformat formatter...$(RESET)"
 	mdformat ./docs README.md CLAUDE.md
+	@echo "$(YELLOW)Running stylua formatter...$(RESET)"
+	stylua src/lua
 
 typecheck: ## Run type checker
 	@echo "$(YELLOW)Running type checker...$(RESET)"
