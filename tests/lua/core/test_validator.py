@@ -10,10 +10,9 @@
 import socket
 
 from tests.lua.conftest import (
+    api,
     assert_error_response,
     assert_success_response,
-    receive_response,
-    send_request,
 )
 
 # ============================================================================
@@ -26,7 +25,7 @@ class TestTypeValidation:
 
     def test_valid_string_type(self, client: socket.socket) -> None:
         """Test that valid string type passes validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -34,12 +33,11 @@ class TestTypeValidation:
                 "string_field": "hello",
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_invalid_string_type(self, client: socket.socket) -> None:
         """Test that invalid string type fails validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -47,7 +45,6 @@ class TestTypeValidation:
                 "string_field": 123,  # Should be string
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
@@ -56,7 +53,7 @@ class TestTypeValidation:
 
     def test_valid_integer_type(self, client: socket.socket) -> None:
         """Test that valid integer type passes validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -64,12 +61,11 @@ class TestTypeValidation:
                 "integer_field": 42,
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_invalid_integer_type_float(self, client: socket.socket) -> None:
         """Test that float fails integer validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -77,7 +73,6 @@ class TestTypeValidation:
                 "integer_field": 42.5,  # Should be integer
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
@@ -86,7 +81,7 @@ class TestTypeValidation:
 
     def test_invalid_integer_type_string(self, client: socket.socket) -> None:
         """Test that string fails integer validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -94,7 +89,6 @@ class TestTypeValidation:
                 "integer_field": "42",
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
@@ -103,7 +97,7 @@ class TestTypeValidation:
 
     def test_valid_array_type(self, client: socket.socket) -> None:
         """Test that valid array type passes validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -111,12 +105,11 @@ class TestTypeValidation:
                 "array_field": [1, 2, 3],
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_invalid_array_type_not_sequential(self, client: socket.socket) -> None:
         """Test that non-sequential table fails array validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -124,7 +117,6 @@ class TestTypeValidation:
                 "array_field": {"key": "value"},  # Not an array
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
@@ -133,7 +125,7 @@ class TestTypeValidation:
 
     def test_invalid_array_type_string(self, client: socket.socket) -> None:
         """Test that string fails array validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -141,7 +133,6 @@ class TestTypeValidation:
                 "array_field": "not an array",
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
@@ -159,22 +150,20 @@ class TestRequiredFields:
 
     def test_required_field_present(self, client: socket.socket) -> None:
         """Test that request with required field passes."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {"required_field": "present"},
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_required_field_missing(self, client: socket.socket) -> None:
         """Test that request without required field fails."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {},  # Missing required_field
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_MISSING_REQUIRED",
@@ -183,7 +172,7 @@ class TestRequiredFields:
 
     def test_optional_field_missing(self, client: socket.socket) -> None:
         """Test that missing optional fields are allowed."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -191,7 +180,6 @@ class TestRequiredFields:
                 # All other fields are optional
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
 
@@ -205,7 +193,7 @@ class TestArrayItemTypes:
 
     def test_array_of_integers_valid(self, client: socket.socket) -> None:
         """Test that array of integers passes."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -213,12 +201,11 @@ class TestArrayItemTypes:
                 "array_of_integers": [1, 2, 3],
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_array_of_integers_invalid_float(self, client: socket.socket) -> None:
         """Test that array with float items fails integer validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -226,7 +213,6 @@ class TestArrayItemTypes:
                 "array_of_integers": [1, 2.5, 3],
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_ARRAY_ITEMS",
@@ -235,7 +221,7 @@ class TestArrayItemTypes:
 
     def test_array_of_integers_invalid_string(self, client: socket.socket) -> None:
         """Test that array with string items fails integer validation."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -243,7 +229,6 @@ class TestArrayItemTypes:
                 "array_of_integers": [1, "2", 3],
             },
         )
-        response = receive_response(client)
         assert_error_response(
             response,
             expected_error_code="SCHEMA_INVALID_ARRAY_ITEMS",
@@ -261,7 +246,7 @@ class TestFailFastBehavior:
 
     def test_multiple_errors_returns_first(self, client: socket.socket) -> None:
         """Test that only the first error is returned when multiple errors exist."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -270,7 +255,6 @@ class TestFailFastBehavior:
                 "integer_field": "not an integer",  # Type error (another error)
             },
         )
-        response = receive_response(client)
         # Should get ONE error (fail-fast), not all errors
         # The specific error depends on Lua table iteration order
         assert_error_response(response)
@@ -293,17 +277,16 @@ class TestEdgeCases:
         self, client: socket.socket
     ) -> None:
         """Test that arguments with only required field passes."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {"required_field": "only this"},
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_all_fields_provided(self, client: socket.socket) -> None:
         """Test request with multiple valid fields."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -314,12 +297,11 @@ class TestEdgeCases:
                 "array_of_integers": [4, 5, 6],
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_empty_array_when_allowed(self, client: socket.socket) -> None:
         """Test that empty array passes when no min constraint."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
@@ -327,17 +309,15 @@ class TestEdgeCases:
                 "array_field": [],
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
 
     def test_empty_string_when_allowed(self, client: socket.socket) -> None:
         """Test that empty string passes when no min constraint."""
-        send_request(
+        response = api(
             client,
             "test_validation",
             {
                 "required_field": "",  # Empty but present
             },
         )
-        response = receive_response(client)
         assert_success_response(response)
