@@ -55,4 +55,5 @@ dev = [
   "pytest-rerunfailures>=16.1",
   "pytest-xdist[psutil]>=3.8.0",
   "ruff>=0.12.2",
+  "tqdm>=4.67.0",
 ]
