@@ -1,0 +1,89 @@
+-- src/lua/endpoints/load.lua
+-- Load Game State Endpoint
+--
+-- Loads a saved game run state from a file using nativefs
+
+local nativefs = require("nativefs")
+local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
+
+---@type Endpoint
+return {
+  name = "load",
+
+  description = "Load a saved run state from a file",
+
+  schema = {
+    path = {
+      type = "string",
+      required = true,
+      description = "File path to the save file",
+    },
+  },
+
+  requires_state = nil,
+
+  ---@param args table The arguments with 'path' field
+  ---@param send_response fun(response: table) Callback to send response
+  execute = function(args, send_response)
+    local path = args.path
+
+    -- Check if file exists
+    local file_info = nativefs.getInfo(path)
+    if not file_info or file_info.type ~= "file" then
+      send_response({
+        error = "File not found: '" .. path .. "'",
+        error_code = errors.EXEC_FILE_NOT_FOUND,
+      })
+      return
+    end
+
+    -- Read file using nativefs
+    local compressed_data = nativefs.read(path)
+    ---@cast compressed_data string
+    if not compressed_data then
+      send_response({
+        error = "Failed to read save file",
+        error_code = errors.EXEC_INTERNAL_ERROR,
+      })
+      return
+    end
+
+    -- Write to temp location for get_compressed to read
+    local temp_filename = "balatrobot_temp_load.jkr"
+    local save_dir = love.filesystem.getSaveDirectory()
+    local temp_path = save_dir .. "/" .. temp_filename
+
+    local write_success = nativefs.write(temp_path, compressed_data)
+    if not write_success then
+      send_response({
+        error = "Failed to prepare save file for loading",
+        error_code = errors.EXEC_INTERNAL_ERROR,
+      })
+      return
+    end
+
+    -- Load using game's built-in functions
+    G:delete_run()
+    G.SAVED_GAME = get_compressed(temp_filename)
+
+    if G.SAVED_GAME == nil then
+      send_response({
+        error = "Invalid save file format",
+        error_code = errors.EXEC_INVALID_SAVE_FORMAT,
+      })
+      love.filesystem.remove(temp_filename)
+      return
+    end
+
+    G.SAVED_GAME = STR_UNPACK(G.SAVED_GAME)
+    G:start_run({ savetext = G.SAVED_GAME })
+
+    -- Clean up
+    love.filesystem.remove(temp_filename)
+
+    send_response({
+      success = true,
+      path = path,
+    })
+  end,
+}
