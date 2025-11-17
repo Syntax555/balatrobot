@@ -1,0 +1,51 @@
+"""Tests for src/lua/endpoints/gamestate.lua"""
+
+import socket
+from typing import Any
+
+from tests.lua.conftest import api, get_fixture_path
+
+
+def verify_base_gamestate_response(response: dict[str, Any]) -> None:
+    """Verify that gamestate response has all base fields."""
+    # Verify state field
+    assert "state" in response
+    assert isinstance(response["state"], str)
+    assert len(response["state"]) > 0
+
+    # Verify round_num field
+    assert "round_num" in response
+    assert isinstance(response["round_num"], int)
+    assert response["round_num"] >= 0
+
+    # Verify ante_num field
+    assert "ante_num" in response
+    assert isinstance(response["ante_num"], int)
+    assert response["ante_num"] >= 0
+
+    # Verify money field
+    assert "money" in response
+    assert isinstance(response["money"], int)
+    assert response["money"] >= 0
+
+
+class TestGamestateEndpoint:
+    """Test basic gamestate endpoint and gamestate response structure."""
+
+    def test_gamestate_from_MENU(self, client: socket.socket) -> None:
+        """Test that gamestate endpoint from MENU state is valid."""
+        api(client, "menu", {})
+        response = api(client, "gamestate", {})
+        verify_base_gamestate_response(response)
+        assert response["state"] == "MENU"
+
+    def test_gamestate_from_BLIND_SELECT(self, client: socket.socket) -> None:
+        """Test that gamestate from BLIND_SELECT state is valid."""
+        save = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr"
+        api(client, "load", {"path": str(get_fixture_path("gamestate", save))})
+        response = api(client, "gamestate", {})
+        verify_base_gamestate_response(response)
+        assert response["state"] == "BLIND_SELECT"
+        assert response["round_num"] == 0
+        assert response["deck"] == "RED"
+        assert response["stake"] == "WHITE"
