@@ -9,6 +9,9 @@ BB_ENDPOINTS = {
   "src/lua/endpoints/health.lua",
   "src/lua/endpoints/save.lua",
   "src/lua/endpoints/load.lua",
+  "src/lua/endpoints/gamestate.lua",
+  "src/lua/endpoints/menu.lua",
+  "src/lua/endpoints/start.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
