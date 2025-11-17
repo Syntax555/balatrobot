@@ -1,27 +1,43 @@
 #!/usr/bin/env python3
-"""Generate test fixture files for save/load endpoint testing.
+"""Generate test fixture files for endpoint testing.
 
-This script connects to a running Balatro instance and uses the save endpoint
-to generate .jkr fixture files for testing. It also creates corrupted files
-for testing error handling.
-
-Fixtures are organized by endpoint:
-- save/start.jkr - Used by save tests to get into run state
-- load/start.jkr - Used by load tests to test loading
-- load/corrupted.jkr - Used by load tests to test error handling
+This script automatically connects to a running Balatro instance and generates
+.jkr fixture files for testing endpoints.
 
 Usage:
     python generate.py
+
+Requirements:
+- Balatro must be running with the BalatroBot mod loaded
+- Default connection: 127.0.0.1:12346
 """
 
 import json
 import socket
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
+
+from tqdm import tqdm
 
 FIXTURES_DIR = Path(__file__).parent
 HOST = "127.0.0.1"
 PORT = 12346
 BUFFER_SIZE = 65536
+
+
+@dataclass
+class FixtureSpec:
+    """Specification for a single fixture."""
+
+    name: str  # Display name
+    paths: list[Path]  # Output paths (first is primary, rest are copies)
+    setup: Callable[[socket.socket], bool] | None = None  # Game state setup
+    validate: bool = True  # Whether to validate by loading
+    post_process: Callable[[Path], None] | None = (
+        None  # Post-processing (e.g., corruption)
+    )
+    depends_on: list[str] = field(default_factory=list)  # Dependencies
 
 
 def send_request(sock: socket.socket, name: str, arguments: dict) -> None:
@@ -44,100 +60,196 @@ def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict:
     return json.loads(first_message)
 
 
-def generate_start_fixtures() -> None:
-    """Generate start.jkr fixtures for both save and load endpoints.
+def start_new_game(
+    sock: socket.socket,
+    deck: str = "RED",
+    stake: str = "WHITE",
+    seed: str | None = None,
+) -> bool:
+    """Start a new game with specified deck and stake."""
+    # Ensure menu state
+    send_request(sock, "menu", {})
+    res = receive_response(sock)
+    if "error" in res or res.get("state") != "MENU":
+        return False
 
-    Creates identical start.jkr files in both save/ and load/ directories
-    from the current game state. This should be run when the game is in
-    an initial state (e.g., early in a run).
-    """
-    save_fixture = FIXTURES_DIR / "save" / "start.jkr"
-    load_fixture = FIXTURES_DIR / "load" / "start.jkr"
+    # Start game
+    arguments = {"deck": deck, "stake": stake}
+    if seed:
+        arguments["seed"] = seed
+    send_request(sock, "start", arguments)
+    res = receive_response(sock)
 
-    print(f"Generating start.jkr fixtures...")
+    if "error" in res:
+        return False
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(10)
-        sock.connect((HOST, PORT))
-
-        # Save to save/ directory
-        send_request(sock, "save", {"path": str(save_fixture)})
-        response = receive_response(sock)
-
-        if "error" in response:
-            print(
-                f"  Error: {response['error']} ({response.get('error_code', 'UNKNOWN')})"
-            )
-            print("  Make sure you're in an active run before generating fixtures")
-            return
-
-        if response.get("success"):
-            print(f"  Generated {save_fixture}")
-            print(f"  File size: {save_fixture.stat().st_size} bytes")
-
-            # Copy to load/ directory
-            load_fixture.write_bytes(save_fixture.read_bytes())
-            print(f"  Generated {load_fixture}")
-            print(f"  File size: {load_fixture.stat().st_size} bytes")
-
-            # Validate by loading it back
-            send_request(sock, "load", {"path": str(load_fixture)})
-            load_response = receive_response(sock)
-
-            if load_response.get("success"):
-                print(f"  Validated: fixtures load successfully")
-            else:
-                print(f"  Warning: fixtures generated but failed to load")
-                print(f"  Error: {load_response.get('error', 'Unknown error')}")
-        else:
-            print(f"  Failed to generate fixtures")
+    state = res.get("state")
+    if state == "BLIND_SELECT":
+        return res.get("deck") == deck and res.get("stake") == stake
+    return False
 
 
-def generate_corrupted() -> None:
-    """Generate corrupted.jkr fixture for error testing.
-
-    Creates an intentionally corrupted .jkr file in load/ directory to test
-    EXEC_INVALID_SAVE_FORMAT error handling in the load endpoint.
-    """
-    fixture_path = FIXTURES_DIR / "load" / "corrupted.jkr"
-    print(f"Generating {fixture_path}...")
-
-    # Write invalid/truncated data that won't decompress correctly
-    corrupted_data = b"CORRUPTED_SAVE_FILE_FOR_TESTING\x00\x01\x02"
-
-    fixture_path.write_bytes(corrupted_data)
-    print(f"  Generated {fixture_path}")
-    print(f"  File size: {fixture_path.stat().st_size} bytes")
-    print(f"  This file is intentionally corrupted for error testing")
+def corrupt_file(path: Path) -> None:
+    """Corrupt a file for error testing."""
+    path.write_bytes(b"CORRUPTED_SAVE_FILE_FOR_TESTING\x00\x01\x02")
 
 
-def main() -> None:
-    """Main entry point for fixture generation."""
-    print("BalatroBot Fixture Generator")
-    print(f"Connecting to {HOST}:{PORT}")
-    print()
+def generate_fixture(
+    sock: socket.socket | None,
+    spec: FixtureSpec,
+    pbar: tqdm,
+) -> bool:
+    """Generate a single fixture from its specification."""
+    primary_path = spec.paths[0]
 
     try:
-        generate_start_fixtures()
-        print()
-        generate_corrupted()
-        print()
+        # Setup game state
+        if spec.setup:
+            if not sock:
+                pbar.write(f"  Error: {spec.name} requires socket connection")
+                return False
+            if not spec.setup(sock):
+                pbar.write(f"  Error: {spec.name} setup failed")
+                return False
 
-        print("Fixture generation complete!")
-        print(f"Fixtures organized in: {FIXTURES_DIR}/")
-        print("  - save/start.jkr")
-        print("  - load/start.jkr")
-        print("  - load/corrupted.jkr")
+        # Save fixture
+        primary_path.parent.mkdir(parents=True, exist_ok=True)
+        assert sock, "Socket connection required for save"
+
+        if spec.setup:  # Game-based fixture
+            send_request(sock, "save", {"path": str(primary_path)})
+            res = receive_response(sock)
+            if not res.get("success"):
+                error = res.get("error", "Unknown error")
+                pbar.write(f"  Error: {spec.name} save failed: {error}")
+                return False
+        else:  # Non-game fixture (created by post_process)
+            primary_path.touch()
+
+        # Copy to additional paths
+        for dest_path in spec.paths[1:]:
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            dest_path.write_bytes(primary_path.read_bytes())
+
+        # Post-processing
+        if spec.post_process:
+            for path in spec.paths:
+                spec.post_process(path)
+
+        # Validation
+        if spec.validate and spec.setup and sock:
+            send_request(sock, "load", {"path": str(primary_path)})
+            load_response = receive_response(sock)
+            if not load_response.get("success"):
+                pbar.write(f"  Warning: {spec.name} validation failed")
+
+        return True
+
+    except Exception as e:
+        pbar.write(f"  Error: {spec.name} failed: {e}")
+        return False
+
+
+def build_fixtures() -> list[FixtureSpec]:
+    """Build fixture specifications."""
+    return [
+        FixtureSpec(
+            name="Initial state (BLIND_SELECT)",
+            paths=[
+                FIXTURES_DIR / "save" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "load" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "menu" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "health" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "start" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR
+                / "gamestate"
+                / "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr",
+            ],
+            setup=lambda sock: start_new_game(sock, deck="RED", stake="WHITE"),
+        ),
+        FixtureSpec(
+            name="load/corrupted.jkr",
+            paths=[FIXTURES_DIR / "load" / "corrupted.jkr"],
+            setup=None,
+            validate=False,
+            post_process=corrupt_file,
+        ),
+    ]
+
+
+def should_generate(spec: FixtureSpec, regenerated: set[str]) -> bool:
+    """Check if fixture should be generated (dependencies or missing files)."""
+    # Check dependencies - if any dependency was regenerated, regenerate this too
+    if any(dep in regenerated for dep in spec.depends_on):
+        return True
+
+    # Check if any path is missing
+    return not all(path.exists() for path in spec.paths)
+
+
+def main() -> int:
+    """Main entry point."""
+    print("BalatroBot Fixture Generator")
+    print(f"Connecting to {HOST}:{PORT}\n")
+
+    fixtures = build_fixtures()
+
+    # Check existing fixtures
+    existing = [spec for spec in fixtures if all(path.exists() for path in spec.paths)]
+
+    if existing:
+        print(f"Found {len(existing)} existing fixture(s)")
+        response = input("Delete all existing fixtures and regenerate? [y/N]: ")
+        if response.lower() == "y":
+            for spec in existing:
+                for path in spec.paths:
+                    if path.exists():
+                        path.unlink()
+            print("Deleted existing fixtures\n")
+        else:
+            print("Will skip existing fixtures\n")
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((HOST, PORT))
+
+            regenerated: set[str] = set()
+            success = 0
+            skipped = 0
+            failed = 0
+
+            with tqdm(
+                total=len(fixtures), desc="Generating fixtures", unit="fixture"
+            ) as pbar:
+                for spec in fixtures:
+                    if should_generate(spec, regenerated):
+                        if generate_fixture(sock, spec, pbar):
+                            regenerated.add(spec.name)
+                            success += 1
+                        else:
+                            failed += 1
+                    else:
+                        pbar.write(f"  Skipped: {spec.name} (already exists)")
+                        skipped += 1
+                    pbar.update(1)
+
+            print(f"\nSummary: {success} generated, {skipped} skipped, {failed} failed")
+
+            if failed > 0:
+                return 1
+
+            return 0
 
     except ConnectionRefusedError:
         print(f"Error: Could not connect to Balatro at {HOST}:{PORT}")
         print("Make sure Balatro is running with BalatroBot mod loaded")
         return 1
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+    except socket.timeout:
+        print(f"Error: Connection timeout to Balatro at {HOST}:{PORT}")
         return 1
-
-    return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
 
 if __name__ == "__main__":
