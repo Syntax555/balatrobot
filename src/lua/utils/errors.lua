@@ -18,6 +18,7 @@
 ---@field SCHEMA_INVALID_TYPE string
 ---@field SCHEMA_MISSING_REQUIRED string
 ---@field SCHEMA_INVALID_ARRAY_ITEMS string
+---@field SCHEMA_INVALID_VALUE string
 ---@field STATE_INVALID_STATE string
 ---@field STATE_NOT_READY string
 ---@field GAME_NOT_IN_RUN string
@@ -41,6 +42,7 @@ return {
   SCHEMA_INVALID_TYPE = "SCHEMA_INVALID_TYPE", -- Argument type mismatch
   SCHEMA_MISSING_REQUIRED = "SCHEMA_MISSING_REQUIRED", -- Required argument missing
   SCHEMA_INVALID_ARRAY_ITEMS = "SCHEMA_INVALID_ARRAY_ITEMS", -- Invalid array item type
+  SCHEMA_INVALID_VALUE = "SCHEMA_INVALID_VALUE", -- Argument value out of range or invalid
 
   -- STATE_* : Game state validation errors (wrong state for action)
   STATE_INVALID_STATE = "STATE_INVALID_STATE", -- Action not allowed in current state
