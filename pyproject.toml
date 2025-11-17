@@ -38,8 +38,8 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 [tool.pyright]
 typeCheckingMode = "basic"
 
-[tool.pytest.ini_options]
-addopts = "--reruns 5"
+# [tool.pytest.ini_options]
+# addopts = "--reruns 5"
 
 [dependency-groups]
 dev = [
