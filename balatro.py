@@ -95,6 +95,8 @@ def start(args):
         env["BALATROBOT_AUDIO"] = "1"
     if args.debug:
         env["BALATROBOT_DEBUG"] = "1"
+    if args.no_shaders:
+        env["BALATROBOT_NO_SHADERS"] = "1"
 
     # Open log file
     log_file = LOGS_DIR / f"balatro_{args.port}.log"
@@ -166,6 +168,11 @@ def main():
         "--debug",
         action="store_true",
         help="Enable debug mode (requires DebugPlus mod, loads test endpoints)",
+    )
+    start_parser.add_argument(
+        "--no-shaders",
+        action="store_true",
+        help="Disable all shaders for better performance",
     )
 
     # Kill command

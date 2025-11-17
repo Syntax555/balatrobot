@@ -21,6 +21,9 @@ BalatroBot configure settings in Balatro using the following environment variabl
 
   - BALATROBOT_DEBUG: whether enable debug mode. It requires DebugPlus mod to be running.
       1 for actiavate the debug mode, 0 for no debug (default: 0)
+
+  - BALATROBOT_NO_SHADERS: whether to disable all shaders for better performance.
+      1 for disable shaders, 0 for enable shaders (default: 0)
 ]]
 
 ---@diagnostic disable: duplicate-set-field
@@ -41,6 +44,8 @@ BB_SETTINGS = {
   audio = os.getenv("BALATROBOT_AUDIO") == "1" or false,
   ---@type boolean
   debug = os.getenv("BALATROBOT_DEBUG") == "1" or false,
+  ---@type boolean
+  no_shaders = os.getenv("BALATROBOT_NO_SHADERS") == "1" or false,
 }
 
 -- Global flag to trigger rendering (used by render_on_api)
@@ -190,6 +195,18 @@ local function configure_fast()
   G.F_VERBOSE = false
 end
 
+--- Disables all shaders by overriding love.graphics.setShader to always pass nil
+--- This improves performance by bypassing shader compilation and rendering
+--- Disabling shaders cause visual glitches. Use at your own risk.
+---@return nil
+local function configure_no_shaders()
+  local love_graphics_setShader = love.graphics.setShader
+  love.graphics.setShader = function(_)
+    return love_graphics_setShader(nil)
+  end
+  sendDebugMessage("Disabled all shaders", "BB.SETTINGS")
+end
+
 --- Enables audio by setting volume levels and enabling sound thread
 ---@return nil
 local function configure_audio()
@@ -224,6 +241,10 @@ BB_SETTINGS.setup = function()
 
   if BB_SETTINGS.fast then
     configure_fast()
+  end
+
+  if BB_SETTINGS.no_shaders then
+    configure_no_shaders()
   end
 
   if BB_SETTINGS.audio then
