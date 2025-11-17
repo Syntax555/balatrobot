@@ -4,13 +4,6 @@
 -- Simple synchronous endpoint for connection testing and readiness checks
 -- Returns server status and basic game information immediately
 
----@class Endpoint
----@field name string The endpoint name
----@field description string Brief description of the endpoint
----@field schema table<string, SchemaField> Schema definition for arguments validation
----@field requires_state string[]? Optional list of required game states
----@field execute fun(args: table, send_response: fun(response: table)) Execute function
-
 ---@type Endpoint
 return {
   name = "health",
