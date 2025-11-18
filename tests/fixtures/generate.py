@@ -14,9 +14,8 @@ Requirements:
 
 import json
 import socket
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from tqdm import tqdm
 
@@ -30,26 +29,25 @@ BUFFER_SIZE = 65536
 class FixtureSpec:
     """Specification for a single fixture."""
 
-    name: str  # Display name
     paths: list[Path]  # Output paths (first is primary, rest are copies)
-    setup: Callable[[socket.socket], bool] | None = None  # Game state setup
-    validate: bool = True  # Whether to validate by loading
-    post_process: Callable[[Path], None] | None = (
-        None  # Post-processing (e.g., corruption)
-    )
-    depends_on: list[str] = field(default_factory=list)  # Dependencies
+    setup: list[tuple[str, dict]]  # Sequence of API calls: [(name, arguments), ...]
 
 
-def send_request(sock: socket.socket, name: str, arguments: dict) -> None:
-    """Send a JSON request to the Balatro server."""
+def api(sock: socket.socket, name: str, arguments: dict) -> dict:
+    """Send API call to Balatro and return response.
+
+    Args:
+        sock: Connected socket to Balatro server.
+        name: API endpoint name.
+        arguments: API call arguments.
+
+    Returns:
+        Response dictionary from server.
+    """
     request = {"name": name, "arguments": arguments}
     message = json.dumps(request) + "\n"
     sock.sendall(message.encode())
 
-
-def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict:
-    """Receive and parse JSON response from server."""
-    sock.settimeout(timeout)
     response = sock.recv(BUFFER_SIZE)
     decoded = response.decode()
     first_newline = decoded.find("\n")
@@ -60,93 +58,39 @@ def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict:
     return json.loads(first_message)
 
 
-def start_new_game(
-    sock: socket.socket,
-    deck: str = "RED",
-    stake: str = "WHITE",
-    seed: str | None = None,
-) -> bool:
-    """Start a new game with specified deck and stake."""
-    # Ensure menu state
-    send_request(sock, "menu", {})
-    res = receive_response(sock)
-    if "error" in res or res.get("state") != "MENU":
-        return False
-
-    # Start game
-    arguments = {"deck": deck, "stake": stake}
-    if seed:
-        arguments["seed"] = seed
-    send_request(sock, "start", arguments)
-    res = receive_response(sock)
-
-    if "error" in res:
-        return False
-
-    state = res.get("state")
-    if state == "BLIND_SELECT":
-        return res.get("deck") == deck and res.get("stake") == stake
-    return False
-
-
 def corrupt_file(path: Path) -> None:
     """Corrupt a file for error testing."""
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"CORRUPTED_SAVE_FILE_FOR_TESTING\x00\x01\x02")
 
 
 def generate_fixture(
-    sock: socket.socket | None,
+    sock: socket.socket,
     spec: FixtureSpec,
     pbar: tqdm,
 ) -> bool:
     """Generate a single fixture from its specification."""
     primary_path = spec.paths[0]
+    relative_path = primary_path.relative_to(FIXTURES_DIR)
 
     try:
-        # Setup game state
-        if spec.setup:
-            if not sock:
-                pbar.write(f"  Error: {spec.name} requires socket connection")
-                return False
-            if not spec.setup(sock):
-                pbar.write(f"  Error: {spec.name} setup failed")
-                return False
+        # Execute API call sequence
+        for endpoint, arguments in spec.setup:
+            api(sock, endpoint, arguments)
 
         # Save fixture
         primary_path.parent.mkdir(parents=True, exist_ok=True)
-        assert sock, "Socket connection required for save"
-
-        if spec.setup:  # Game-based fixture
-            send_request(sock, "save", {"path": str(primary_path)})
-            res = receive_response(sock)
-            if not res.get("success"):
-                error = res.get("error", "Unknown error")
-                pbar.write(f"  Error: {spec.name} save failed: {error}")
-                return False
-        else:  # Non-game fixture (created by post_process)
-            primary_path.touch()
+        api(sock, "save", {"path": str(primary_path)})
 
         # Copy to additional paths
         for dest_path in spec.paths[1:]:
             dest_path.parent.mkdir(parents=True, exist_ok=True)
             dest_path.write_bytes(primary_path.read_bytes())
 
-        # Post-processing
-        if spec.post_process:
-            for path in spec.paths:
-                spec.post_process(path)
-
-        # Validation
-        if spec.validate and spec.setup and sock:
-            send_request(sock, "load", {"path": str(primary_path)})
-            load_response = receive_response(sock)
-            if not load_response.get("success"):
-                pbar.write(f"  Warning: {spec.name} validation failed")
-
         return True
 
     except Exception as e:
-        pbar.write(f"  Error: {spec.name} failed: {e}")
+        pbar.write(f"  Error: {relative_path} failed: {e}")
         return False
 
 
@@ -154,7 +98,6 @@ def build_fixtures() -> list[FixtureSpec]:
     """Build fixture specifications."""
     return [
         FixtureSpec(
-            name="Initial state (BLIND_SELECT)",
             paths=[
                 FIXTURES_DIR / "save" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "load" / "state-BLIND_SELECT.jkr",
@@ -162,28 +105,47 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "health" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "start" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
+                / "skip"
+                / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
+                FIXTURES_DIR
                 / "gamestate"
                 / "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr",
             ],
-            setup=lambda sock: start_new_game(sock, deck="RED", stake="WHITE"),
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE"}),
+            ],
         ),
         FixtureSpec(
-            name="load/corrupted.jkr",
-            paths=[FIXTURES_DIR / "load" / "corrupted.jkr"],
-            setup=None,
-            validate=False,
-            post_process=corrupt_file,
+            paths=[
+                FIXTURES_DIR
+                / "skip"
+                / "state-BLIND_SELECT--blinds.big.status-SELECT.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE"}),
+                ("skip", {}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR
+                / "skip"
+                / "state-BLIND_SELECT--blinds.boss.status-SELECT.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE"}),
+                ("skip", {}),
+                ("skip", {}),
+            ],
         ),
     ]
 
 
-def should_generate(spec: FixtureSpec, regenerated: set[str]) -> bool:
-    """Check if fixture should be generated (dependencies or missing files)."""
-    # Check dependencies - if any dependency was regenerated, regenerate this too
-    if any(dep in regenerated for dep in spec.depends_on):
-        return True
-
-    # Check if any path is missing
+def should_generate(spec: FixtureSpec) -> bool:
+    """Check if fixture should be generated (any path missing)."""
     return not all(path.exists() for path in spec.paths)
 
 
@@ -194,26 +156,10 @@ def main() -> int:
 
     fixtures = build_fixtures()
 
-    # Check existing fixtures
-    existing = [spec for spec in fixtures if all(path.exists() for path in spec.paths)]
-
-    if existing:
-        print(f"Found {len(existing)} existing fixture(s)")
-        response = input("Delete all existing fixtures and regenerate? [y/N]: ")
-        if response.lower() == "y":
-            for spec in existing:
-                for path in spec.paths:
-                    if path.exists():
-                        path.unlink()
-            print("Deleted existing fixtures\n")
-        else:
-            print("Will skip existing fixtures\n")
-
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((HOST, PORT))
 
-            regenerated: set[str] = set()
             success = 0
             skipped = 0
             failed = 0
@@ -222,16 +168,24 @@ def main() -> int:
                 total=len(fixtures), desc="Generating fixtures", unit="fixture"
             ) as pbar:
                 for spec in fixtures:
-                    if should_generate(spec, regenerated):
+                    if should_generate(spec):
                         if generate_fixture(sock, spec, pbar):
-                            regenerated.add(spec.name)
                             success += 1
                         else:
                             failed += 1
                     else:
-                        pbar.write(f"  Skipped: {spec.name} (already exists)")
+                        relative_path = spec.paths[0].relative_to(FIXTURES_DIR)
+                        pbar.write(f"  Skipped: {relative_path}")
                         skipped += 1
                     pbar.update(1)
+
+            # Go back to menu state
+            api(sock, "menu", {})
+
+            # Generate corrupted fixture
+            corrupted_path = FIXTURES_DIR / "load" / "corrupted.jkr"
+            corrupt_file(corrupted_path)
+            success += 1
 
             print(f"\nSummary: {success} generated, {skipped} skipped, {failed} failed")
 
