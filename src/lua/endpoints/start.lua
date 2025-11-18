@@ -139,11 +139,13 @@ return {
     G.E_MANAGER:add_event(Event({
       no_delete = true,
       trigger = "condition",
-      blocking = true,
+      blocking = false,
       func = function()
-        -- Run is ready when we're in BLIND_SELECT state with a blind on deck
-        local done = G.STATE == G.STATES.BLIND_SELECT
-
+        local done = (
+          G.GAME.blind_on_deck ~= nil
+          and G.blind_select_opts ~= nil
+          and G.blind_select_opts["small"]:get_UIE_by_ID("tag_Small") ~= nil
+        )
         if done then
           sendDebugMessage("Return start()", "BB.ENDPOINTS")
           local state_data = gamestate.get_gamestate()
