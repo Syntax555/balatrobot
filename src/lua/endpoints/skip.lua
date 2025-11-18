@@ -31,6 +31,7 @@ return {
         error = "Cannot skip Boss blind",
         error_code = errors.GAME_INVALID_STATE,
       })
+      return
     end
 
     -- Get the skip button from the tag element
