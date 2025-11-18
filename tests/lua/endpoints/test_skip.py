@@ -3,12 +3,9 @@
 import socket
 from typing import Any
 
-import pytest
-
 from tests.lua.conftest import api, assert_error_response, get_fixture_path
 
 
-@pytest.mark.skip(reason="Skipping test")
 def verify_skip_response(response: dict[str, Any]) -> None:
     """Verify that skip response has expected fields."""
     # Verify state field
