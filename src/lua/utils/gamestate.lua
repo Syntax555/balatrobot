@@ -358,34 +358,152 @@ local function extract_round_info()
 end
 
 -- ==========================================================================
--- Blind Information (adapted from old utils)
+-- Blind Information
 -- ==========================================================================
+
+---Gets blind effect description from localization data
+---@param blind_config table The blind configuration from G.P_BLINDS
+---@return string effect The effect description
+local function get_blind_effect_from_ui(blind_config)
+  if not blind_config or not blind_config.key then
+    return ""
+  end
+
+  -- Small and Big blinds have no effect
+  if blind_config.key == "bl_small" or blind_config.key == "bl_big" then
+    return ""
+  end
+
+  -- Access localization data directly (more reliable than using localize function)
+  -- Path: G.localization.descriptions.Blind[blind_key].text
+  if not G or not G.localization then ---@diagnostic disable-line: undefined-global
+    return ""
+  end
+
+  local loc_data = G.localization.descriptions ---@diagnostic disable-line: undefined-global
+  if not loc_data or not loc_data.Blind or not loc_data.Blind[blind_config.key] then
+    return ""
+  end
+
+  local blind_data = loc_data.Blind[blind_config.key]
+  if not blind_data.text or type(blind_data.text) ~= "table" then
+    return ""
+  end
+
+  -- Concatenate all description lines
+  local effect_parts = {}
+  for _, line in ipairs(blind_data.text) do
+    if line and line ~= "" then
+      effect_parts[#effect_parts + 1] = line
+    end
+  end
+
+  return table.concat(effect_parts, " ")
+end
+
+---Gets tag information using localize function (same approach as Tag:set_text)
+---@param tag_key string The tag key from G.P_TAGS
+---@return table tag_info {name: string, effect: string}
+local function get_tag_info(tag_key)
+  local result = { name = "", effect = "" }
+
+  if not tag_key or not G.P_TAGS or not G.P_TAGS[tag_key] then
+    return result
+  end
+
+  if not localize then ---@diagnostic disable-line: undefined-global
+    return result
+  end
+
+  local tag_data = G.P_TAGS[tag_key]
+  result.name = tag_data.name or ""
+
+  -- Build loc_vars based on tag name (same logic as Tag:get_uibox_table in tag.lua:545-561)
+  local loc_vars = {}
+  local name = tag_data.name
+  if name == "Investment Tag" then
+    loc_vars = { tag_data.config and tag_data.config.dollars or 0 }
+  elseif name == "Handy Tag" then
+    local dollars_per_hand = tag_data.config and tag_data.config.dollars_per_hand or 0
+    local hands_played = (G.GAME and G.GAME.hands_played) or 0
+    loc_vars = { dollars_per_hand, dollars_per_hand * hands_played }
+  elseif name == "Garbage Tag" then
+    local dollars_per_discard = tag_data.config and tag_data.config.dollars_per_discard or 0
+    local unused_discards = (G.GAME and G.GAME.unused_discards) or 0
+    loc_vars = { dollars_per_discard, dollars_per_discard * unused_discards }
+  elseif name == "Juggle Tag" then
+    loc_vars = { tag_data.config and tag_data.config.h_size or 0 }
+  elseif name == "Top-up Tag" then
+    loc_vars = { tag_data.config and tag_data.config.spawn_jokers or 0 }
+  elseif name == "Skip Tag" then
+    local skip_bonus = tag_data.config and tag_data.config.skip_bonus or 0
+    local skips = (G.GAME and G.GAME.skips) or 0
+    loc_vars = { skip_bonus, skip_bonus * (skips + 1) }
+  elseif name == "Orbital Tag" then
+    local orbital_hand = "Poker Hand" -- Default placeholder
+    local levels = tag_data.config and tag_data.config.levels or 0
+    loc_vars = { orbital_hand, levels }
+  elseif name == "Economy Tag" then
+    loc_vars = { tag_data.config and tag_data.config.max or 0 }
+  end
+
+  -- Use localize with raw_descriptions type (matches Balatro's internal approach)
+  local text_lines = localize({ type = "raw_descriptions", key = tag_key, set = "Tag", vars = loc_vars }) ---@diagnostic disable-line: undefined-global
+  if text_lines and type(text_lines) == "table" then
+    result.effect = table.concat(text_lines, " ")
+  end
+
+  return result
+end
+
+---Converts game blind status to uppercase enum
+---@param status string Game status (e.g., "Defeated", "Current", "Select")
+---@return string uppercase_status Uppercase status enum (e.g., "DEFEATED", "CURRENT", "SELECT")
+local function convert_status_to_enum(status)
+  if status == "Defeated" then
+    return "DEFEATED"
+  elseif status == "Skipped" then
+    return "SKIPPED"
+  elseif status == "Current" then
+    return "CURRENT"
+  elseif status == "Select" then
+    return "SELECT"
+  elseif status == "Upcoming" then
+    return "UPCOMING"
+  else
+    return "UPCOMING" -- Default fallback
+  end
+end
 
 ---Gets comprehensive blind information for the current ante
 ---@return table<string, Blind> blinds Information about small, big, and boss blinds
-local function get_blinds_info()
+function gamestate.get_blinds_info()
+  -- Initialize with default structure matching the Blind type
   local blinds = {
     small = {
-      name = "Small",
-      score = 0,
-      status = "pending",
+      type = "SMALL",
+      status = "UPCOMING",
+      name = "",
       effect = "",
+      score = 0,
       tag_name = "",
       tag_effect = "",
     },
     big = {
-      name = "Big",
-      score = 0,
-      status = "pending",
+      type = "BIG",
+      status = "UPCOMING",
+      name = "",
       effect = "",
+      score = 0,
       tag_name = "",
       tag_effect = "",
     },
     boss = {
+      type = "BOSS",
+      status = "UPCOMING",
       name = "",
-      score = 0,
-      status = "pending",
       effect = "",
+      score = 0,
       tag_name = "",
       tag_effect = "",
     },
@@ -399,122 +517,79 @@ local function get_blinds_info()
   local ante = G.GAME.round_resets.ante or 1
   local base_amount = get_blind_amount(ante) ---@diagnostic disable-line: undefined-global
 
-  -- Apply ante scaling
-  local ante_scaling = G.GAME.starting_params.ante_scaling or 1
+  -- Apply ante scaling with null check
+  local ante_scaling = (G.GAME.starting_params and G.GAME.starting_params.ante_scaling) or 1
 
-  -- Small blind (1x multiplier)
-  blinds.small.score = math.floor(base_amount * 1 * ante_scaling)
-  if G.GAME.round_resets.blind_states and G.GAME.round_resets.blind_states.Small then
-    local status = G.GAME.round_resets.blind_states.Small
-    if status == "Defeated" or status == "Skipped" then
-      blinds.small.status = "completed"
-    elseif status == "Current" or status == "Select" then
-      blinds.small.status = "current"
+  -- Get blind choices
+  local blind_choices = G.GAME.round_resets.blind_choices or {}
+  local blind_states = G.GAME.round_resets.blind_states or {}
+
+  -- ====================
+  -- Small Blind
+  -- ====================
+  local small_choice = blind_choices.Small or "bl_small"
+  if G.P_BLINDS and G.P_BLINDS[small_choice] then
+    local small_blind = G.P_BLINDS[small_choice]
+    blinds.small.name = small_blind.name or "Small Blind"
+    blinds.small.score = math.floor(base_amount * (small_blind.mult or 1) * ante_scaling)
+    blinds.small.effect = get_blind_effect_from_ui(small_blind)
+
+    -- Set status
+    if blind_states.Small then
+      blinds.small.status = convert_status_to_enum(blind_states.Small)
+    end
+
+    -- Get tag information
+    local small_tag_key = G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Small
+    if small_tag_key then
+      local tag_info = get_tag_info(small_tag_key)
+      blinds.small.tag_name = tag_info.name
+      blinds.small.tag_effect = tag_info.effect
     end
   end
 
-  -- Big blind (1.5x multiplier)
-  blinds.big.score = math.floor(base_amount * 1.5 * ante_scaling)
-  if G.GAME.round_resets.blind_states and G.GAME.round_resets.blind_states.Big then
-    local status = G.GAME.round_resets.blind_states.Big
-    if status == "Defeated" or status == "Skipped" then
-      blinds.big.status = "completed"
-    elseif status == "Current" or status == "Select" then
-      blinds.big.status = "current"
+  -- ====================
+  -- Big Blind
+  -- ====================
+  local big_choice = blind_choices.Big or "bl_big"
+  if G.P_BLINDS and G.P_BLINDS[big_choice] then
+    local big_blind = G.P_BLINDS[big_choice]
+    blinds.big.name = big_blind.name or "Big Blind"
+    blinds.big.score = math.floor(base_amount * (big_blind.mult or 1.5) * ante_scaling)
+    blinds.big.effect = get_blind_effect_from_ui(big_blind)
+
+    -- Set status
+    if blind_states.Big then
+      blinds.big.status = convert_status_to_enum(blind_states.Big)
+    end
+
+    -- Get tag information
+    local big_tag_key = G.GAME.round_resets.blind_tags and G.GAME.round_resets.blind_tags.Big
+    if big_tag_key then
+      local tag_info = get_tag_info(big_tag_key)
+      blinds.big.tag_name = tag_info.name
+      blinds.big.tag_effect = tag_info.effect
     end
   end
 
-  -- Boss blind
-  local boss_choice = G.GAME.round_resets.blind_choices and G.GAME.round_resets.blind_choices.Boss
+  -- ====================
+  -- Boss Blind
+  -- ====================
+  local boss_choice = blind_choices.Boss
   if boss_choice and G.P_BLINDS and G.P_BLINDS[boss_choice] then
     local boss_blind = G.P_BLINDS[boss_choice]
-    blinds.boss.name = boss_blind.name or ""
+    blinds.boss.name = boss_blind.name or "Boss Blind"
     blinds.boss.score = math.floor(base_amount * (boss_blind.mult or 2) * ante_scaling)
+    blinds.boss.effect = get_blind_effect_from_ui(boss_blind)
 
-    if G.GAME.round_resets.blind_states and G.GAME.round_resets.blind_states.Boss then
-      local status = G.GAME.round_resets.blind_states.Boss
-      if status == "Defeated" or status == "Skipped" then
-        blinds.boss.status = "completed"
-      elseif status == "Current" or status == "Select" then
-        blinds.boss.status = "current"
-      end
-    end
-
-    -- Get boss effect description
-    if boss_blind.key and localize then ---@diagnostic disable-line: undefined-global
-      local loc_target = localize({ ---@diagnostic disable-line: undefined-global
-        type = "raw_descriptions",
-        key = boss_blind.key,
-        set = "Blind",
-        vars = { "" },
-      })
-      if loc_target and loc_target[1] then
-        blinds.boss.effect = loc_target[1]
-        if loc_target[2] then
-          blinds.boss.effect = blinds.boss.effect .. " " .. loc_target[2]
-        end
-      end
+    -- Set status
+    if blind_states.Boss then
+      blinds.boss.status = convert_status_to_enum(blind_states.Boss)
     end
   else
-    blinds.boss.name = "Boss"
+    -- Fallback if boss blind not yet determined
+    blinds.boss.name = "Boss Blind"
     blinds.boss.score = math.floor(base_amount * 2 * ante_scaling)
-    if G.GAME.round_resets.blind_states and G.GAME.round_resets.blind_states.Boss then
-      local status = G.GAME.round_resets.blind_states.Boss
-      if status == "Defeated" or status == "Skipped" then
-        blinds.boss.status = "completed"
-      elseif status == "Current" or status == "Select" then
-        blinds.boss.status = "current"
-      end
-    end
-  end
-
-  -- Get tag information for Small and Big blinds
-  if G.GAME.round_resets.blind_tags and G.P_TAGS then
-    -- Small blind tag
-    local small_tag_key = G.GAME.round_resets.blind_tags.Small
-    if small_tag_key and G.P_TAGS[small_tag_key] then
-      local tag_data = G.P_TAGS[small_tag_key]
-      blinds.small.tag_name = tag_data.name or ""
-
-      -- Get tag effect description
-      if localize then ---@diagnostic disable-line: undefined-global
-        local tag_effect = localize({ ---@diagnostic disable-line: undefined-global
-          type = "raw_descriptions",
-          key = small_tag_key,
-          set = "Tag",
-          vars = { "" },
-        })
-        if tag_effect and tag_effect[1] then
-          blinds.small.tag_effect = tag_effect[1]
-          if tag_effect[2] then
-            blinds.small.tag_effect = blinds.small.tag_effect .. " " .. tag_effect[2]
-          end
-        end
-      end
-    end
-
-    -- Big blind tag
-    local big_tag_key = G.GAME.round_resets.blind_tags.Big
-    if big_tag_key and G.P_TAGS[big_tag_key] then
-      local tag_data = G.P_TAGS[big_tag_key]
-      blinds.big.tag_name = tag_data.name or ""
-
-      -- Get tag effect description
-      if localize then ---@diagnostic disable-line: undefined-global
-        local tag_effect = localize({ ---@diagnostic disable-line: undefined-global
-          type = "raw_descriptions",
-          key = big_tag_key,
-          set = "Tag",
-          vars = { "" },
-        })
-        if tag_effect and tag_effect[1] then
-          blinds.big.tag_effect = tag_effect[1]
-          if tag_effect[2] then
-            blinds.big.tag_effect = tag_effect[2] .. " " .. tag_effect[2]
-          end
-        end
-      end
-    end
   end
 
   -- Boss blind has no tags (tag_name and tag_effect remain empty strings)
@@ -586,7 +661,7 @@ function gamestate.get_gamestate()
     state_data.round = extract_round_info()
 
     -- Blinds info
-    state_data.blinds = get_blinds_info()
+    state_data.blinds = gamestate.get_blinds_info()
   end
 
   -- Always available areas
