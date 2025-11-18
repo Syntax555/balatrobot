@@ -101,10 +101,11 @@
 ---@field chips integer? Current chips scored in this round
 
 ---@class Blind
----@field name string Name of the blind (e.g., "Small", "Big", "The Wall")
----@field score integer Score requirement to beat this blind
----@field status "pending" | "current" | "completed" Status of the blind
+---@field type "SMALL" | "BIG" | "BOSS" Type of the blind
+---@field status "SELECT" | "CURRENT" | "UPCOMING" | "DEFEATED" | "SKIPPED" Status of the bilnd
+---@field name string Name of the blind (e.g., "Small", "Big" or the Boss name)
 ---@field effect string Description of the blind's effect
+---@field score integer Score requirement to beat this blind
 ---@field tag_name string? Name of the tag associated with this blind (Small/Big only)
 ---@field tag_effect string? Description of the tag's effect (Small/Big only)
 
