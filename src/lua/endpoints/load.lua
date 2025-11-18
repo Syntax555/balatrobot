@@ -64,7 +64,7 @@ return {
 
     -- Load using game's built-in functions
     G:delete_run()
-    G.SAVED_GAME = get_compressed(temp_filename)
+    G.SAVED_GAME = get_compressed(temp_filename) ---@diagnostic disable-line: undefined-global
 
     if G.SAVED_GAME == nil then
       send_response({
@@ -81,9 +81,28 @@ return {
     -- Clean up
     love.filesystem.remove(temp_filename)
 
-    send_response({
-      success = true,
-      path = path,
-    })
+    G.E_MANAGER:add_event(Event({
+      no_delete = true,
+      trigger = "condition",
+      blocking = false,
+      func = function()
+        local done = false
+        if G.STATE == G.STATES.BLIND_SELECT then
+          done = G.GAME.blind_on_deck ~= nil
+            and G.blind_select_opts ~= nil
+            and G.blind_select_opts["small"]:get_UIE_by_ID("tag_Small") ~= nil
+        end
+
+        --- TODO: add other states here ...
+
+        if done then
+          send_response({
+            success = true,
+            path = path,
+          })
+        end
+        return done
+      end,
+    }))
   end,
 }
