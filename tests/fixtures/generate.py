@@ -108,6 +108,9 @@ def build_fixtures() -> list[FixtureSpec]:
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
                 FIXTURES_DIR
+                / "select"
+                / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
+                FIXTURES_DIR
                 / "gamestate"
                 / "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr",
             ],
@@ -121,6 +124,9 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.big.status-SELECT.jkr",
+                FIXTURES_DIR
+                / "select"
+                / "state-BLIND_SELECT--blinds.big.status-SELECT.jkr",
             ],
             setup=[
                 ("menu", {}),
@@ -132,6 +138,9 @@ def build_fixtures() -> list[FixtureSpec]:
             paths=[
                 FIXTURES_DIR
                 / "skip"
+                / "state-BLIND_SELECT--blinds.boss.status-SELECT.jkr",
+                FIXTURES_DIR
+                / "select"
                 / "state-BLIND_SELECT--blinds.boss.status-SELECT.jkr",
             ],
             setup=[
