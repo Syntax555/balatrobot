@@ -13,9 +13,9 @@ return {
   schema = {},
   requires_state = { G.STATES.BLIND_SELECT },
 
-  ---@param args table The arguments (none required)
+  ---@param _ table The arguments (none required)
   ---@param send_response fun(response: table) Callback to send response
-  execute = function(args, send_response)
+  execute = function(_, send_response)
     sendDebugMessage("Init skip()", "BB.ENDPOINTS")
 
     -- Get the current blind on deck (similar to select endpoint)
@@ -39,6 +39,9 @@ return {
     local tag_element = blind_pane:get_UIE_by_ID("tag_" .. current_blind)
     assert(tag_element ~= nil, "skip() tag element not found: " .. current_blind)
     local skip_button = tag_element.children[2]
+    assert(skip_button ~= nil, "skip() skip button not found: " .. current_blind)
+
+    -- Execute blind skip
     G.FUNCS.skip_blind(skip_button)
 
     -- Wait for the skip to complete
