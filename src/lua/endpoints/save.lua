@@ -6,6 +6,9 @@
 local nativefs = require("nativefs")
 local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
+---@class Endpoint.Save.Args
+---@field path string File path for the save file
+
 ---@type Endpoint
 return {
   name = "save",
@@ -39,7 +42,7 @@ return {
     G.STATES.NEW_ROUND, -- 19
   },
 
-  ---@param args table The arguments with 'path' field
+  ---@param args Endpoint.Save.Args The arguments with 'path' field
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     local path = args.path

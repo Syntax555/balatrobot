@@ -27,7 +27,7 @@ return {
       trigger = "condition",
       blocking = false,
       func = function()
-        local done = G.STATE == G.STATES.SELECTING_HAND
+        local done = G.STATE == G.STATES.SELECTING_HAND and G.hand ~= nil
         if done then
           sendDebugMessage("select() completed", "BB.ENDPOINTS")
           local state_data = gamestate.get_gamestate()

@@ -6,6 +6,9 @@
 local nativefs = require("nativefs")
 local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
+---@class Endpoint.Load.Args
+---@field path string File path to the save file
+
 ---@type Endpoint
 return {
   name = "load",
@@ -22,7 +25,7 @@ return {
 
   requires_state = nil,
 
-  ---@param args table The arguments with 'path' field
+  ---@param args Endpoint.Load.Args The arguments with 'path' field
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     local path = args.path
@@ -91,6 +94,10 @@ return {
           done = G.GAME.blind_on_deck ~= nil
             and G.blind_select_opts ~= nil
             and G.blind_select_opts["small"]:get_UIE_by_ID("tag_Small") ~= nil
+        end
+
+        if G.STATE == G.STATES.SELECTING_HAND then
+          done = G.hand ~= nil
         end
 
         --- TODO: add other states here ...

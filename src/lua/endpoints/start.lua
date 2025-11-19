@@ -36,6 +36,11 @@ local STAKE_ENUM_TO_NUMBER = {
   GOLD = 8,
 }
 
+---@class Endpoint.Run.Args
+---@field deck Deck deck enum value (e.g., "RED", "BLUE", "YELLOW")
+---@field stake Stake stake enum value (e.g., "WHITE", "RED", "GREEN", "BLACK", "BLUE", "PURPLE", "ORANGE", "GOLD")
+---@field seed string? optional seed for the run
+
 ---@type Endpoint
 return {
   name = "start",
@@ -62,7 +67,7 @@ return {
 
   requires_state = { G.STATES.MENU },
 
-  ---@param args table The arguments (deck, stake, seed?)
+  ---@param args Endpoint.Run.Args The arguments (deck, stake, seed?)
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init start()", "BB.ENDPOINTS")
