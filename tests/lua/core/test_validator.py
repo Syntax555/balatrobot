@@ -2,7 +2,7 @@
 # Comprehensive tests for src/lua/core/validator.lua
 #
 # Tests validation scenarios through the dispatcher using the test_validation endpoint:
-# - Type validation (string, integer, array)
+# - Type validation (string, integer, boolean, array, table)
 # - Required field validation
 # - Array item type validation (integer arrays only)
 # - Error codes and messages
@@ -137,6 +137,118 @@ class TestTypeValidation:
             response,
             expected_error_code="SCHEMA_INVALID_TYPE",
             expected_message_contains="array_field",
+        )
+
+    def test_valid_boolean_type_true(self, client: socket.socket) -> None:
+        """Test that boolean true passes validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "boolean_field": True,
+            },
+        )
+        assert_success_response(response)
+
+    def test_valid_boolean_type_false(self, client: socket.socket) -> None:
+        """Test that boolean false passes validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "boolean_field": False,
+            },
+        )
+        assert_success_response(response)
+
+    def test_invalid_boolean_type_string(self, client: socket.socket) -> None:
+        """Test that string fails boolean validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "boolean_field": "true",  # Should be boolean, not string
+            },
+        )
+        assert_error_response(
+            response,
+            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_message_contains="boolean_field",
+        )
+
+    def test_invalid_boolean_type_number(self, client: socket.socket) -> None:
+        """Test that number fails boolean validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "boolean_field": 1,  # Should be boolean, not number
+            },
+        )
+        assert_error_response(
+            response,
+            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_message_contains="boolean_field",
+        )
+
+    def test_valid_table_type(self, client: socket.socket) -> None:
+        """Test that valid table (non-array) passes validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "table_field": {"key": "value", "nested": {"data": 123}},
+            },
+        )
+        assert_success_response(response)
+
+    def test_valid_table_type_empty(self, client: socket.socket) -> None:
+        """Test that empty table passes validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "table_field": {},
+            },
+        )
+        assert_success_response(response)
+
+    def test_invalid_table_type_array(self, client: socket.socket) -> None:
+        """Test that array fails table validation (arrays should use 'array' type)."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "table_field": [1, 2, 3],  # Array not allowed for 'table' type
+            },
+        )
+        assert_error_response(
+            response,
+            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_message_contains="table_field",
+        )
+
+    def test_invalid_table_type_string(self, client: socket.socket) -> None:
+        """Test that string fails table validation."""
+        response = api(
+            client,
+            "test_validation",
+            {
+                "required_field": "test",
+                "table_field": "not a table",
+            },
+        )
+        assert_error_response(
+            response,
+            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_message_contains="table_field",
         )
 
 
@@ -293,7 +405,9 @@ class TestEdgeCases:
                 "required_field": "test",
                 "string_field": "hello",
                 "integer_field": 42,
+                "boolean_field": True,
                 "array_field": [1, 2, 3],
+                "table_field": {"key": "value"},
                 "array_of_integers": [4, 5, 6],
             },
         )

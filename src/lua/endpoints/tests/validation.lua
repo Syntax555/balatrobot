@@ -2,7 +2,7 @@
 -- Comprehensive Validation Test Endpoint
 --
 -- Endpoint with schema for testing simplified validator capabilities:
--- - Type validation (string, integer, array)
+-- - Type validation (string, integer, boolean, array, table)
 -- - Required field validation
 -- - Array item type validation (integer arrays only)
 
@@ -31,9 +31,19 @@ return {
       description = "Optional integer field for type validation",
     },
 
+    boolean_field = {
+      type = "boolean",
+      description = "Optional boolean field for type validation",
+    },
+
     array_field = {
       type = "array",
       description = "Optional array field for type validation",
+    },
+
+    table_field = {
+      type = "table",
+      description = "Optional table field for type validation",
     },
 
     -- Array item type validation
