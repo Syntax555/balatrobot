@@ -13,7 +13,9 @@
 -- Supported Types:
 -- - string: Basic string type
 -- - integer: Integer number (validated with math.floor check)
+-- - boolean: Boolean type (true/false)
 -- - array: Array of items (validated with sequential numeric indices)
+-- - table: Generic table type (non-array tables)
 --
 -- Range/Length Validation:
 -- Min/max validation is NOT handled by the validator. Endpoints implement
@@ -24,7 +26,7 @@
 local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
 ---@class SchemaField
----@field type "string"|"integer"|"array" The field type (only string, integer, and array supported)
+---@field type "string"|"integer"|"array"|"boolean"|"table" The field type
 ---@field required boolean? Whether the field is required
 ---@field items "integer"? Type of array items (only "integer" supported, only for array type)
 ---@field description string Description of the field (required)
@@ -75,8 +77,13 @@ local function validate_field(field_name, value, field_schema)
     if not is_array(value) then
       return false, "Field '" .. field_name .. "' must be an array", errors.SCHEMA_INVALID_TYPE
     end
+  elseif expected_type == "table" then
+    -- Empty tables are allowed, non-empty arrays are rejected
+    if type(value) ~= "table" or (next(value) ~= nil and is_array(value)) then
+      return false, "Field '" .. field_name .. "' must be a table", errors.SCHEMA_INVALID_TYPE
+    end
   else
-    -- Standard Lua types: string, number, boolean, table
+    -- Standard Lua types: string, boolean
     if type(value) ~= expected_type then
       return false, "Field '" .. field_name .. "' must be of type " .. expected_type, errors.SCHEMA_INVALID_TYPE
     end
