@@ -19,6 +19,8 @@ BB_ENDPOINTS = {
   -- Blind selection endpoints
   "src/lua/endpoints/skip.lua",
   "src/lua/endpoints/select.lua",
+  -- Play/discard endpoints
+  "src/lua/endpoints/play.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
