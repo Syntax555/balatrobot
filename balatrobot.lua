@@ -51,9 +51,11 @@ if not dispatcher_ok then
   return
 end
 
--- Hook into love.update to run server update loop
+-- Hook into love.update to run server update loop and detect GAME_OVER
 local love_update = love.update
 love.update = function(dt) ---@diagnostic disable-line: duplicate-set-field
+  -- Check for GAME_OVER before game logic runs
+  BB_GAMESTATE.check_game_over()
   love_update(dt)
   BB_SERVER.update(BB_DISPATCHER)
 end
