@@ -21,6 +21,8 @@ BB_ENDPOINTS = {
   "src/lua/endpoints/select.lua",
   -- Play/discard endpoints
   "src/lua/endpoints/play.lua",
+  -- Cash out endpoint
+  "src/lua/endpoints/cash_out.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
