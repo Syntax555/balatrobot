@@ -57,6 +57,7 @@ def api(
     client: socket.socket,
     name: str,
     arguments: dict = {},
+    timeout: int = 5,
 ) -> dict[str, Any]:
     """Send an API call to the Balatro game and get the response.
 
@@ -70,6 +71,7 @@ def api(
     """
     payload = {"name": name, "arguments": arguments}
     client.send(json.dumps(payload).encode() + b"\n")
+    client.settimeout(timeout)
     response = client.recv(BUFFER_SIZE)
     gamestate = json.loads(response.decode().strip())
     return gamestate
