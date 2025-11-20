@@ -4,8 +4,6 @@
 -- Returns the current game state extracted via the gamestate utility
 -- Provides a simplified view of the game optimized for bot decision-making
 
-local gamestate = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
-
 ---@type Endpoint
 return {
   name = "gamestate",
@@ -20,7 +18,7 @@ return {
   ---@param send_response fun(response: table) Callback to send response
   execute = function(_, send_response)
     -- Get current game state
-    local state_data = gamestate.get_gamestate()
+    local state_data = BB_GAMESTATE.get_gamestate()
 
     -- Return the game state
     send_response(state_data)

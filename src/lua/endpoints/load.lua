@@ -4,7 +4,6 @@
 -- Loads a saved game run state from a file using nativefs
 
 local nativefs = require("nativefs")
-local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
 ---@class Endpoint.Load.Args
 ---@field path string File path to the save file
@@ -35,7 +34,7 @@ return {
     if not file_info or file_info.type ~= "file" then
       send_response({
         error = "File not found: '" .. path .. "'",
-        error_code = errors.EXEC_FILE_NOT_FOUND,
+        error_code = BB_ERRORS.EXEC_FILE_NOT_FOUND,
       })
       return
     end
@@ -46,7 +45,7 @@ return {
     if not compressed_data then
       send_response({
         error = "Failed to read save file",
-        error_code = errors.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
       })
       return
     end
@@ -60,7 +59,7 @@ return {
     if not write_success then
       send_response({
         error = "Failed to prepare save file for loading",
-        error_code = errors.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
       })
       return
     end
@@ -72,7 +71,7 @@ return {
     if G.SAVED_GAME == nil then
       send_response({
         error = "Invalid save file format",
-        error_code = errors.EXEC_INVALID_SAVE_FORMAT,
+        error_code = BB_ERRORS.EXEC_INVALID_SAVE_FORMAT,
       })
       love.filesystem.remove(temp_filename)
       return

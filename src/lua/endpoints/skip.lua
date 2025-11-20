@@ -3,9 +3,6 @@
 --
 -- Skip the current blind (Small or Big only, not Boss)
 
-local gamestate = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
-local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
-
 ---@type Endpoint
 return {
   name = "skip",
@@ -22,14 +19,14 @@ return {
     local current_blind = G.GAME.blind_on_deck
     assert(current_blind ~= nil, "skip() called with no blind on deck")
     local current_blind_key = string.lower(current_blind)
-    local blind = gamestate.get_blinds_info()[current_blind_key]
+    local blind = BB_GAMESTATE.get_blinds_info()[current_blind_key]
     assert(blind ~= nil, "skip() blind not found: " .. current_blind)
 
     if blind.type == "BOSS" then
       sendDebugMessage("skip() cannot skip Boss blind: " .. current_blind, "BB.ENDPOINTS")
       send_response({
         error = "Cannot skip Boss blind",
-        error_code = errors.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.GAME_INVALID_STATE,
       })
       return
     end
@@ -52,7 +49,7 @@ return {
       trigger = "condition",
       blocking = true,
       func = function()
-        local blinds = gamestate.get_blinds_info()
+        local blinds = BB_GAMESTATE.get_blinds_info()
         local done = (
           G.STATE == G.STATES.BLIND_SELECT
           and G.GAME.blind_on_deck ~= nil
@@ -61,7 +58,7 @@ return {
         )
         if done then
           sendDebugMessage("Return skip()", "BB.ENDPOINTS")
-          local state_data = gamestate.get_gamestate()
+          local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end
 

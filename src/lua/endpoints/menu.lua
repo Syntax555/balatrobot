@@ -3,8 +3,6 @@
 --
 -- Returns to the main menu from any game state
 
-local gamestate = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
-
 ---@type Endpoint
 return {
   name = "menu",
@@ -31,7 +29,7 @@ return {
 
         if done then
           sendDebugMessage("Return menu()", "BB.ENDPOINTS")
-          local state_data = gamestate.get_gamestate()
+          local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end
 

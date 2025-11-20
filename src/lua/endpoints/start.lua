@@ -3,9 +3,6 @@
 --
 -- Starts a new game run with specified deck and stake
 
-local gamestate = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
-local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
-
 -- Mapping tables for enum values
 local DECK_ENUM_TO_NAME = {
   RED = "Red Deck",
@@ -79,7 +76,7 @@ return {
       send_response({
         error = "Invalid stake enum. Must be one of: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD. Got: "
           .. tostring(args.stake),
-        error_code = errors.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
       })
       return
     end
@@ -91,7 +88,7 @@ return {
       send_response({
         error = "Invalid deck enum. Must be one of: RED, BLUE, YELLOW, GREEN, BLACK, MAGIC, NEBULA, GHOST, ABANDONED, CHECKERED, ZODIAC, PAINTED, ANAGLYPH, PLASMA, ERRATIC. Got: "
           .. tostring(args.deck),
-        error_code = errors.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
       })
       return
     end
@@ -118,7 +115,7 @@ return {
       sendDebugMessage("start() deck not found in game data: " .. deck_name, "BB.ENDPOINTS")
       send_response({
         error = "Deck not found in game data: " .. deck_name,
-        error_code = errors.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
       })
       return
     end
@@ -153,7 +150,7 @@ return {
         )
         if done then
           sendDebugMessage("Return start()", "BB.ENDPOINTS")
-          local state_data = gamestate.get_gamestate()
+          local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end
 

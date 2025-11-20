@@ -1,5 +1,3 @@
-local gamestate = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
-
 ---@type Endpoint
 return {
   name = "select",
@@ -30,7 +28,7 @@ return {
         local done = G.STATE == G.STATES.SELECTING_HAND and G.hand ~= nil
         if done then
           sendDebugMessage("select() completed", "BB.ENDPOINTS")
-          local state_data = gamestate.get_gamestate()
+          local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end
         return done
