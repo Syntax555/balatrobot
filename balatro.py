@@ -15,8 +15,24 @@ LOVELY_LIB = STEAM_PATH / "liblovely.dylib"
 LOGS_DIR = Path("logs")
 
 
-def kill():
-    """Kill all running Balatro instances."""
+def kill(port: int | None = None):
+    """Kill all running Balatro instances and optionally processes on a specific port."""
+    if port:
+        print(f"Killing processes on port {port}...")
+        # Find processes listening on the port
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        if result.stdout.strip():
+            pids = result.stdout.strip().split("\n")
+            for pid in pids:
+                print(f"  Killing PID {pid} on port {port}")
+                subprocess.run(["kill", "-9", pid], stderr=subprocess.DEVNULL)
+            time.sleep(0.5)
+    
     print("Killing all Balatro instances...")
     subprocess.run(["pkill", "-f", "Balatro\\.app"], stderr=subprocess.DEVNULL)
     time.sleep(1)
@@ -49,9 +65,9 @@ def status():
     for pid in balatro_pids:
         result = subprocess.run(
             ["lsof", "-Pan", "-p", pid, "-i", "TCP"],
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
+            text=True,
         )
 
         port = None
@@ -72,7 +88,22 @@ def status():
 
 def start(args):
     """Start Balatro with given configuration."""
-    # Kill existing instances first
+    # Kill processes on the specified port
+    print(f"Killing processes on port {args.port}...")
+    result = subprocess.run(
+        ["lsof", "-ti", f":{args.port}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    if result.stdout.strip():
+        pids = result.stdout.strip().split("\n")
+        for pid in pids:
+            print(f"  Killing PID {pid} on port {args.port}")
+            subprocess.run(["kill", "-9", pid], stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+    
+    # Kill existing Balatro instances
     subprocess.run(["pkill", "-f", "Balatro\\.app"], stderr=subprocess.DEVNULL)
     time.sleep(1)
 
@@ -176,9 +207,14 @@ def main():
     )
 
     # Kill command
-    subparsers.add_parser(
+    kill_parser = subparsers.add_parser(
         "kill",
         help="Kill all Balatro instances",
+    )
+    kill_parser.add_argument(
+        "--port",
+        type=int,
+        help="Also kill processes on this port",
     )
 
     # Status command
@@ -191,7 +227,7 @@ def main():
 
     # Execute command
     if args.command == "kill":
-        kill()
+        kill(args.port if hasattr(args, "port") else None)
     elif args.command == "status":
         status()
     elif args.command == "start":
