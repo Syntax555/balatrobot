@@ -26,7 +26,7 @@
 ---@field used_vouchers table<string, string>? Vouchers used (name -> description)
 ---@field hands table<string, Hand>? Poker hands information
 ---@field round Round? Current round state
----@field blinds table<string, Blind>? Blind information (keys: "small", "big", "boss")
+---@field blinds table<"small"|"big"|"boss", Blind>? Blind information
 ---@field jokers Area? Jokers area
 ---@field consumables Area? Consumables area
 ---@field hand Area? Hand area (available during playing phase)
