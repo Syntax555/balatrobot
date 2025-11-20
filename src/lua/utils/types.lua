@@ -32,6 +32,7 @@
 ---@field hand Area? Hand area (available during playing phase)
 ---@field shop Area? Shop area (available during shop phase)
 ---@field vouchers Area? Vouchers area (available during shop phase)
+---@field won boolean? Whether the game has been won
 
 ---@alias Deck
 ---| "RED" # +1 discard every round
