@@ -8,6 +8,9 @@ BLUE := \033[34m
 RED := \033[31m
 RESET := \033[0m
 
+# Test variables
+PYTEST_MARKER ?=
+
 help: ## Show this help message
 	@echo "$(BLUE)BalatroBot Development Makefile$(RESET)"
 	@echo ""
@@ -40,6 +43,8 @@ quality: lint typecheck format ## Run all code quality checks
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
 
 fixtures: ## Generate fixtures
+	@echo "$(YELLOW)Starting Balatro...$(RESET)"
+	python balatro.py start --fast --debug
 	@echo "$(YELLOW)Generating fixtures...$(RESET)"
 	python tests/fixtures/generate.py
 
@@ -47,7 +52,7 @@ test: ## Run tests head-less
 	@echo "$(YELLOW)Starting Balatro...$(RESET)"
 	python balatro.py start --fast --debug
 	@echo "$(YELLOW)Running tests...$(RESET)"
-	pytest tests/lua
+	pytest tests/lua $(if $(PYTEST_MARKER),-m "$(PYTEST_MARKER)") -v
 
 all: lint format typecheck test ## Run all code quality checks and tests
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
