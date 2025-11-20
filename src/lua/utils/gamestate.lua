@@ -687,4 +687,23 @@ function gamestate.get_gamestate()
   return state_data
 end
 
+-- ==========================================================================
+-- GAME_OVER Callback Support
+-- ==========================================================================
+
+-- Callback set by endpoints that need immediate GAME_OVER notification
+-- This is necessary because when G.STATE becomes GAME_OVER, the game pauses
+-- (G.SETTINGS.paused = true) which stops event processing, preventing
+-- normal event-based detection from working.
+gamestate.on_game_over = nil
+
+---Check and trigger GAME_OVER callback if state is GAME_OVER
+---Called from love.update before game logic runs
+function gamestate.check_game_over()
+  if gamestate.on_game_over and G.STATE == G.STATES.GAME_OVER then
+    gamestate.on_game_over(gamestate.get_gamestate())
+    gamestate.on_game_over = nil
+  end
+end
+
 return gamestate
