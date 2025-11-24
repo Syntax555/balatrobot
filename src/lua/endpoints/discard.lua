@@ -1,0 +1,99 @@
+-- src/lua/endpoints/discard.lua
+-- Discard Endpoint
+--
+-- Discard cards from the hand
+
+---@class Endpoint.Discard.Args
+---@field cards integer[] 0-based indices of cards to discard
+
+---@type Endpoint
+return {
+  name = "discard",
+  description = "Discard cards from the hand",
+  schema = {
+    cards = {
+      type = "array",
+      required = true,
+      items = "integer",
+      description = "0-based indices of cards to discard",
+    },
+  },
+  requires_state = { G.STATES.SELECTING_HAND },
+
+  ---@param args Endpoint.Discard.Args The arguments (cards)
+  ---@param send_response fun(response: table) Callback to send response
+  execute = function(args, send_response)
+    if #args.cards == 0 then
+      send_response({
+        error = "Must provide at least one card to discard",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    if G.GAME.current_round.discards_left <= 0 then
+      send_response({
+        error = "No discards left",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    if #args.cards > G.hand.config.highlighted_limit then
+      send_response({
+        error = "You can only discard " .. G.hand.config.highlighted_limit .. " cards",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    for _, card_index in ipairs(args.cards) do
+      if not G.hand.cards[card_index + 1] then
+        send_response({
+          error = "Invalid card index: " .. card_index,
+          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        })
+        return
+      end
+    end
+
+    -- NOTE: Clear any existing highlights before selecting new cards
+    -- prevent state pollution. This is a bit of a hack but could interfere
+    -- with Boss Blind like Cerulean Bell.
+    G.hand:unhighlight_all()
+
+    for _, card_index in ipairs(args.cards) do
+      G.hand.cards[card_index + 1]:click()
+    end
+
+    ---@diagnostic disable-next-line: undefined-field
+    local discard_button = UIBox:get_UIE_by_ID("discard_button", G.buttons.UIRoot)
+    assert(discard_button ~= nil, "discard() discard button not found")
+    G.FUNCS.discard_cards_from_highlighted(discard_button)
+
+    local draw_to_hand = false
+
+    G.E_MANAGER:add_event(Event({
+      no_delete = true,
+      trigger = "immediate",
+      blocking = false,
+      blockable = false,
+      created_on_pause = true,
+      func = function()
+        -- State progression for discard:
+        -- Discard always continues current round: HAND_PLAYED -> DRAW_TO_HAND -> SELECTING_HAND
+        if G.STATE == G.STATES.DRAW_TO_HAND then
+          draw_to_hand = true
+        end
+
+        if draw_to_hand and G.buttons and G.STATE == G.STATES.SELECTING_HAND then
+          local state_data = BB_GAMESTATE.get_gamestate()
+          send_response(state_data)
+          return true
+        end
+
+        return false
+      end,
+    }))
+  end,
+}
