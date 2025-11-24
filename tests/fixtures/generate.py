@@ -108,6 +108,7 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "start" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "play" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "discard" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "next_round" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
@@ -232,6 +233,7 @@ def build_fixtures() -> list[FixtureSpec]:
         FixtureSpec(
             paths=[
                 FIXTURES_DIR / "set" / "state-SHOP.jkr",
+                FIXTURES_DIR / "next_round" / "state-SHOP.jkr",
             ],
             setup=[
                 ("menu", {}),
