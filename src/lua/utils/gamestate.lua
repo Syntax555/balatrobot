@@ -132,17 +132,17 @@ local function extract_card_modifier(card)
 
   -- Seal (direct property)
   if card.seal then
-    modifier.seal = card.seal
+    modifier.seal = string.upper(card.seal)
   end
 
   -- Edition (table with type/key)
   if card.edition and card.edition.type then
-    modifier.edition = card.edition.type
+    modifier.edition = string.upper(card.edition.type)
   end
 
   -- Enhancement (from ability.name for enhanced cards)
   if card.ability and card.ability.effect and card.ability.effect ~= "Base" then
-    modifier.enhancement = card.ability.effect
+    modifier.enhancement = string.upper(card.ability.effect)
   end
 
   -- Eternal (boolean from ability)
@@ -228,21 +228,21 @@ end
 ---@return Card card The Card object
 local function extract_card(card)
   -- Determine set
-  local set = "default"
+  local set = "DEFAULT"
   if card.ability and card.ability.set then
     local ability_set = card.ability.set
     if ability_set == "Joker" then
-      set = "joker"
+      set = "JOKER"
     elseif ability_set == "Tarot" then
-      set = "tarot"
+      set = "TAROT"
     elseif ability_set == "Planet" then
-      set = "planet"
+      set = "PLANET"
     elseif ability_set == "Spectral" then
-      set = "spectral"
+      set = "SPECTRAL"
     elseif ability_set == "Booster" then
-      set = "booster"
+      set = "BOOSTER"
     elseif card.ability.effect and card.ability.effect ~= "Base" then
-      set = "enhanced"
+      set = "ENHANCED"
     end
   end
 

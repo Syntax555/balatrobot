@@ -119,7 +119,7 @@
 
 ---@class Card
 ---@field id integer Unique identifier for the card (sort_id)
----@field set "default" | "joker" | "tarot" | "planet" | "spectral" | "enhanced" | "booster" Card set/type
+---@field set "DEFAULT" | "JOKER" | "TAROT" | "PLANET" | "SPECTRAL" | "ENHANCED" | "BOOSTER" Card set/type
 ---@field label string Display label/name of the card
 ---@field value Card.Value Value information for the card
 ---@field modifier Card.Modifier Modifier information (seals, editions, enhancements)
@@ -132,9 +132,9 @@
 ---@field effect string Description of the card's effect (from UI)
 
 ---@class Card.Modifier
----@field seal "red" | "blue" | "gold" | "purple"? Seal type
----@field edition "holo" | "foil" | "polychrome" | "negative"? Edition type
----@field enhancement "bonus" | "mult" | "wild" | "glass" | "steel" | "stone" | "gold" | "lucky"? Enhancement type
+---@field seal "RED" | "BLUE" | "GOLD" | "PURPLE"? Seal type
+---@field edition "HOLO" | "FOIL" | "POLYCHROME" | "NEGATIVE"? Edition type
+---@field enhancement "BONUS" | "MULT" | "WILD" | "GLASS" | "STEEL" | "STONE" | "GOLD" | "LUCKY"? Enhancement type
 ---@field eternal boolean? If true, card cannot be sold or destroyed
 ---@field perishable integer? Number of rounds remaining (only if > 0)
 ---@field rental boolean? If true, card costs money at end of round
