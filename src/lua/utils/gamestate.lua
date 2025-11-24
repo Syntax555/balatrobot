@@ -239,6 +239,8 @@ local function extract_card(card)
       set = "planet"
     elseif ability_set == "Spectral" then
       set = "spectral"
+    elseif ability_set == "Booster" then
+      set = "booster"
     elseif card.ability.effect and card.ability.effect ~= "Base" then
       set = "enhanced"
     end
@@ -682,6 +684,10 @@ function gamestate.get_gamestate()
 
   if G.shop_vouchers then
     state_data.vouchers = extract_area(G.shop_vouchers)
+  end
+
+  if G.shop_booster then
+    state_data.packs = extract_area(G.shop_booster)
   end
 
   return state_data

@@ -32,9 +32,8 @@
 ---@field hand Area? Hand area (available during playing phase)
 ---@field shop Area? Shop area (available during shop phase)
 ---@field vouchers Area? Vouchers area (available during shop phase)
+---@field packs Area? Booster packs area (available during shop phase)
 ---@field won boolean? Whether the game has been won
-
---- TODO: add packs to GameState
 
 ---@alias Deck
 ---| "RED" # +1 discard every round
@@ -120,7 +119,7 @@
 
 ---@class Card
 ---@field id integer Unique identifier for the card (sort_id)
----@field set "default" | "joker" | "tarot" | "planet" | "spectral" | "enhanced" Card set/type
+---@field set "default" | "joker" | "tarot" | "planet" | "spectral" | "enhanced" | "booster" Card set/type
 ---@field label string Display label/name of the card
 ---@field value Card.Value Value information for the card
 ---@field modifier Card.Modifier Modifier information (seals, editions, enhancements)
