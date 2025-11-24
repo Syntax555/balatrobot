@@ -32,7 +32,7 @@ def kill(port: int | None = None):
                 print(f"  Killing PID {pid} on port {port}")
                 subprocess.run(["kill", "-9", pid], stderr=subprocess.DEVNULL)
             time.sleep(0.5)
-    
+
     print("Killing all Balatro instances...")
     subprocess.run(["pkill", "-f", "Balatro\\.app"], stderr=subprocess.DEVNULL)
     time.sleep(1)
@@ -102,7 +102,7 @@ def start(args):
             print(f"  Killing PID {pid} on port {args.port}")
             subprocess.run(["kill", "-9", pid], stderr=subprocess.DEVNULL)
         time.sleep(0.5)
-    
+
     # Kill existing Balatro instances
     subprocess.run(["pkill", "-f", "Balatro\\.app"], stderr=subprocess.DEVNULL)
     time.sleep(1)
