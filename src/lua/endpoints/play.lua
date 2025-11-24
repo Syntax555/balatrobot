@@ -96,10 +96,21 @@ return {
 
         -- NOTE: GAME_OVER is detected by gamestate.on_game_over callback in love.update
 
-        if G.STATE == G.STATES.ROUND_EVAL then
-          local state_data = BB_GAMESTATE.get_gamestate()
-          send_response(state_data)
-          return true
+        if G.STATE == G.STATES.ROUND_EVAL and G.round_eval then
+          -- Go to the cash out stage
+          for _, b in ipairs(G.I.UIBOX) do
+            if b:get_UIE_by_ID("cash_out_button") then
+              local state_data = BB_GAMESTATE.get_gamestate()
+              send_response(state_data)
+              return true
+            end
+          end
+          -- Game is won
+          if G.GAME.won then
+            local state_data = BB_GAMESTATE.get_gamestate()
+            send_response(state_data)
+            return true
+          end
         end
 
         if draw_to_hand and hand_played and G.buttons and G.STATE == G.STATES.SELECTING_HAND then
