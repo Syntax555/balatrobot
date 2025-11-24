@@ -107,6 +107,7 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "health" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "start" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "play" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "discard" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
@@ -185,6 +186,19 @@ def build_fixtures() -> list[FixtureSpec]:
                 ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
                 ("select", {}),
                 ("set", {"hands": 1}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR
+                / "discard"
+                / "state-SELECTING_HAND--round.discards_left-0.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"discards": 0}),
             ],
         ),
         FixtureSpec(
