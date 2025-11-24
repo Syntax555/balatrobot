@@ -83,6 +83,18 @@ return {
     -- Clean up
     love.filesystem.remove(temp_filename)
 
+    local num_items = function(area)
+      local count = 0
+      if area and area.cards then
+        for _, v in ipairs(area.cards) do
+          if v.children.buy_button and v.children.buy_button.definition then
+            count = count + 1
+          end
+        end
+      end
+      return count
+    end
+
     G.E_MANAGER:add_event(Event({
       no_delete = true,
       trigger = "condition",
@@ -108,10 +120,7 @@ return {
         end
 
         if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
-          local done_vouchers = G.shop_vouchers and G.shop_vouchers.cards and #G.shop_vouchers.cards > 0
-          local done_packs = G.shop_booster and G.shop_booster.cards and #G.shop_booster.cards > 0
-          local done_jokers = G.shop_jokers and G.shop_jokers.cards and #G.shop_jokers.cards > 0
-          done = done_vouchers or done_packs or done_jokers
+          done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
         end
 
         --- TODO: add other states here ...
