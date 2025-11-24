@@ -158,7 +158,21 @@ class TestSetEndpoint:
         assert len(after["shop"]["cards"]) > 0
         assert len(before["shop"]["cards"]) > 0
         assert after["shop"] != before["shop"]
-        assert after["vouchers"] != before["vouchers"]
+        assert after["packs"] != before["packs"]
+        assert after["vouchers"] != before["vouchers"]  # here only the id is changed
+
+    def test_set_shop_set_round_set_money(self, client: socket.socket) -> None:
+        """Test that set fails when shop is called from SHOP state."""
+        save = "state-SHOP.jkr"
+        response = api(client, "load", {"path": str(get_fixture_path("set", save))})
+        assert "error" not in response
+        before = api(client, "gamestate", {})
+        after = api(client, "set", {"shop": True, "round": 5, "money": 100})
+        assert after["shop"] != before["shop"]
+        assert after["packs"] != before["packs"]
+        assert after["vouchers"] != before["vouchers"]  # here only the id is changed
+        assert after["round_num"] == 5
+        assert after["money"] == 100
 
 
 class TestSetEndpointValidation:
