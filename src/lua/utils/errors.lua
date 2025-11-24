@@ -59,7 +59,6 @@ return {
   EXEC_FILE_WRITE_ERROR = "EXEC_FILE_WRITE_ERROR", -- Failed to write file
   EXEC_INVALID_SAVE_FORMAT = "EXEC_INVALID_SAVE_FORMAT", -- Invalid save file format
 
-  -- TODO: Define future error codes as needed:
   --
   -- Here are some examples of future error codes:
   -- PROTO_INCOMPLETE - No newline terminator

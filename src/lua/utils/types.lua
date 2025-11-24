@@ -34,6 +34,8 @@
 ---@field vouchers Area? Vouchers area (available during shop phase)
 ---@field won boolean? Whether the game has been won
 
+--- TODO: add packs to GameState
+
 ---@alias Deck
 ---| "RED" # +1 discard every round
 ---| "BLUE" # +1 hand every round
