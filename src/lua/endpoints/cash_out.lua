@@ -19,19 +19,23 @@ return {
     sendDebugMessage("Init cash_out()", "BB.ENDPOINTS")
     G.FUNCS.cash_out({ config = {} })
 
+    -- Wait for SHOP state after state transition completes
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
       trigger = "condition",
       blocking = false,
       func = function()
-        local done = G.STATE == G.STATES.SHOP and G.shop and G.SHOP_SIGN and G.STATE_COMPLETE
-
-        if done then
-          sendDebugMessage("Return cash_out()", "BB.ENDPOINTS")
-          local state_data = BB_GAMESTATE.get_gamestate()
-          send_response(state_data)
+        local done = false
+        if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
+          local done_vouchers = G.shop_vouchers and G.shop_vouchers.cards and #G.shop_vouchers.cards > 0
+          local done_packs = G.shop_booster and G.shop_booster.cards and #G.shop_booster.cards > 0
+          local done_jokers = G.shop_jokers and G.shop_jokers.cards and #G.shop_jokers.cards > 0
+          done = done_vouchers or done_packs or done_jokers
+          if done then
+            sendDebugMessage("Return cash_out() - reached SHOP state", "BB.ENDPOINTS")
+            send_response(BB_GAMESTATE.get_gamestate())
+            return done
+          end
         end
-
         return done
       end,
     }))
