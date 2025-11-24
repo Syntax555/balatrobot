@@ -3,8 +3,6 @@
 import socket
 from typing import Any
 
-import pytest
-
 from tests.lua.conftest import api, assert_error_response, get_fixture_path
 
 
@@ -20,7 +18,6 @@ def verify_next_round_response(response: dict[str, Any]) -> None:
     assert isinstance(response["blinds"], dict)
 
 
-@pytest.mark.dev
 class TestNextRoundEndpoint:
     """Test basic next_round endpoint functionality."""
 
