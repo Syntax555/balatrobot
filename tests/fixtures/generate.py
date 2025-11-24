@@ -6,12 +6,14 @@ This script automatically connects to a running Balatro instance and generates
 
 Usage:
     python generate.py
+    python generate.py --overwrite  # Regenerate all fixtures
 
 Requirements:
 - Balatro must be running with the BalatroBot mod loaded
 - Default connection: 127.0.0.1:12346
 """
 
+import argparse
 import json
 import socket
 from dataclasses import dataclass
@@ -104,6 +106,7 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "menu" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "health" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "start" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "play" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
@@ -150,24 +153,125 @@ def build_fixtures() -> list[FixtureSpec]:
                 ("skip", {}),
             ],
         ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "play" / "state-SELECTING_HAND.jkr",
+                FIXTURES_DIR / "discard" / "state-SELECTING_HAND.jkr",
+                FIXTURES_DIR / "set" / "state-SELECTING_HAND.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "play" / "state-SELECTING_HAND--round.chips-200.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 200}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "play" / "state-SELECTING_HAND--round.hands_left-1.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"hands": 1}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR
+                / "play"
+                / "state-SELECTING_HAND--ante_num-8--blinds.boss.status-CURRENT--round.chips-1000000.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("skip", {}),
+                ("skip", {}),
+                ("select", {}),
+                ("set", {"ante": 8}),
+                ("set", {"chips": 1_000_000}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "cash_out" / "state-ROUND_EVAL.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000}),
+                ("play", {"cards": [0]}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "set" / "state-SHOP.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+            ],
+        ),
     ]
 
 
-def should_generate(spec: FixtureSpec) -> bool:
-    """Check if fixture should be generated (any path missing)."""
+def should_generate(spec: FixtureSpec, overwrite: bool = False) -> bool:
+    """Check if fixture should be generated.
+
+    Args:
+        spec: Fixture specification to check.
+        overwrite: If True, generate regardless of existing files.
+
+    Returns:
+        True if fixture should be generated.
+    """
+    if overwrite:
+        return True
     return not all(path.exists() for path in spec.paths)
 
 
 def main() -> int:
     """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="Generate test fixture files for endpoint testing."
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrite",
+        action="store_true",
+        help="Regenerate all fixtures, overwriting existing files",
+    )
+    args = parser.parse_args()
+
     print("BalatroBot Fixture Generator")
-    print(f"Connecting to {HOST}:{PORT}\n")
+    print(f"Connecting to {HOST}:{PORT}")
+    if args.overwrite:
+        print("Mode: Overwrite all fixtures\n")
+    else:
+        print("Mode: Generate missing fixtures only\n")
 
     fixtures = build_fixtures()
 
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((HOST, PORT))
+            sock.settimeout(10)
 
             success = 0
             skipped = 0
@@ -177,7 +281,7 @@ def main() -> int:
                 total=len(fixtures), desc="Generating fixtures", unit="fixture"
             ) as pbar:
                 for spec in fixtures:
-                    if should_generate(spec):
+                    if should_generate(spec, overwrite=args.overwrite):
                         if generate_fixture(sock, spec, pbar):
                             success += 1
                         else:
