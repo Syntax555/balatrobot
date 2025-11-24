@@ -109,6 +109,7 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "play" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "discard" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "next_round" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "reroll" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
@@ -234,6 +235,7 @@ def build_fixtures() -> list[FixtureSpec]:
             paths=[
                 FIXTURES_DIR / "set" / "state-SHOP.jkr",
                 FIXTURES_DIR / "next_round" / "state-SHOP.jkr",
+                FIXTURES_DIR / "reroll" / "state-SHOP.jkr",
             ],
             setup=[
                 ("menu", {}),
@@ -242,6 +244,20 @@ def build_fixtures() -> list[FixtureSpec]:
                 ("set", {"chips": 1000}),
                 ("play", {"cards": [0]}),
                 ("cash_out", {}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "reroll" / "state-SHOP--money-0.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("set", {"money": 0}),
             ],
         ),
     ]
