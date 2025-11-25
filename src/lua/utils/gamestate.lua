@@ -694,6 +694,11 @@ function gamestate.get_gamestate()
     state_data.packs = extract_area(G.shop_booster)
   end
 
+  -- Pack cards area (available during pack opening phases)
+  if G.pack_cards and not G.pack_cards.REMOVED then
+    state_data.pack = extract_area(G.pack_cards)
+  end
+
   return state_data
 end
 
