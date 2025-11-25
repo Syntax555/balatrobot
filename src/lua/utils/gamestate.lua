@@ -239,8 +239,12 @@ local function extract_card(card)
       set = "PLANET"
     elseif ability_set == "Spectral" then
       set = "SPECTRAL"
+    elseif ability_set == "Voucher" then
+      set = "VOUCHER"
     elseif ability_set == "Booster" then
       set = "BOOSTER"
+    elseif ability_set == "Edition" then
+      set = "EDITION"
     elseif card.ability.effect and card.ability.effect ~= "Base" then
       set = "ENHANCED"
     end

@@ -1,4 +1,4 @@
----@meta
+---@meta types
 
 -- ==========================================================================
 -- Endpoint Type
@@ -12,28 +12,8 @@
 ---@field execute fun(args: table, send_response: fun(response: table)) Execute function
 
 -- ==========================================================================
--- GameState Types
+-- GameState Enums
 -- ==========================================================================
-
----@class GameState
----@field deck Deck? Current selected deck
----@field stake Stake? Current selected stake
----@field seed string? Seed used for the run
----@field state State Current game state
----@field round_num integer Current round number
----@field ante_num integer Current ante number
----@field money integer Current money amount
----@field used_vouchers table<string, string>? Vouchers used (name -> description)
----@field hands table<string, Hand>? Poker hands information
----@field round Round? Current round state
----@field blinds table<"small"|"big"|"boss", Blind>? Blind information
----@field jokers Area? Jokers area
----@field consumables Area? Consumables area
----@field hand Area? Hand area (available during playing phase)
----@field shop Area? Shop area (available during shop phase)
----@field vouchers Area? Vouchers area (available during shop phase)
----@field packs Area? Booster packs area (available during shop phase)
----@field won boolean? Whether the game has been won
 
 ---@alias Deck
 ---| "RED" # +1 discard every round
@@ -63,17 +43,17 @@
 ---| "GOLD" # 8. Shop can have Rental Jokers. Applies all previous Stakes
 
 ---@alias State
----| "SELECTING_HAND" # 1
----| "HAND_PLAYED" # 2
----| "DRAW_TO_HAND" # 3
----| "GAME_OVER" # 4
----| "SHOP" # 5
+---| "SELECTING_HAND" # 1 When you can select cards to play or discard
+---| "HAND_PLAYED" # 2 Duing hand playing animation
+---| "DRAW_TO_HAND" # 3 During hand drawing animation
+---| "GAME_OVER" # 4 Game is over
+---| "SHOP" # 5 When inside the shop
 ---| "PLAY_TAROT" # 6
----| "BLIND_SELECT" # 7
----| "ROUND_EVAL" # 8
+---| "BLIND_SELECT" # 7 When in the blind selection phase
+---| "ROUND_EVAL" # 8 When the round end and inside the "cash out" phase
 ---| "TAROT_PACK" # 9
 ---| "PLANET_PACK" # 10
----| "MENU" # 11
+---| "MENU" # 11 When in the main menu of the game
 ---| "TUTORIAL" # 12
 ---| "SPLASH" # 13
 ---| "SANDBOX" # 14
@@ -81,9 +61,99 @@
 ---| "DEMO_CTA" # 16
 ---| "STANDARD_PACK" # 17
 ---| "BUFFOON_PACK" # 18
----| "NEW_ROUND" # 19
+---| "NEW_ROUND" # 19 When a round is won and the new round begins
 ---| "SMODS_BOOSTER_OPENED" # 999
----| "UNKNOWN"
+---| "UNKNOWN" # Not a number, we never expect this game state
+
+---@alias Set
+---| "BOOSTER"
+---| "DEFAULT"
+---| "EDITION"
+---| "ENHANCED"
+---| "JOKER"
+---| "TAROT"
+---| "PLANET"
+---| "SPECTRAL"
+---| "VOUCHER"
+
+---@alias Seal
+---| "RED"
+---| "BLUE"
+---| "GOLD"
+---| "PURPLE"
+
+---@alias Edition
+---| "HOLO"
+---| "FOIL"
+---| "POLYCHROME"
+---| "NEGATIVE"
+
+---@alias Enhancement
+---| "BONUS"
+---| "MULT"
+---| "WILD"
+---| "GLASS"
+---| "STEEL"
+---| "STONE"
+---| "GOLD"
+---| "LUCKY"
+
+---@alias Suit
+---| "H" # Hearts
+---| "D" # Diamonds
+---| "C" # Clubs
+---| "S" # Spades
+
+---@alias Rank
+---| "2" # Two
+---| "3" # Three
+---| "4" # Four
+---| "5" # Five
+---| "6" # Six
+---| "7" # Seven
+---| "8" # Eight
+---| "9" # Nine
+---| "T" # Ten
+---| "J" # Jack
+---| "Q" # Queen
+---| "K" # King
+---| "A" # Ace
+
+---@alias Blind.Type
+---| "SMALL"
+---| "BIG"
+---| "BOSS"
+
+---@alias Blind.Status
+---| "SELECT"
+---| "CURRENT"
+---| "UPCOMING"
+---| "DEFEATED"
+---| "SKIPPED"
+
+-- ==========================================================================
+-- GameState Types
+-- ==========================================================================
+
+---@class GameState
+---@field deck Deck? Current selected deck
+---@field stake Stake? Current selected stake
+---@field seed string? Seed used for the run
+---@field state State Current game state
+---@field round_num integer Current round number
+---@field ante_num integer Current ante number
+---@field money integer Current money amount
+---@field used_vouchers table<string, string>? Vouchers used (name -> description)
+---@field hands table<string, Hand>? Poker hands information
+---@field round Round? Current round state
+---@field blinds table<"small"|"big"|"boss", Blind>? Blind information
+---@field jokers Area? Jokers area
+---@field consumables Area? Consumables area
+---@field hand Area? Hand area (available during playing phase)
+---@field shop Area? Shop area (available during shop phase)
+---@field vouchers Area? Vouchers area (available during shop phase)
+---@field packs Area? Booster packs area (available during shop phase)
+---@field won boolean? Whether the game has been won
 
 ---@class Hand
 ---@field order integer The importance/ordering of the hand
@@ -103,8 +173,8 @@
 ---@field chips integer? Current chips scored in this round
 
 ---@class Blind
----@field type "SMALL" | "BIG" | "BOSS" Type of the blind
----@field status "SELECT" | "CURRENT" | "UPCOMING" | "DEFEATED" | "SKIPPED" Status of the bilnd
+---@field type Blind.Type Type of the blind
+---@field status Blind.Status Status of the bilnd
 ---@field name string Name of the blind (e.g., "Small", "Big" or the Boss name)
 ---@field effect string Description of the blind's effect
 ---@field score integer Score requirement to beat this blind
@@ -119,7 +189,7 @@
 
 ---@class Card
 ---@field id integer Unique identifier for the card (sort_id)
----@field set "DEFAULT" | "JOKER" | "TAROT" | "PLANET" | "SPECTRAL" | "ENHANCED" | "BOOSTER" Card set/type
+---@field set Set Card set/type
 ---@field label string Display label/name of the card
 ---@field value Card.Value Value information for the card
 ---@field modifier Card.Modifier Modifier information (seals, editions, enhancements)
@@ -127,14 +197,14 @@
 ---@field cost Card.Cost Cost information (buy/sell prices)
 
 ---@class Card.Value
----@field suit "H" | "D" | "C" | "S"? Suit (Hearts, Diamonds, Clubs, Spades) - only for playing cards
----@field value "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "Q" | "K" | "A"? Rank - only for playing cards
+---@field suit Suit? Suit (Hearts, Diamonds, Clubs, Spades) - only for playing cards
+---@field value Rank? Rank - only for playing cards
 ---@field effect string Description of the card's effect (from UI)
 
 ---@class Card.Modifier
----@field seal "RED" | "BLUE" | "GOLD" | "PURPLE"? Seal type
----@field edition "HOLO" | "FOIL" | "POLYCHROME" | "NEGATIVE"? Edition type
----@field enhancement "BONUS" | "MULT" | "WILD" | "GLASS" | "STEEL" | "STONE" | "GOLD" | "LUCKY"? Enhancement type
+---@field seal Seal? Seal type
+---@field edition Edition? Edition type
+---@field enhancement Enhancement? Enhancement type
 ---@field eternal boolean? If true, card cannot be sold or destroyed
 ---@field perishable integer? Number of rounds remaining (only if > 0)
 ---@field rental boolean? If true, card costs money at end of round
