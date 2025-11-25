@@ -28,6 +28,7 @@ BB_ENDPOINTS = {
   -- Shop endpoints
   "src/lua/endpoints/next_round.lua",
   "src/lua/endpoints/reroll.lua",
+  "src/lua/endpoints/buy.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
