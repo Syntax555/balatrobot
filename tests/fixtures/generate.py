@@ -110,6 +110,7 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "discard" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "next_round" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR / "reroll" / "state-BLIND_SELECT.jkr",
+                FIXTURES_DIR / "buy" / "state-BLIND_SELECT.jkr",
                 FIXTURES_DIR
                 / "skip"
                 / "state-BLIND_SELECT--blinds.small.status-SELECT.jkr",
@@ -236,6 +237,12 @@ def build_fixtures() -> list[FixtureSpec]:
                 FIXTURES_DIR / "set" / "state-SHOP.jkr",
                 FIXTURES_DIR / "next_round" / "state-SHOP.jkr",
                 FIXTURES_DIR / "reroll" / "state-SHOP.jkr",
+                FIXTURES_DIR / "buy" / "state-SHOP--shop.cards[0].set-JOKER.jkr",
+                FIXTURES_DIR / "buy" / "state-SHOP--shop.cards[1].set-PLANET.jkr",
+                FIXTURES_DIR / "buy" / "state-SHOP--voucher.cards[0].set-VOUCHER.jkr",
+                FIXTURES_DIR
+                / "buy"
+                / "state-SHOP--packs.cards[0].label-Buffoon+Pack--packs.cards[1].label-Standard+Pack.jkr",
             ],
             setup=[
                 ("menu", {}),
@@ -248,7 +255,95 @@ def build_fixtures() -> list[FixtureSpec]:
         ),
         FixtureSpec(
             paths=[
+                FIXTURES_DIR / "buy" / "state-SHOP--voucher.count-0.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000, "money": 100}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("buy", {"voucher": 0}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "buy" / "state-SHOP--shop.cards[1].set-TAROT.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000, "money": 100}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("reroll", {}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR / "buy" / "state-SHOP--shop.count-0.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000, "money": 100}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("buy", {"card": 0}),
+                ("buy", {"card": 0}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR
+                / "buy"
+                / "state-SHOP--jokers.count-5--shop.cards[0].set-JOKER.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000, "money": 1000}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("buy", {"card": 0}),
+                ("reroll", {}),
+                ("buy", {"card": 0}),
+                ("reroll", {}),
+                ("buy", {"card": 0}),
+                ("buy", {"card": 0}),
+                ("reroll", {}),
+                ("buy", {"card": 0}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
+                FIXTURES_DIR
+                / "buy"
+                / "state-SHOP--consumables.count-2--shop.cards[1].set-PLANET.jkr",
+            ],
+            setup=[
+                ("menu", {}),
+                ("start", {"deck": "RED", "stake": "WHITE", "seed": "TEST123"}),
+                ("select", {}),
+                ("set", {"chips": 1000, "money": 100}),
+                ("play", {"cards": [0]}),
+                ("cash_out", {}),
+                ("buy", {"card": 1}),
+                ("reroll", {}),
+                ("buy", {"card": 1}),
+                ("reroll", {}),
+                ("reroll", {}),
+                ("reroll", {}),
+            ],
+        ),
+        FixtureSpec(
+            paths=[
                 FIXTURES_DIR / "reroll" / "state-SHOP--money-0.jkr",
+                FIXTURES_DIR / "buy" / "state-SHOP--money-0.jkr",
             ],
             setup=[
                 ("menu", {}),
