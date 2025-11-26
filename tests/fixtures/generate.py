@@ -106,20 +106,9 @@ def generate_fixture(sock: socket.socket, spec: FixtureSpec, pbar: tqdm) -> bool
         return False
 
 
-def should_generate(spec: FixtureSpec, overwrite: bool = False) -> bool:
-    if overwrite:
-        return True
-    return not all(path.exists() for path in spec.paths)
-
-
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--overwrite", action="store_true")
-    args = parser.parse_args()
-
-    print("BalatroBot Fixture Generator v2")
-    print(f"Connecting to {HOST}:{PORT}")
-    print(f"Mode: {'Overwrite all' if args.overwrite else 'Generate missing only'}\n")
+    print("BalatroBot Fixture Generator")
+    print(f"Connecting to {HOST}:{PORT}\n")
 
     json_data = load_fixtures_json()
     fixtures = aggregate_fixtures(json_data)
@@ -131,22 +120,16 @@ def main() -> int:
             sock.settimeout(10)
 
             success = 0
-            skipped = 0
             failed = 0
 
             with tqdm(
                 total=len(fixtures), desc="Generating fixtures", unit="fixture"
             ) as pbar:
                 for spec in fixtures:
-                    if should_generate(spec, overwrite=args.overwrite):
-                        if generate_fixture(sock, spec, pbar):
-                            success += 1
-                        else:
-                            failed += 1
+                    if generate_fixture(sock, spec, pbar):
+                        success += 1
                     else:
-                        relative_path = spec.paths[0].relative_to(FIXTURES_DIR)
-                        pbar.write(f"  Skipped: {relative_path}")
-                        skipped += 1
+                        failed += 1
                     pbar.update(1)
 
             api(sock, "menu", {})
@@ -155,7 +138,7 @@ def main() -> int:
             corrupt_file(corrupted_path)
             success += 1
 
-            print(f"\nSummary: {success} generated, {skipped} skipped, {failed} failed")
+            print(f"\nSummary: {success} generated, {failed} failed")
             return 1 if failed > 0 else 0
 
     except ConnectionRefusedError:
