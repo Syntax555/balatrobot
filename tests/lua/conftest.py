@@ -125,7 +125,7 @@ def get_fixture_path(endpoint: str, fixture_name: str) -> Path:
         Path to the fixture file in tests/fixtures/<endpoint>/.
     """
     fixtures_dir = Path(__file__).parent.parent / "fixtures"
-    return fixtures_dir / endpoint / fixture_name
+    return fixtures_dir / endpoint / f"{fixture_name}.jkr"
 
 
 def create_temp_save_path() -> Path:
@@ -203,3 +203,77 @@ def assert_health_response(response: dict[str, Any]) -> None:
     """
     assert "status" in response, "Health response must have 'status' field"
     assert response["status"] == "ok", "Health response 'status' must be 'ok'"
+
+
+def load_fixture(
+    client: socket.socket,
+    endpoint: str,
+    fixture_name: str,
+    cache: bool = True,
+) -> dict[str, Any]:
+    """Load a fixture file and return the resulting gamestate.
+
+    This helper function consolidates the common pattern of:
+    1. Loading a fixture file (or generating it if missing)
+    2. Asserting the load succeeded
+    3. Getting the current gamestate
+
+    If the fixture file doesn't exist or cache=False, it will be automatically
+    generated using the setup steps defined in fixtures.json.
+
+    Args:
+        client: The TCP socket connected to the game.
+        endpoint: The endpoint directory name (e.g., "buy", "discard").
+        fixture_name: Name of the fixture file (e.g., "state-SHOP.jkr").
+        cache: If True, use existing fixture file. If False, regenerate (default: True).
+
+    Returns:
+        The current gamestate after loading the fixture.
+
+    Raises:
+        AssertionError: If the load operation or generation fails.
+        KeyError: If fixture definition not found in fixtures.json.
+
+    Example:
+        gamestate = load_fixture(client, "buy", "state-SHOP.jkr")
+        response = api(client, "buy", {"card": 0})
+        assert response["success"]
+    """
+    fixture_path = get_fixture_path(endpoint, fixture_name)
+
+    # Generate fixture if it doesn't exist or cache=False
+    if not fixture_path.exists() or not cache:
+        fixtures_json_path = Path(__file__).parent.parent / "fixtures" / "fixtures.json"
+        with open(fixtures_json_path) as f:
+            fixtures_data = json.load(f)
+
+        if endpoint not in fixtures_data:
+            raise KeyError(f"Endpoint '{endpoint}' not found in fixtures.json")
+        if fixture_name not in fixtures_data[endpoint]:
+            raise KeyError(
+                f"Fixture key '{fixture_name}' not found in fixtures.json['{endpoint}']"
+            )
+
+        setup_steps = fixtures_data[endpoint][fixture_name]
+
+        # Execute each setup step
+        for step in setup_steps:
+            step_endpoint = step["endpoint"]
+            step_arguments = step.get("arguments", {})
+            response = api(client, step_endpoint, step_arguments)
+
+            # Check for errors during generation
+            if "error" in response:
+                raise AssertionError(
+                    f"Fixture generation failed at step {step_endpoint}: {response['error']}"
+                )
+
+        # Save the fixture
+        fixture_path.parent.mkdir(parents=True, exist_ok=True)
+        save_response = api(client, "save", {"path": str(fixture_path)})
+        assert_success_response(save_response)
+
+    # Load the fixture
+    load_response = api(client, "load", {"path": str(fixture_path)})
+    assert_success_response(load_response)
+    return api(client, "gamestate", {})
