@@ -8,6 +8,7 @@ from tests.lua.conftest import (
     assert_error_response,
     assert_success_response,
     get_fixture_path,
+    load_fixture,
 )
 
 
@@ -16,6 +17,8 @@ class TestLoadEndpoint:
 
     def test_load_from_fixture(self, client: socket.socket) -> None:
         """Test that load succeeds with a valid fixture file."""
+        gamestate = load_fixture(client, "load", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         fixture_path = get_fixture_path("load", "state-BLIND_SELECT")
         response = api(client, "load", {"path": str(fixture_path)})
         assert_success_response(response)
@@ -24,6 +27,8 @@ class TestLoadEndpoint:
     def test_load_save_roundtrip(self, client: socket.socket, tmp_path: Path) -> None:
         """Test that a loaded fixture can be saved and loaded again."""
         # Load fixture
+        gamestate = load_fixture(client, "load", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         fixture_path = get_fixture_path("load", "state-BLIND_SELECT")
         load_response = api(client, "load", {"path": str(fixture_path)})
         assert_success_response(load_response)
