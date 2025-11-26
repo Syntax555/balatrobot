@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Balatro API Test Fixtures Schema",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "arguments"],
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

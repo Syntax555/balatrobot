@@ -1,0 +1,1112 @@
+{
+  "$schema": "./fixtures.schema.json",
+  "health": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "gamestate": {
+    "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "save": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "load": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "set": {
+    "state-SELECTING_HAND": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ]
+  },
+  "menu": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "start": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
+  },
+  "skip": {
+    "state-BLIND_SELECT--blinds.small.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-BLIND_SELECT--blinds.big.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      }
+    ],
+    "state-BLIND_SELECT--blinds.boss.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      }
+    ]
+  },
+  "select": {
+    "state-BLIND_SELECT--blinds.small.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-BLIND_SELECT--blinds.big.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      }
+    ],
+    "state-BLIND_SELECT--blinds.boss.status-SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      }
+    ]
+  },
+  "play": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SELECTING_HAND": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SELECTING_HAND--round.chips-200": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 200,
+          "hands": 1,
+          "discards": 0
+        }
+      }
+    ],
+    "state-SELECTING_HAND--round.hands_left-1": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "hands": 1
+        }
+      }
+    ],
+    "state-SELECTING_HAND--ante_num-8--blinds.boss.status-CURRENT--round.chips-1000000": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      },
+      {
+        "endpoint": "skip",
+        "arguments": {}
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "ante": 8,
+          "chips": 1000000
+        }
+      }
+    ]
+  },
+  "discard": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SELECTING_HAND": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SELECTING_HAND--round.discards_left-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "discards": 0
+        }
+      }
+    ]
+  },
+  "cash_out": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-ROUND_EVAL": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      }
+    ]
+  },
+  "next_round": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SHOP": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ]
+  },
+  "reroll": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SHOP": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--money-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "money": 0
+        }
+      }
+    ]
+  },
+  "buy": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SHOP--shop.cards[0].set-JOKER": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--shop.cards[1].set-PLANET": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--voucher.cards[0].set-VOUCHER": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--packs.cards[0].label-Buffoon+Pack--packs.cards[1].label-Standard+Pack": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--voucher.count-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "voucher": 0
+        }
+      }
+    ],
+    "state-SHOP--shop.cards[1].set-TAROT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--shop.count-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      }
+    ],
+    "state-SHOP--jokers.count-5--shop.cards[0].set-JOKER": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      }
+    ],
+    "state-SHOP--consumables.count-2--shop.cards[1].set-PLANET": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 1
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 1
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--money-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "money": 0
+        }
+      }
+    ]
+  }
+}
