@@ -21,7 +21,7 @@ def verify_cash_out_response(response: dict[str, Any]) -> None:
 class TestCashOutEndpoint:
     """Test basic cash_out endpoint functionality."""
 
-    def test_cash_out_from_round_eval(self, client: socket.socket) -> None:
+    def test_cash_out_from_ROUND_EVAL(self, client: socket.socket) -> None:
         """Test cashing out from ROUND_EVAL state."""
         save = "state-ROUND_EVAL.jkr"
         api(client, "load", {"path": str(get_fixture_path("cash_out", save))})
@@ -33,9 +33,10 @@ class TestCashOutEndpoint:
 class TestCashOutEndpointStateRequirements:
     """Test cash_out endpoint state requirements."""
 
-    def test_cash_out_from_MENU(self, client: socket.socket):
+    def test_cash_out_from_BLIND_SELECT(self, client: socket.socket):
         """Test that cash_out fails when not in ROUND_EVAL state."""
-        response = api(client, "menu", {})
+        save = "state-BLIND_SELECT.jkr"
+        api(client, "load", {"path": str(get_fixture_path("cash_out", save))})
         response = api(client, "cash_out", {})
         assert_error_response(
             response,
