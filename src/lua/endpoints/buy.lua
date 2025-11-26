@@ -182,7 +182,6 @@ return {
 
     -- Wait for buy completion with comprehensive verification
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
       trigger = "condition",
       blocking = false,
       func = function()

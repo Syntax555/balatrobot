@@ -73,8 +73,7 @@ return {
     BB_GAMESTATE.on_game_over = send_response
 
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
-      trigger = "immediate",
+      trigger = "condition",
       blocking = false,
       blockable = false,
       created_on_pause = true,
@@ -94,19 +93,24 @@ return {
           draw_to_hand = true
         end
 
-        -- NOTE: GAME_OVER is detected by gamestate.on_game_over callback in love.update
+        -- if G.STATE == G.STATES.GAME_OVER then
+        --   -- NOTE: GAME_OVER is detected by gamestate.on_game_over callback in love.update
+        --   return true
+        -- end
 
         if G.STATE == G.STATES.ROUND_EVAL and G.round_eval then
           -- Go to the cash out stage
           for _, b in ipairs(G.I.UIBOX) do
             if b:get_UIE_by_ID("cash_out_button") then
               local state_data = BB_GAMESTATE.get_gamestate()
+              sendDebugMessage("Return play() - cash out", "BB.ENDPOINTS")
               send_response(state_data)
               return true
             end
           end
           -- Game is won
           if G.GAME.won then
+            sendDebugMessage("Return play() - won", "BB.ENDPOINTS")
             local state_data = BB_GAMESTATE.get_gamestate()
             send_response(state_data)
             return true
@@ -114,6 +118,7 @@ return {
         end
 
         if draw_to_hand and hand_played and G.buttons and G.STATE == G.STATES.SELECTING_HAND then
+          sendDebugMessage("Return play() - same round", "BB.ENDPOINTS")
           local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
           return true

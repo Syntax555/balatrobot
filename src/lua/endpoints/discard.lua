@@ -74,7 +74,6 @@ return {
     local draw_to_hand = false
 
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
       trigger = "immediate",
       blocking = false,
       blockable = false,

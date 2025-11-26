@@ -21,7 +21,6 @@ return {
 
     -- Wait for completion: transition to SELECTING_HAND with facing_blind flag set
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
       trigger = "condition",
       blocking = false,
       func = function()

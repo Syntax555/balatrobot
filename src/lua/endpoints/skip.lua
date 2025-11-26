@@ -45,7 +45,6 @@ return {
     -- Wait for the skip to complete
     -- Completion is indicated by the blind state changing to "Skipped"
     G.E_MANAGER:add_event(Event({
-      no_delete = true,
       trigger = "condition",
       blocking = true,
       func = function()
