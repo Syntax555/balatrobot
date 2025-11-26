@@ -3,7 +3,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, assert_error_response, get_fixture_path
+from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
 def verify_cash_out_response(response: dict[str, Any]) -> None:
@@ -23,8 +23,8 @@ class TestCashOutEndpoint:
 
     def test_cash_out_from_ROUND_EVAL(self, client: socket.socket) -> None:
         """Test cashing out from ROUND_EVAL state."""
-        save = "state-ROUND_EVAL.jkr"
-        api(client, "load", {"path": str(get_fixture_path("cash_out", save))})
+        gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
+        assert gamestate["state"] == "ROUND_EVAL"
         response = api(client, "cash_out", {})
         verify_cash_out_response(response)
         assert response["state"] == "SHOP"
@@ -35,11 +35,10 @@ class TestCashOutEndpointStateRequirements:
 
     def test_cash_out_from_BLIND_SELECT(self, client: socket.socket):
         """Test that cash_out fails when not in ROUND_EVAL state."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("cash_out", save))})
-        response = api(client, "cash_out", {})
+        gamestate = load_fixture(client, "cash_out", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
-            response,
-            expected_error_code="STATE_INVALID_STATE",
-            expected_message_contains="Endpoint 'cash_out' requires one of these states:",
+            api(client, "cash_out", {}),
+            "STATE_INVALID_STATE",
+            "Endpoint 'cash_out' requires one of these states:",
         )

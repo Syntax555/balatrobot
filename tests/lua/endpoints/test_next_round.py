@@ -3,7 +3,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, assert_error_response, get_fixture_path
+from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
 def verify_next_round_response(response: dict[str, Any]) -> None:
@@ -23,8 +23,8 @@ class TestNextRoundEndpoint:
 
     def test_next_round_from_shop(self, client: socket.socket) -> None:
         """Test advancing to next round from SHOP state."""
-        save = "state-SHOP.jkr"
-        api(client, "load", {"path": str(get_fixture_path("next_round", save))})
+        gamestate = load_fixture(client, "next_round", "state-SHOP")
+        assert gamestate["state"] == "SHOP"
         response = api(client, "next_round", {})
         verify_next_round_response(response)
 
@@ -34,8 +34,8 @@ class TestNextRoundEndpointStateRequirements:
 
     def test_next_round_from_MENU(self, client: socket.socket):
         """Test that next_round fails when not in SHOP state."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("next_round", save))})
+        gamestate = load_fixture(client, "next_round", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         response = api(client, "next_round", {})
         assert_error_response(
             response,

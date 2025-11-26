@@ -3,7 +3,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, get_fixture_path
+from tests.lua.conftest import api, load_fixture
 
 
 def verify_base_menu_response(response: dict[str, Any]) -> None:
@@ -25,7 +25,7 @@ class TestMenuEndpoint:
 
     def test_menu_from_BLIND_SELECT(self, client: socket.socket) -> None:
         """Test that menu endpoint returns state as MENU."""
-        save = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr"
-        api(client, "load", {"path": str(get_fixture_path("menu", save))})
+        gamestate = load_fixture(client, "menu", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         response = api(client, "menu", {})
         verify_base_menu_response(response)

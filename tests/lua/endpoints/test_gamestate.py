@@ -3,7 +3,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, get_fixture_path
+from tests.lua.conftest import api, load_fixture
 
 
 def verify_base_gamestate_response(response: dict[str, Any]) -> None:
@@ -41,8 +41,12 @@ class TestGamestateEndpoint:
 
     def test_gamestate_from_BLIND_SELECT(self, client: socket.socket) -> None:
         """Test that gamestate from BLIND_SELECT state is valid."""
-        save = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE.jkr"
-        api(client, "load", {"path": str(get_fixture_path("gamestate", save))})
+        fixture_name = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE"
+        gamestate = load_fixture(client, "gamestate", fixture_name)
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert gamestate["round_num"] == 0
+        assert gamestate["deck"] == "RED"
+        assert gamestate["stake"] == "WHITE"
         response = api(client, "gamestate", {})
         verify_base_gamestate_response(response)
         assert response["state"] == "BLIND_SELECT"

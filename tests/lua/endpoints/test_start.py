@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from tests.lua.conftest import api, assert_error_response, get_fixture_path
+from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
 class TestStartEndpoint:
@@ -78,21 +78,10 @@ class TestStartEndpoint:
 class TestStartEndpointValidation:
     """Test start endpoint parameter validation."""
 
-    @pytest.fixture(scope="class")
-    def client(self, host: str, port: int):
-        """Class-scoped client fixture for this test class."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(60)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
-            sock.connect((host, port))
-
-            response = api(sock, "menu", {})
-            assert response["state"] == "MENU"
-
-            yield sock
-
     def test_missing_deck_parameter(self, client: socket.socket):
         """Test that start fails when deck parameter is missing."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"stake": "WHITE"})
         assert_error_response(
             response,
@@ -102,6 +91,8 @@ class TestStartEndpointValidation:
 
     def test_missing_stake_parameter(self, client: socket.socket):
         """Test that start fails when stake parameter is missing."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"deck": "RED"})
         assert_error_response(
             response,
@@ -111,6 +102,8 @@ class TestStartEndpointValidation:
 
     def test_invalid_deck_value(self, client: socket.socket):
         """Test that start fails with invalid deck enum."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"deck": "INVALID_DECK", "stake": "WHITE"})
         assert_error_response(
             response,
@@ -120,6 +113,8 @@ class TestStartEndpointValidation:
 
     def test_invalid_stake_value(self, client: socket.socket):
         """Test that start fails when invalid stake enum is provided."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"deck": "RED", "stake": "INVALID_STAKE"})
         assert_error_response(
             response,
@@ -129,6 +124,8 @@ class TestStartEndpointValidation:
 
     def test_invalid_deck_type(self, client: socket.socket):
         """Test that start fails when deck is not a string."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"deck": 123, "stake": "WHITE"})
         assert_error_response(
             response,
@@ -138,6 +135,8 @@ class TestStartEndpointValidation:
 
     def test_invalid_stake_type(self, client: socket.socket):
         """Test that start fails when stake is not a string."""
+        response = api(client, "menu", {})
+        assert response["state"] == "MENU"
         response = api(client, "start", {"deck": "RED", "stake": 1})
         assert_error_response(
             response,
@@ -151,8 +150,8 @@ class TestStartEndpointStateRequirements:
 
     def test_start_from_BLIND_SELECT(self, client: socket.socket):
         """Test that start fails when not in MENU state."""
-        save = "state-BLIND_SELECT.jkr"
-        response = api(client, "load", {"path": str(get_fixture_path("start", save))})
+        gamestate = load_fixture(client, "start", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         response = api(client, "start", {"deck": "RED", "stake": "WHITE"})
         assert_error_response(
             response,

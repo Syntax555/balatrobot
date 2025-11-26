@@ -2,7 +2,7 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, get_fixture_path
+from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
 class TestRerollEndpoint:
@@ -10,23 +10,22 @@ class TestRerollEndpoint:
 
     def test_reroll_from_shop(self, client: socket.socket) -> None:
         """Test rerolling shop from SHOP state."""
-        save = "state-SHOP.jkr"
-        api(client, "load", {"path": str(get_fixture_path("reroll", save))})
-        after = api(client, "gamestate", {})
-        before = api(client, "reroll", {})
+        gamestate = load_fixture(client, "reroll", "state-SHOP")
+        assert gamestate["state"] == "SHOP"
+        after = api(client, "reroll", {})
+        assert gamestate["state"] == "SHOP"
         assert after["state"] == "SHOP"
-        assert before["state"] == "SHOP"
-        assert after["shop"] != before["shop"]
+        assert gamestate["shop"] != after["shop"]
 
     def test_reroll_insufficient_funds(self, client: socket.socket) -> None:
         """Test reroll endpoint when player has insufficient funds."""
-        save = "state-SHOP--money-0.jkr"
-        api(client, "load", {"path": str(get_fixture_path("reroll", save))})
-        response = api(client, "reroll", {})
+        gamestate = load_fixture(client, "reroll", "state-SHOP--money-0")
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["money"] == 0
         assert_error_response(
-            response,
-            expected_error_code="GAME_INVALID_STATE",
-            expected_message_contains="Not enough dollars to reroll",
+            api(client, "reroll", {}),
+            "GAME_INVALID_STATE",
+            "Not enough dollars to reroll",
         )
 
 
@@ -35,11 +34,10 @@ class TestRerollEndpointStateRequirements:
 
     def test_reroll_from_BLIND_SELECT(self, client: socket.socket):
         """Test that reroll fails when not in SHOP state."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("reroll", save))})
-        response = api(client, "reroll", {})
+        gamestate = load_fixture(client, "reroll", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
-            response,
-            expected_error_code="STATE_INVALID_STATE",
-            expected_message_contains="Endpoint 'reroll' requires one of these states:",
+            api(client, "reroll", {}),
+            "STATE_INVALID_STATE",
+            "Endpoint 'reroll' requires one of these states:",
         )

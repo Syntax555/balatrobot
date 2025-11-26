@@ -7,7 +7,7 @@ from tests.lua.conftest import (
     api,
     assert_error_response,
     assert_success_response,
-    get_fixture_path,
+    load_fixture,
 )
 
 
@@ -18,9 +18,9 @@ class TestSaveEndpoint:
         self, client: socket.socket, tmp_path: Path
     ) -> None:
         """Test that save succeeds from BLIND_SELECT state."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("save", save))})
-        temp_file = tmp_path / "save.jkr"
+        gamestate = load_fixture(client, "save", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
+        temp_file = tmp_path / "save"
         response = api(client, "save", {"path": str(temp_file)})
         assert_success_response(response)
         assert response["path"] == str(temp_file)
@@ -31,9 +31,9 @@ class TestSaveEndpoint:
         self, client: socket.socket, tmp_path: Path
     ) -> None:
         """Test that saved file can be loaded back successfully."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("save", save))})
-        temp_file = tmp_path / "save.jkr"
+        gamestate = load_fixture(client, "save", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
+        temp_file = tmp_path / "save"
         save_response = api(client, "save", {"path": str(temp_file)})
         assert_success_response(save_response)
         load_response = api(client, "load", {"path": str(temp_file)})
@@ -68,7 +68,7 @@ class TestSaveStateRequirements:
     def test_save_from_MENU(self, client: socket.socket, tmp_path: Path) -> None:
         """Test that save fails when not in an active run."""
         api(client, "menu", {})
-        temp_file = tmp_path / "save.jkr"
+        temp_file = tmp_path / "save"
         response = api(client, "save", {"path": str(temp_file)})
         assert_error_response(
             response,

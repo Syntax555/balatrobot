@@ -8,7 +8,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, get_fixture_path
+from tests.lua.conftest import api, load_fixture
 
 
 def assert_health_response(response: dict[str, Any]) -> None:
@@ -23,12 +23,11 @@ class TestHealthEndpoint:
         """Test that health check returns status ok."""
         response = api(client, "menu", {})
         assert response["state"] == "MENU"
-        response = api(client, "health", {})
-        assert_health_response(response)
+        assert_health_response(api(client, "health", {}))
 
     def test_health_from_BLIND_SELECT(self, client: socket.socket) -> None:
         """Test that health check returns status ok."""
-        save = "state-BLIND_SELECT.jkr"
-        api(client, "load", {"path": str(get_fixture_path("health", save))})
-        response = api(client, "health", {})
-        assert_health_response(response)
+        save = "state-BLIND_SELECT"
+        gamestate = load_fixture(client, "health", save)
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert_health_response(api(client, "health", {}))
