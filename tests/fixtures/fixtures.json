@@ -1108,5 +1108,120 @@
         }
       }
     ]
+  },
+  "rearrange": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SELECTING_HAND--hand.count-8": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--jokers.count-4--consumables.count-2": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      }
+    ]
   }
 }
