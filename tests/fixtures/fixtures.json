@@ -1395,5 +1395,81 @@
         "arguments": {}
       }
     ]
+  },
+  "add": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "voucher": 0
+        }
+      }
+    ]
   }
 }
