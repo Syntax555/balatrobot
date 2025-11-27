@@ -1,17 +1,6 @@
 ---@meta types
 
 -- ==========================================================================
--- Endpoint Type
--- ==========================================================================
-
----@class Endpoint
----@field name string The endpoint name
----@field description string Brief description of the endpoint
----@field schema table<string, SchemaField> Schema definition for arguments validation
----@field requires_state string[]? Optional list of required game states
----@field execute fun(args: table, send_response: fun(response: table)) Execute function
-
--- ==========================================================================
 -- GameState Enums
 -- ==========================================================================
 
@@ -190,6 +179,7 @@
 
 ---@class Card
 ---@field id integer Unique identifier for the card (sort_id)
+---@field key string Specific card key (e.g., "c_fool", "j_brainstorm, "v_overstock", ...)
 ---@field set Set Card set/type
 ---@field label string Display label/name of the card
 ---@field value Card.Value Value information for the card
@@ -199,7 +189,7 @@
 
 ---@class Card.Value
 ---@field suit Suit? Suit (Hearts, Diamonds, Clubs, Spades) - only for playing cards
----@field value Rank? Rank - only for playing cards
+---@field rank Rank? Rank - only for playing cards
 ---@field effect string Description of the card's effect (from UI)
 
 ---@class Card.Modifier
@@ -218,3 +208,14 @@
 ---@class Card.Cost
 ---@field sell integer Sell value of the card
 ---@field buy integer Buy price of the card (if in shop)
+
+-- ==========================================================================
+-- Endpoint Type
+-- ==========================================================================
+
+---@class Endpoint
+---@field name string The endpoint name
+---@field description string Brief description of the endpoint
+---@field schema table<string, SchemaField> Schema definition for arguments validation
+---@field requires_state string[]? Optional list of required game states
+---@field execute fun(args: table, send_response: fun(response: table)) Execute function

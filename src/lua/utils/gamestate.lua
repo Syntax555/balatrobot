@@ -121,6 +121,56 @@ local function get_card_ui_description(card)
 end
 
 -- ==========================================================================
+-- Card Value Converters
+-- ==========================================================================
+
+---Converts Balatro suit name to enum format
+---@param suit_name string The suit name from card.config.card.suit
+---@return Suit? suit_enum The single-letter suit enum ("H", "D", "C", "S")
+local function convert_suit_to_enum(suit_name)
+  if suit_name == "Hearts" then
+    return "H"
+  elseif suit_name == "Diamonds" then
+    return "D"
+  elseif suit_name == "Clubs" then
+    return "C"
+  elseif suit_name == "Spades" then
+    return "S"
+  end
+  return nil
+end
+
+---Converts Balatro rank value to enum format
+---@param rank_value string The rank value from card.config.card.value
+---@return Rank? rank_enum The single-character rank enum
+local function convert_rank_to_enum(rank_value)
+  -- Numbers 2-9 stay the same
+  if
+    rank_value == "2"
+    or rank_value == "3"
+    or rank_value == "4"
+    or rank_value == "5"
+    or rank_value == "6"
+    or rank_value == "7"
+    or rank_value == "8"
+    or rank_value == "9"
+  then
+    return rank_value
+  elseif rank_value == "10" then
+    return "T"
+  elseif rank_value == "Jack" then
+    return "J"
+  elseif rank_value == "Queen" then
+    return "Q"
+  elseif rank_value == "King" then
+    return "K"
+  elseif rank_value == "Ace" then
+    return "A"
+  end
+  return nil
+end
+
+-- ==========================================================================
 -- Card Component Extractors
 -- ==========================================================================
 
@@ -172,10 +222,10 @@ local function extract_card_value(card)
   -- Suit and rank (for playing cards)
   if card.config and card.config.card then
     if card.config.card.suit then
-      value.suit = card.config.card.suit
+      value.suit = convert_suit_to_enum(card.config.card.suit)
     end
     if card.config.card.value then
-      value.value = card.config.card.value
+      value.rank = convert_rank_to_enum(card.config.card.value)
     end
   end
 
@@ -250,8 +300,19 @@ local function extract_card(card)
     end
   end
 
+  -- Extract key (prefer card_key for playing cards, fallback to center_key)
+  local key = ""
+  if card.config then
+    if card.config.card_key then
+      key = card.config.card_key
+    elseif card.config.center_key then
+      key = card.config.center_key
+    end
+  end
+
   return {
     id = card.sort_id or 0,
+    key = key,
     set = set,
     label = card.label or "",
     value = extract_card_value(card),
