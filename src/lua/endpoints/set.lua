@@ -187,9 +187,9 @@ return {
       blocking = false,
       func = function()
         if args.shop then
-          local done_vouchers = G.shop_vouchers and G.shop_vouchers.cards and #G.shop_vouchers.cards > 0
-          local done_packs = G.shop_booster and G.shop_booster.cards and #G.shop_booster.cards > 0
-          local done_jokers = G.shop_jokers and G.shop_jokers.cards and #G.shop_jokers.cards > 0
+          local done_vouchers = G.shop_vouchers and G.shop_vouchers.config and G.shop_vouchers.config.card_count > 0
+          local done_packs = G.shop_booster and G.shop_booster.config and G.shop_booster.config.card_count > 0
+          local done_jokers = G.shop_jokers and G.shop_jokers.config and G.shop_jokers.config.card_count > 0
           if done_vouchers or done_packs or done_jokers then
             sendDebugMessage("Return set()", "BB.ENDPOINTS")
             local state_data = BB_GAMESTATE.get_gamestate()

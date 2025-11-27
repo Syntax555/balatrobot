@@ -53,7 +53,7 @@ return {
 
     if args.joker then
       -- Validate G.jokers exists and has cards
-      if not G.jokers or not G.jokers.cards or #G.jokers.cards == 0 then
+      if not G.jokers or not G.jokers.config or G.jokers.config.card_count == 0 then
         send_response({
           error = "No jokers available to sell",
           error_code = BB_ERRORS.GAME_INVALID_STATE,
@@ -65,7 +65,7 @@ return {
       sell_type = "joker"
     else -- args.consumable
       -- Validate G.consumeables exists and has cards
-      if not G.consumeables or not G.consumeables.cards or #G.consumeables.cards == 0 then
+      if not G.consumeables or not G.consumeables.config or G.consumeables.config.card_count == 0 then
         send_response({
           error = "No consumables available to sell",
           error_code = BB_ERRORS.GAME_INVALID_STATE,
@@ -89,7 +89,8 @@ return {
     local card = source_array[pos]
 
     -- Track initial state for completion verification
-    local initial_count = #source_array
+    local area = sell_type == "joker" and G.jokers or G.consumeables
+    local initial_count = area.config.card_count
     local initial_money = G.GAME.dollars
     local expected_money = initial_money + card.sell_cost
     local card_id = card.sort_id
@@ -110,10 +111,11 @@ return {
       blocking = false,
       func = function()
         -- Check all 5 completion criteria
-        local current_array = sell_type == "joker" and G.jokers.cards or G.consumeables.cards
+        local current_area = sell_type == "joker" and G.jokers or G.consumeables
+        local current_array = current_area.cards
 
         -- 1. Card count decreased by 1
-        local count_decreased = (#current_array == initial_count - 1)
+        local count_decreased = (current_area.config.card_count == initial_count - 1)
 
         -- 2. Money increased by sell_cost
         local money_increased = (G.GAME.dollars == expected_money)

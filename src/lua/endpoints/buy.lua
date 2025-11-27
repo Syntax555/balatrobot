@@ -37,7 +37,10 @@ return {
     sendDebugMessage("Init buy()", "BB.ENDPOINTS")
     local gamestate = BB_GAMESTATE.get_gamestate()
     sendDebugMessage("Gamestate is : " .. gamestate.state, "BB.ENDPOINTS")
-    sendDebugMessage("Gamestate native is : " .. #G.consumeables.cards, "BB.ENDPOINTS")
+    sendDebugMessage(
+      "Gamestate native is : " .. (G.consumeables and G.consumeables.config and G.consumeables.config.card_count or 0),
+      "BB.ENDPOINTS"
+    )
     local area
     local pos
     local set = 0
@@ -147,7 +150,9 @@ return {
 
     if args.card then
       initial_shop_count = gamestate.shop.count
-      initial_dest_count = gamestate.jokers.count + gamestate.consumables.count + (#G.deck.cards or 0)
+      initial_dest_count = gamestate.jokers.count
+        + gamestate.consumables.count
+        + (G.deck and G.deck.config and G.deck.config.card_count or 0)
     elseif args.voucher then
       initial_shop_count = gamestate.vouchers.count
       initial_dest_count = 0
@@ -188,10 +193,10 @@ return {
         local done = false
 
         if args.card then
-          local shop_count = (G.shop_jokers and #G.shop_jokers.cards or 0)
-          local dest_count = (G.jokers and #G.jokers.cards or 0)
-            + (G.consumeables and #G.consumeables.cards or 0)
-            + (G.deck and #G.deck.cards or 0)
+          local shop_count = (G.shop_jokers and G.shop_jokers.config and G.shop_jokers.config.card_count or 0)
+          local dest_count = (G.jokers and G.jokers.config and G.jokers.config.card_count or 0)
+            + (G.consumeables and G.consumeables.config and G.consumeables.config.card_count or 0)
+            + (G.deck and G.deck.config and G.deck.config.card_count or 0)
           local shop_decreased = (shop_count == initial_shop_count - 1)
           local dest_increased = (dest_count == initial_dest_count + 1)
           local money_deducted = (G.GAME.dollars == initial_money - card.cost.buy)
@@ -199,7 +204,7 @@ return {
             done = true
           end
         elseif args.voucher then
-          local shop_count = (G.shop_vouchers and #G.shop_vouchers.cards or 0)
+          local shop_count = (G.shop_vouchers and G.shop_vouchers.config and G.shop_vouchers.config.card_count or 0)
           local dest_count = 0
           if G.GAME.used_vouchers then
             for _ in pairs(G.GAME.used_vouchers) do
@@ -215,7 +220,7 @@ return {
           end
         elseif args.pack then
           local money_deducted = (G.GAME.dollars == initial_money - card.cost.buy)
-          local pack_cards_count = (G.pack_cards and #G.pack_cards.cards or 0)
+          local pack_cards_count = (G.pack_cards and G.pack_cards.config and G.pack_cards.config.card_count or 0)
           if money_deducted and pack_cards_count > 0 and G.STATE == G.STATES.SMODS_BOOSTER_OPENED then
             done = true
           end

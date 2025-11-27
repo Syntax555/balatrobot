@@ -141,10 +141,10 @@ return {
     end
 
     -- Track initial state for verification
-    local initial_joker_count = G.jokers and #G.jokers.cards or 0
-    local initial_consumable_count = G.consumeables and #G.consumeables.cards or 0
-    local initial_voucher_count = G.shop_vouchers and #G.shop_vouchers.cards or 0
-    local initial_hand_count = G.hand and #G.hand.cards or 0
+    local initial_joker_count = G.jokers and G.jokers.config and G.jokers.config.card_count or 0
+    local initial_consumable_count = G.consumeables and G.consumeables.config and G.consumeables.config.card_count or 0
+    local initial_voucher_count = G.shop_vouchers and G.shop_vouchers.config and G.shop_vouchers.config.card_count or 0
+    local initial_hand_count = G.hand and G.hand.config and G.hand.config.card_count or 0
 
     sendDebugMessage("Initial voucher count: " .. initial_voucher_count, "BB.ENDPOINTS")
 
