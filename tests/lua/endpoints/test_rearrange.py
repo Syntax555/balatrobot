@@ -1,0 +1,232 @@
+"""Tests for src/lua/endpoints/rearrange.lua"""
+
+import socket
+
+import pytest
+
+from tests.lua.conftest import api, assert_error_response, load_fixture
+
+
+class TestRearrangeEndpoint:
+    """Test basic rearrange endpoint functionality."""
+
+    def test_rearrange_hand(self, client: socket.socket) -> None:
+        """Test rearranging hand in selecting hand state."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        ids = [card["id"] for card in gamestate["hand"]["cards"]]
+        assert ids == [62, 50, 35, 60, 58, 55, 54, 28]
+        response = api(
+            client,
+            "rearrange",
+            {"hand": [1, 2, 0, 3, 4, 5, 7, 6]},
+        )
+        ids = [card["id"] for card in response["hand"]["cards"]]
+        assert ids == [50, 35, 62, 60, 58, 55, 28, 54]
+
+    def test_rearrange_jokers(self, client: socket.socket) -> None:
+        """Test rearranging jokers."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 4
+        ids = [card["id"] for card in gamestate["jokers"]["cards"]]
+        assert ids == [184, 189, 191, 192]
+        response = api(
+            client,
+            "rearrange",
+            {"jokers": [2, 0, 1, 3]},
+        )
+        ids = [card["id"] for card in response["jokers"]["cards"]]
+        assert ids == [191, 184, 189, 192]
+
+    def test_rearrange_consumables(self, client: socket.socket) -> None:
+        """Test rearranging consumables."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 2
+        ids = [card["id"] for card in gamestate["consumables"]["cards"]]
+        assert ids == [185, 190]
+        response = api(
+            client,
+            "rearrange",
+            {"consumables": [1, 0]},
+        )
+        ids = [card["id"] for card in response["consumables"]["cards"]]
+        assert ids == [190, 185]
+
+
+class TestRearrangeEndpointValidation:
+    """Test rearrange endpoint parameter validation."""
+
+    def test_no_parameters_provided(self, client: socket.socket) -> None:
+        """Test error when no rearrange type specified."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        response = api(client, "rearrange", {})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Must provide exactly one of: hand, jokers, or consumables",
+        )
+
+    def test_multiple_parameters_provided(self, client: socket.socket) -> None:
+        """Test error when multiple rearrange types specified."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        response = api(
+            client, "rearrange", {"hand": [], "jokers": [], "consumables": []}
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Can only rearrange one type at a time",
+        )
+
+    def test_wrong_array_length_hand(self, client: socket.socket) -> None:
+        """Test error when hand array wrong length."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(
+            client,
+            "rearrange",
+            {"hand": [0, 1, 2, 3]},
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Must provide exactly 8 indices for hand",
+        )
+
+    def test_wrong_array_length_jokers(self, client: socket.socket) -> None:
+        """Test error when jokers array wrong length."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 4
+        response = api(
+            client,
+            "rearrange",
+            {"jokers": [0, 1, 2]},
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Must provide exactly 4 indices for jokers",
+        )
+
+    def test_wrong_array_length_consumables(self, client: socket.socket) -> None:
+        """Test error when consumables array wrong length."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 2
+        response = api(
+            client,
+            "rearrange",
+            {"consumables": [0, 1, 2]},
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Must provide exactly 2 indices for consumables",
+        )
+
+    def test_invalid_card_index(self, client: socket.socket) -> None:
+        """Test error when card index out of range."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(
+            client,
+            "rearrange",
+            {"hand": [-1, 1, 2, 3, 4, 5, 6, 7]},
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Index out of range for hand: -1",
+        )
+
+    def test_duplicate_indices(self, client: socket.socket) -> None:
+        """Test error when indices contain duplicates."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(
+            client,
+            "rearrange",
+            {"hand": [1, 1, 2, 3, 4, 5, 6, 7]},
+        )
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Duplicate index in hand: 1",
+        )
+
+
+class TestRearrangeEndpointStateRequirements:
+    """Test rearrange endpoint state requirements."""
+
+    def test_rearrange_hand_from_wrong_state(self, client: socket.socket) -> None:
+        """Test that rearranging hand fails from wrong state."""
+        gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert_error_response(
+            api(client, "rearrange", {"hand": [0, 1, 2, 3, 4, 5, 6, 7]}),
+            "STATE_INVALID_STATE",
+            "Endpoint 'rearrange' requires one of these states: 1, 5",
+        )
+
+    def test_rearrange_jokers_from_wrong_state(self, client: socket.socket) -> None:
+        """Test that rearranging jokers fails from wrong state."""
+        gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert_error_response(
+            api(client, "rearrange", {"jokers": [0, 1, 2, 3, 4]}),
+            "STATE_INVALID_STATE",
+            "Endpoint 'rearrange' requires one of these states: 1, 5",
+        )
+
+    def test_rearrange_consumables_from_wrong_state(
+        self, client: socket.socket
+    ) -> None:
+        """Test that rearranging consumables fails from wrong state."""
+        gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
+        assert gamestate["state"] == "BLIND_SELECT"
+        assert_error_response(
+            api(client, "rearrange", {"jokers": [0, 1]}),
+            "STATE_INVALID_STATE",
+            "Endpoint 'rearrange' requires one of these states: 1, 5",
+        )
+
+    def test_rearrange_hand_from_shop(self, client: socket.socket) -> None:
+        """Test that rearranging hand fails from SHOP."""
+        gamestate = load_fixture(
+            client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert_error_response(
+            api(client, "rearrange", {"hand": [0, 1, 2, 3, 4, 5, 6, 7]}),
+            "STATE_INVALID_STATE",
+            "Can only rearrange hand during hand selection",
+        )
