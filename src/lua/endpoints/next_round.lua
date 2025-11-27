@@ -24,7 +24,9 @@ return {
       trigger = "condition",
       blocking = false,
       func = function()
-        local done = G.STATE == G.STATES.BLIND_SELECT
+        local blind_pane = G.blind_select_opts[string.lower(G.GAME.blind_on_deck)]
+        local select_button = blind_pane:get_UIE_by_ID("select_blind_button")
+        local done = G.STATE == G.STATES.BLIND_SELECT and select_button ~= nil
         if done then
           sendDebugMessage("Return next_round() - reached BLIND_SELECT state", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
