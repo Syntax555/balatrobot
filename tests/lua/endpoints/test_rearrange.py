@@ -2,8 +2,6 @@
 
 import socket
 
-import pytest
-
 from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
