@@ -1223,5 +1223,177 @@
         }
       }
     ]
+  },
+  "sell": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-ROUND_EVAL": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      }
+    ],
+    "state-SELECTING_HAND--jokers.count-0--consumables.count-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SHOP--jokers.count-1--consumables.count-1": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      }
+    ],
+    "state-SELECTING_HAND--jokers.count-1--consumables.count-1": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 0
+        }
+      },
+      {
+        "endpoint": "next_round",
+        "arguments": {}
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ]
   }
 }
