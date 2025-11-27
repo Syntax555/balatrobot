@@ -17,15 +17,15 @@ class TestRearrangeEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hand"]["count"] == 8
-        ids = [card["id"] for card in gamestate["hand"]["cards"]]
-        assert ids == [62, 50, 35, 60, 58, 55, 54, 28]
+        prev_ids = [card["id"] for card in gamestate["hand"]["cards"]]
+        permutation = [1, 2, 0, 3, 4, 5, 7, 6]
         response = api(
             client,
             "rearrange",
-            {"hand": [1, 2, 0, 3, 4, 5, 7, 6]},
+            {"hand": permutation},
         )
         ids = [card["id"] for card in response["hand"]["cards"]]
-        assert ids == [50, 35, 62, 60, 58, 55, 28, 54]
+        assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_jokers(self, client: socket.socket) -> None:
         """Test rearranging jokers."""
@@ -34,15 +34,15 @@ class TestRearrangeEndpoint:
         )
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 4
-        ids = [card["id"] for card in gamestate["jokers"]["cards"]]
-        assert ids == [184, 189, 191, 192]
+        prev_ids = [card["id"] for card in gamestate["jokers"]["cards"]]
+        permutation = [2, 0, 1, 3]
         response = api(
             client,
             "rearrange",
-            {"jokers": [2, 0, 1, 3]},
+            {"jokers": permutation},
         )
         ids = [card["id"] for card in response["jokers"]["cards"]]
-        assert ids == [191, 184, 189, 192]
+        assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_consumables(self, client: socket.socket) -> None:
         """Test rearranging consumables."""
@@ -51,15 +51,15 @@ class TestRearrangeEndpoint:
         )
         assert gamestate["state"] == "SHOP"
         assert gamestate["consumables"]["count"] == 2
-        ids = [card["id"] for card in gamestate["consumables"]["cards"]]
-        assert ids == [185, 190]
+        prev_ids = [card["id"] for card in gamestate["consumables"]["cards"]]
+        permutation = [1, 0]
         response = api(
             client,
             "rearrange",
-            {"consumables": [1, 0]},
+            {"consumables": permutation},
         )
         ids = [card["id"] for card in response["consumables"]["cards"]]
-        assert ids == [190, 185]
+        assert ids == [prev_ids[i] for i in permutation]
 
 
 class TestRearrangeEndpointValidation:
