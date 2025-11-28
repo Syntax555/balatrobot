@@ -1471,5 +1471,393 @@
         }
       }
     ]
+  },
+  "use": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ],
+    "state-ROUND_EVAL": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      }
+    ],
+    "state-SELECTING_HAND--money-12--consumables.cards[0]-key-c_hermit": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "money": 12
+        }
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_hermit"
+        }
+      }
+    ],
+    "state-SELECTING_HAND--consumables.cards[0]-key-c_familiar": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_familiar"
+        }
+      }
+    ],
+    "state-SHOP--consumables.cards[0]-key-c_familiar": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_familiar"
+        }
+      }
+    ],
+    "state-SELECTING_HAND--consumables.cards[0]-key-c_temperance--jokers.count-0": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_temperance"
+        }
+      }
+    ],
+    "state-SHOP--money-12--consumables.cards[0]-key-c_hermit": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "money": 12
+        }
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_hermit"
+        }
+      }
+    ],
+    "state-SELECTING_HAND--consumables.cards[0].key-c_pluto--consumables.cards[1].key-c_magician": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 1
+        }
+      },
+      {
+        "endpoint": "reroll",
+        "arguments": {}
+      },
+      {
+        "endpoint": "buy",
+        "arguments": {
+          "card": 1
+        }
+      },
+      {
+        "endpoint": "next_round",
+        "arguments": {}
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      }
+    ],
+    "state-SELECTING_HAND--consumables.cards[0].key-c_death": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_death"
+        }
+      }
+    ],
+    "state-SHOP--consumables.cards[0].key-c_magician": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_magician"
+        }
+      }
+    ],
+    "state-SHOP--consumables.cards[0].key-c_strength": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      },
+      {
+        "endpoint": "select",
+        "arguments": {}
+      },
+      {
+        "endpoint": "set",
+        "arguments": {
+          "chips": 1000,
+          "money": 1000
+        }
+      },
+      {
+        "endpoint": "play",
+        "arguments": {
+          "cards": [
+            0
+          ]
+        }
+      },
+      {
+        "endpoint": "cash_out",
+        "arguments": {}
+      },
+      {
+        "endpoint": "add",
+        "arguments": {
+          "key": "c_strength"
+        }
+      }
+    ]
   }
 }
