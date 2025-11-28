@@ -35,6 +35,8 @@ BB_ENDPOINTS = {
   "src/lua/endpoints/rearrange.lua",
   -- Sell endpoint
   "src/lua/endpoints/sell.lua",
+  -- Use consumable endpoint
+  "src/lua/endpoints/use.lua",
   -- If debug mode is enabled, debugger.lua will load test endpoints
 }
 
