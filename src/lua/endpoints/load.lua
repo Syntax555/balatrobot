@@ -101,6 +101,11 @@ return {
       blocking = false,
       func = function()
         local done = false
+
+        if not G.STATE_COMPLETE or G.CONTROLLER.locked then
+          return false
+        end
+
         if G.STATE == G.STATES.BLIND_SELECT then
           done = G.GAME.blind_on_deck ~= nil
             and G.blind_select_opts ~= nil
@@ -119,7 +124,7 @@ return {
           end
         end
 
-        if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
+        if G.STATE == G.STATES.SHOP then
           done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
         end
 
