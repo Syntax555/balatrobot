@@ -127,16 +127,19 @@ return {
       params = {
         rank = rank,
         suit = suit,
+        skip_materialize = true,
       }
     elseif card_type == "voucher" then
       params = {
         key = args.key,
         area = G.shop_vouchers,
+        skip_materialize = true,
       }
     else
       -- For jokers and consumables - just pass the key
       params = {
         key = args.key,
+        skip_materialize = true,
       }
     end
 
@@ -184,7 +187,7 @@ return {
         end
 
         -- Check state stability
-        local state_stable = G.STATE_COMPLETE == true
+        local state_stable = G.STATE_COMPLETE == true and not G.CONTROLLER.locked
 
         -- Check valid state (still in one of the allowed states)
         local valid_state = (
