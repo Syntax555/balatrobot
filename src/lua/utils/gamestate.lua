@@ -192,7 +192,7 @@ local function extract_card_modifier(card)
 
   -- Enhancement (from ability.name for enhanced cards)
   if card.ability and card.ability.effect and card.ability.effect ~= "Base" then
-    modifier.enhancement = string.upper(card.ability.effect)
+    modifier.enhancement = string.upper(card.ability.effect:gsub(" Card", ""))
   end
 
   -- Eternal (boolean from ability)
