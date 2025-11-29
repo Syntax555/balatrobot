@@ -5,6 +5,12 @@
 
 ---@class Endpoint.Add.Args
 ---@field key Card.Key The card key to add (j_* for jokers, c_* for consumables, v_* for vouchers, SUIT_RANK for playing cards)
+---@field seal Card.Modifier.Seal? The card seal to apply (only for playing cards)
+---@field edition Card.Modifier.Edition? The card edition to apply (jokers, playing cards and NEGATIVE consumables)
+---@field enhancement Card.Modifier.Enhancement? The card enhancement to apply (playing cards)
+---@field eternal boolean? If true, the card will be eternal (jokers only)
+---@field perishable integer? The card will be perishable for this many rounds (jokers only, must be >= 1)
+---@field rental boolean? If true, the card will be rental (jokers only)
 
 -- Suit conversion table for playing cards
 local SUIT_MAP = {
@@ -29,6 +35,34 @@ local RANK_MAP = {
   Q = "Queen",
   K = "King",
   A = "Ace",
+}
+
+-- Seal conversion table
+local SEAL_MAP = {
+  RED = "Red",
+  BLUE = "Blue",
+  GOLD = "Gold",
+  PURPLE = "Purple",
+}
+
+-- Edition conversion table
+local EDITION_MAP = {
+  HOLO = "e_holo",
+  FOIL = "e_foil",
+  POLYCHROME = "e_polychrome",
+  NEGATIVE = "e_negative",
+}
+
+-- Enhancement conversion table
+local ENHANCEMENT_MAP = {
+  BONUS = "m_bonus",
+  MULT = "m_mult",
+  WILD = "m_wild",
+  GLASS = "m_glass",
+  STEEL = "m_steel",
+  STONE = "m_stone",
+  GOLD = "m_gold",
+  LUCKY = "m_lucky",
 }
 
 ---Detect card type based on key prefix or pattern
@@ -81,6 +115,36 @@ return {
       required = true,
       description = "Card key (j_* for jokers, c_* for consumables, v_* for vouchers, SUIT_RANK for playing cards like H_A)",
     },
+    seal = {
+      type = "string",
+      required = false,
+      description = "Seal type (RED, BLUE, GOLD, PURPLE) - only valid for playing cards",
+    },
+    edition = {
+      type = "string",
+      required = false,
+      description = "Edition type (HOLO, FOIL, POLYCHROME, NEGATIVE) - valid for jokers, playing cards, and consumables (consumables: NEGATIVE only)",
+    },
+    enhancement = {
+      type = "string",
+      required = false,
+      description = "Enhancement type (BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, LUCKY) - only valid for playing cards",
+    },
+    eternal = {
+      type = "boolean",
+      required = false,
+      description = "If true, the card will be eternal (cannot be sold or destroyed) - only valid for jokers",
+    },
+    perishable = {
+      type = "number",
+      required = false,
+      description = "Number of rounds before card perishes (must be positive integer >= 1) - only valid for jokers",
+    },
+    rental = {
+      type = "boolean",
+      required = false,
+      description = "If true, the card will be rental (costs $1 per round) - only valid for jokers",
+    },
   },
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP, G.STATES.ROUND_EVAL },
 
@@ -118,6 +182,119 @@ return {
       return
     end
 
+    -- Validate seal parameter is only for playing cards
+    if args.seal and card_type ~= "playing_card" then
+      send_response({
+        error = "Seal can only be applied to playing cards",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Validate and convert seal value
+    local seal_value = nil
+    if args.seal then
+      seal_value = SEAL_MAP[args.seal]
+      if not seal_value then
+        send_response({
+          error = "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
+          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        })
+        return
+      end
+    end
+
+    -- Validate edition parameter is only for jokers, playing cards, or consumables
+    if args.edition and card_type == "voucher" then
+      send_response({
+        error = "Edition cannot be applied to vouchers",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Special validation: consumables can only have NEGATIVE edition
+    if args.edition and card_type == "consumable" and args.edition ~= "NEGATIVE" then
+      send_response({
+        error = "Consumables can only have NEGATIVE edition",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Validate and convert edition value
+    local edition_value = nil
+    if args.edition then
+      edition_value = EDITION_MAP[args.edition]
+      if not edition_value then
+        send_response({
+          error = "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
+          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        })
+        return
+      end
+    end
+
+    -- Validate enhancement parameter is only for playing cards
+    if args.enhancement and card_type ~= "playing_card" then
+      send_response({
+        error = "Enhancement can only be applied to playing cards",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Validate and convert enhancement value
+    local enhancement_value = nil
+    if args.enhancement then
+      enhancement_value = ENHANCEMENT_MAP[args.enhancement]
+      if not enhancement_value then
+        send_response({
+          error = "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
+          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        })
+        return
+      end
+    end
+
+    -- Validate eternal parameter is only for jokers
+    if args.eternal and card_type ~= "joker" then
+      send_response({
+        error = "Eternal can only be applied to jokers",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Validate perishable parameter is only for jokers
+    if args.perishable and card_type ~= "joker" then
+      send_response({
+        error = "Perishable can only be applied to jokers",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
+    -- Validate perishable value is a positive integer
+    if args.perishable then
+      if type(args.perishable) ~= "number" or args.perishable ~= math.floor(args.perishable) or args.perishable < 1 then
+        send_response({
+          error = "Perishable must be a positive integer (>= 1)",
+          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        })
+        return
+      end
+    end
+
+    -- Validate rental parameter is only for jokers
+    if args.rental and card_type ~= "joker" then
+      send_response({
+        error = "Rental can only be applied to jokers",
+        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+      })
+      return
+    end
+
     -- Build SMODS.add_card parameters based on card type
     local params
 
@@ -129,6 +306,21 @@ return {
         suit = suit,
         skip_materialize = true,
       }
+
+      -- Add seal if provided
+      if seal_value then
+        params.seal = seal_value
+      end
+
+      -- Add edition if provided
+      if edition_value then
+        params.edition = edition_value
+      end
+
+      -- Add enhancement if provided
+      if enhancement_value then
+        params.enhancement = enhancement_value
+      end
     elseif card_type == "voucher" then
       params = {
         key = args.key,
@@ -140,7 +332,29 @@ return {
       params = {
         key = args.key,
         skip_materialize = true,
+        stickers = {},
+        force_stickers = true,
       }
+
+      -- Add edition if provided
+      if edition_value then
+        params.edition = edition_value
+      end
+
+      -- Add eternal if provided (jokers only - validation already done)
+      if args.eternal then
+        params.stickers[#params.stickers + 1] = "eternal"
+      end
+
+      -- Add perishable if provided (jokers only - validation already done)
+      if args.perishable then
+        params.stickers[#params.stickers + 1] = "perishable"
+      end
+
+      -- Add rental if provided (jokers only - validation already done)
+      if args.rental then
+        params.stickers[#params.stickers + 1] = "rental"
+      end
     end
 
     -- Track initial state for verification
@@ -152,7 +366,7 @@ return {
     sendDebugMessage("Initial voucher count: " .. initial_voucher_count, "BB.ENDPOINTS")
 
     -- Call SMODS.add_card with error handling
-    local success, _ = pcall(SMODS.add_card, params)
+    local success, result = pcall(SMODS.add_card, params)
 
     if not success then
       send_response({
@@ -160,6 +374,11 @@ return {
         error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
       })
       return
+    end
+
+    -- Set custom perish_tally if perishable was provided
+    if args.perishable and result and result.ability then
+      result.ability.perish_tally = args.perishable
     end
 
     sendDebugMessage("SMODS.add_card called for: " .. args.key .. " (" .. card_type .. ")", "BB.ENDPOINTS")
