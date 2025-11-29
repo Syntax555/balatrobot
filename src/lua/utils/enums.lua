@@ -1,9 +1,5 @@
 ---@meta enums
 
--- ==========================================================================
--- GameState Enums
--- ==========================================================================
-
 ---@alias Deck
 ---| "RED" # +1 discard every round
 ---| "BLUE" # +1 hand every round
@@ -51,40 +47,40 @@
 ---| "STANDARD_PACK" # 17
 ---| "BUFFOON_PACK" # 18
 ---| "NEW_ROUND" # 19 When a round is won and the new round begins
----| "SMODS_BOOSTER_OPENED" # 999
+---| "SMODS_BOOSTER_OPENED" # 999 When a booster pack is opened with SMODS loaded
 ---| "UNKNOWN" # Not a number, we never expect this game state
 
 ---@alias Card.Set
----| "BOOSTER"
----| "DEFAULT"
----| "EDITION"
----| "ENHANCED"
----| "JOKER"
----| "TAROT"
----| "PLANET"
----| "SPECTRAL"
----| "VOUCHER"
+---| "BOOSTER" # Booster pack purchasale in the shop
+---| "DEFAULT" # Default playing card
+---| "EDITION" # Card with an edition
+---| "ENHANCED" # Playing card with an enhancement
+---| "JOKER" # Joker card
+---| "TAROT" # Tarot card (consumable)
+---| "PLANET" # Planet card (consumable)
+---| "SPECTRAL" # Spectral card (consumable)
+---| "VOUCHER" # Voucher card
 
 ---@alias Card.Value.Suit
----| "H" # Hearts
----| "D" # Diamonds
----| "C" # Clubs
----| "S" # Spades
+---| "H" # Hearts (playing card)
+---| "D" # Diamonds (playing card)
+---| "C" # Clubs (playing card)
+---| "S" # Spades (playing card)
 
 ---@alias Card.Value.Rank
----| "2" # Two
----| "3" # Three
----| "4" # Four
----| "5" # Five
----| "6" # Six
----| "7" # Seven
----| "8" # Eight
----| "9" # Nine
----| "T" # Ten
----| "J" # Jack
----| "Q" # Queen
----| "K" # King
----| "A" # Ace
+---| "2" # Two (playing card)
+---| "3" # Three (playing card)
+---| "4" # Four (playing card)
+---| "5" # Five (playing card)
+---| "6" # Six (playing card)
+---| "7" # Seven (playing card)
+---| "8" # Eight (playing card)
+---| "9" # Nine (playing card)
+---| "T" # Ten (playing card)
+---| "J" # Jack (playing card)
+---| "Q" # Queen (playing card)
+---| "K" # King (playing card)
+---| "A" # Ace (playing card)
 
 ---@alias Card.Key.Consumable.Tarot
 ---| "c_fool" # The Fool: Creates the last Tarot or Planet card used during this run (The Fool excluded)
@@ -348,35 +344,35 @@
 ---| Card.Key.PlayingCard
 
 ---@alias Card.Modifier.Seal
----| "RED"
----| "BLUE"
----| "GOLD"
----| "PURPLE"
+---| "RED" # Retrigger this card 1 time
+---| "BLUE" # Creates the Planet card for final played poker hand of round if held in hand (Must have room)
+---| "GOLD" # Earn $3 when this card is played and scores
+---| "PURPLE" # Creates a Tarot card when discarded (Must have room)
 
 ---@alias Card.Modifier.Edition
----| "HOLO"
----| "FOIL"
----| "POLYCHROME"
----| "NEGATIVE"
+---| "HOLO" # +10 Mult when scored (Playing cards). +10 Mult directly before the Joker is reached during scoring (Jokers)
+---| "FOIL" # +50 Chips when scored (Playing cards). +50 Chips directly before the Joker is reached during scoring (Jokers)
+---| "POLYCHROME" # X1.5 Mult when scored (Playing cards). X1.5 Mult directly after the Joker is reached during scoring (Jokers)
+---| "NEGATIVE" # N/A (Playing cards). +1 Joker slot (Jokers). +1 Consumable slot (Consumables)
 
 ---@alias Card.Modifier.Enhancement
----| "BONUS"
----| "MULT"
----| "WILD"
----| "GLASS"
----| "STEEL"
----| "STONE"
----| "GOLD"
----| "LUCKY"
+---| "BONUS" # Enhanced card gives an additional +30 Chips when scored
+---| "MULT" # Enhanced card gives +4 Mult when scored
+---| "WILD" # Enhanced card is considered to be every suit simultaneously
+---| "GLASS" # Enhanced card gives X2 Mult when scored
+---| "STEEL" # Enhanced card gives X1.5 Mult while held in hand
+---| "STONE" # Enhanced card's value is set to +50 Chips
+---| "GOLD" # Enhanced card gives $3 if held in hand at end of round
+---| "LUCKY" # Enhanced card has a 1 in 5 chance to give +20 Mult. Enhanced card has a 1 in 15 chance to give $20
 
 ---@alias Blind.Type
----| "SMALL"
----| "BIG"
----| "BOSS"
+---| "SMALL" # No special effects - can be skipped to receive a Tag
+---| "BIG" # No special effects - can be skipped to receive a Tag
+---| "BOSS" # Various effect depending on the boss type
 
 ---@alias Blind.Status
----| "SELECT"
----| "CURRENT"
----| "UPCOMING"
----| "DEFEATED"
----| "SKIPPED"
+---| "SELECT" # Selectable blind
+---| "CURRENT" # Current blind selected
+---| "UPCOMING" # Future blind
+---| "DEFEATED" # Previously defeated blind
+---| "SKIPPED" # Previously skipped blind
