@@ -40,5 +40,5 @@ class TestNextRoundEndpointStateRequirements:
         assert_error_response(
             response,
             expected_error_code="STATE_INVALID_STATE",
-            expected_message_contains="Endpoint 'next_round' requires one of these states:",
+            expected_message_contains="Endpoint 'next_round' requires one of these states: SHOP",
         )

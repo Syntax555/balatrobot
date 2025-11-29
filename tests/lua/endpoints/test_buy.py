@@ -211,5 +211,5 @@ class TestBuyEndpointStateRequirements:
         assert_error_response(
             api(client, "buy", {"card": 0}),
             "STATE_INVALID_STATE",
-            "Endpoint 'buy' requires one of these states:",
+            "Endpoint 'buy' requires one of these states: SHOP",
         )

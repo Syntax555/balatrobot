@@ -65,5 +65,5 @@ class TestSelectEndpointStateRequirements:
         assert_error_response(
             api(client, "select", {}),
             "STATE_INVALID_STATE",
-            "Endpoint 'select' requires one of these states:",
+            "Endpoint 'select' requires one of these states: BLIND_SELECT",
         )

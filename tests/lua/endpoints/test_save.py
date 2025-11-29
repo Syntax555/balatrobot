@@ -73,6 +73,6 @@ class TestSaveStateRequirements:
         assert_error_response(
             response,
             expected_error_code="STATE_INVALID_STATE",
-            expected_message_contains="requires one of these states",
+            expected_message_contains="Endpoint 'save' requires one of these states: SELECTING_HAND, HAND_PLAYED, DRAW_TO_HAND, GAME_OVER, SHOP, PLAY_TAROT, BLIND_SELECT, ROUND_EVAL, TAROT_PACK, PLANET_PACK, SPECTRAL_PACK, STANDARD_PACK, BUFFOON_PACK, NEW_ROUND",
         )
         assert not temp_file.exists()

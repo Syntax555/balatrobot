@@ -302,7 +302,7 @@ class TestUseEndpointStateRequirements:
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
             "STATE_INVALID_STATE",
-            "Endpoint 'use' requires one of these states: 1, 5",
+            "Endpoint 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_use_from_ROUND_EVAL(self, client: socket.socket) -> None:
@@ -316,7 +316,7 @@ class TestUseEndpointStateRequirements:
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
             "STATE_INVALID_STATE",
-            "Endpoint 'use' requires one of these states: 1, 5",
+            "Endpoint 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_use_magician_from_SHOP(self, client: socket.socket) -> None:

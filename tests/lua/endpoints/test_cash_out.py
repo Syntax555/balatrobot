@@ -40,5 +40,5 @@ class TestCashOutEndpointStateRequirements:
         assert_error_response(
             api(client, "cash_out", {}),
             "STATE_INVALID_STATE",
-            "Endpoint 'cash_out' requires one of these states:",
+            "Endpoint 'cash_out' requires one of these states: ROUND_EVAL",
         )

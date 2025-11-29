@@ -192,7 +192,7 @@ class TestRearrangeEndpointStateRequirements:
         assert_error_response(
             api(client, "rearrange", {"hand": [0, 1, 2, 3, 4, 5, 6, 7]}),
             "STATE_INVALID_STATE",
-            "Endpoint 'rearrange' requires one of these states: 1, 5",
+            "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_rearrange_jokers_from_wrong_state(self, client: socket.socket) -> None:
@@ -202,7 +202,7 @@ class TestRearrangeEndpointStateRequirements:
         assert_error_response(
             api(client, "rearrange", {"jokers": [0, 1, 2, 3, 4]}),
             "STATE_INVALID_STATE",
-            "Endpoint 'rearrange' requires one of these states: 1, 5",
+            "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_rearrange_consumables_from_wrong_state(
@@ -214,7 +214,7 @@ class TestRearrangeEndpointStateRequirements:
         assert_error_response(
             api(client, "rearrange", {"jokers": [0, 1]}),
             "STATE_INVALID_STATE",
-            "Endpoint 'rearrange' requires one of these states: 1, 5",
+            "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_rearrange_hand_from_shop(self, client: socket.socket) -> None:

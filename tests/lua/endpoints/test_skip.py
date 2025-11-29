@@ -69,5 +69,5 @@ class TestSkipEndpointStateRequirements:
         assert_error_response(
             api(client, "skip", {}),
             "STATE_INVALID_STATE",
-            "Endpoint 'skip' requires one of these states:",
+            "Endpoint 'skip' requires one of these states: BLIND_SELECT",
         )
