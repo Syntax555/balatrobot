@@ -21,6 +21,29 @@ local Validator = assert(SMODS.load_file("src/lua/core/validator.lua"))()
 ---@type ErrorCodes
 local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
+-- State name lookup cache (built lazily from G.STATES)
+---@type table<number, string>?
+local STATE_NAME_CACHE = nil
+
+--- Get the name of a state from its numeric value
+--- Builds a reverse mapping from G.STATES on first call
+---@param state_value number The numeric state value
+---@return string state_name The state name (or stringified number if not found)
+local function get_state_name(state_value)
+  -- Build cache on first use
+  if not STATE_NAME_CACHE then
+    STATE_NAME_CACHE = {}
+    if G and G.STATES then
+      for name, value in pairs(G.STATES) do
+        STATE_NAME_CACHE[value] = name
+      end
+    end
+  end
+
+  -- Look up the name, fall back to stringified number
+  return STATE_NAME_CACHE[state_value] or tostring(state_value)
+end
+
 ---@class Dispatcher
 ---@field endpoints table<string, Endpoint> Endpoint registry mapping names to modules
 ---@field Server table? Reference to Server module for sending responses
@@ -224,11 +247,14 @@ function BB_DISPATCHER.dispatch(request)
     end
 
     if not state_valid then
+      -- Convert state numbers to names for the error message
+      local state_names = {}
+      for _, state in ipairs(endpoint.requires_state) do
+        table.insert(state_names, get_state_name(state))
+      end
+
       BB_DISPATCHER.send_error(
-        "Endpoint '"
-          .. request.name
-          .. "' requires one of these states: "
-          .. table.concat(endpoint.requires_state, ", "),
+        "Endpoint '" .. request.name .. "' requires one of these states: " .. table.concat(state_names, ", "),
         errors.STATE_INVALID_STATE
       )
       return
