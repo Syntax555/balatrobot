@@ -2,6 +2,8 @@
 
 import socket
 
+import pytest
+
 from tests.lua.conftest import api, assert_error_response, load_fixture
 
 
@@ -186,4 +188,437 @@ class TestAddEndpointStateRequirements:
             api(client, "add", {"key": "v_overstock"}),
             "STATE_INVALID_STATE",
             "Vouchers can only be added in SHOP state",
+        )
+
+
+class TestAddEndpointSeal:
+    """Test seal parameter for add endpoint."""
+
+    @pytest.mark.parametrize("seal", ["RED", "BLUE", "GOLD", "PURPLE"])
+    def test_add_playing_card_with_seal(self, client: socket.socket, seal: str) -> None:
+        """Test adding a playing card with various seals."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "seal": seal})
+        assert response["hand"]["count"] == 9
+        assert response["hand"]["cards"][8]["key"] == "H_A"
+        assert response["hand"]["cards"][8]["modifier"]["seal"] == seal
+
+    def test_add_playing_card_invalid_seal(self, client: socket.socket) -> None:
+        """Test adding a playing card with invalid seal value."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "seal": "WHITE"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
+        )
+
+    @pytest.mark.parametrize("key", ["j_joker", "c_fool", "v_overstock_norm"])
+    def test_add_non_playing_card_with_seal_fails(
+        self, client: socket.socket, key: str
+    ) -> None:
+        """Test that adding non-playing cards with seal parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        response = api(client, "add", {"key": key, "seal": "RED"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Seal can only be applied to playing cards",
+        )
+
+
+class TestAddEndpointEdition:
+    """Test edition parameter for add endpoint."""
+
+    @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME", "NEGATIVE"])
+    def test_add_joker_with_edition(self, client: socket.socket, edition: str) -> None:
+        """Test adding a joker with various editions."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "edition": edition})
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["edition"] == edition
+
+    @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME", "NEGATIVE"])
+    def test_add_playing_card_with_edition(
+        self, client: socket.socket, edition: str
+    ) -> None:
+        """Test adding a playing card with various editions."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "edition": edition})
+        assert response["hand"]["count"] == 9
+        assert response["hand"]["cards"][8]["key"] == "H_A"
+        assert response["hand"]["cards"][8]["modifier"]["edition"] == edition
+
+    def test_add_consumable_with_negative_edition(self, client: socket.socket) -> None:
+        """Test adding a consumable with NEGATIVE edition (only valid edition for consumables)."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 0
+        response = api(client, "add", {"key": "c_fool", "edition": "NEGATIVE"})
+        assert response["consumables"]["count"] == 1
+        assert response["consumables"]["cards"][0]["key"] == "c_fool"
+        assert response["consumables"]["cards"][0]["modifier"]["edition"] == "NEGATIVE"
+
+    @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME"])
+    def test_add_consumable_with_non_negative_edition_fails(
+        self, client: socket.socket, edition: str
+    ) -> None:
+        """Test that adding a consumable with HOLO | FOIL | POLYCHROME edition fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 0
+        response = api(client, "add", {"key": "c_fool", "edition": edition})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Consumables can only have NEGATIVE edition",
+        )
+
+    def test_add_voucher_with_edition_fails(self, client: socket.socket) -> None:
+        """Test that adding a voucher with any edition fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["vouchers"]["count"] == 0
+        response = api(client, "add", {"key": "v_overstock_norm", "edition": "FOIL"})
+        assert_error_response(
+            response, "SCHEMA_INVALID_VALUE", "Edition cannot be applied to vouchers"
+        )
+
+    def test_add_playing_card_invalid_edition(self, client: socket.socket) -> None:
+        """Test adding a playing card with invalid edition value."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "edition": "WHITE"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
+        )
+
+
+class TestAddEndpointEnhancement:
+    """Test enhancement parameter for add endpoint."""
+
+    @pytest.mark.parametrize(
+        "enhancement",
+        ["BONUS", "MULT", "WILD", "GLASS", "STEEL", "STONE", "GOLD", "LUCKY"],
+    )
+    def test_add_playing_card_with_enhancement(
+        self, client: socket.socket, enhancement: str
+    ) -> None:
+        """Test adding a playing card with various enhancements."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "enhancement": enhancement})
+        assert response["hand"]["count"] == 9
+        assert response["hand"]["cards"][8]["key"] == "H_A"
+        assert response["hand"]["cards"][8]["modifier"]["enhancement"] == enhancement
+
+    def test_add_playing_card_invalid_enhancement(self, client: socket.socket) -> None:
+        """Test adding a playing card with invalid enhancement value."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "enhancement": "WHITE"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
+        )
+
+    @pytest.mark.parametrize("key", ["j_joker", "c_fool", "v_overstock_norm"])
+    def test_add_non_playing_card_with_enhancement_fails(
+        self, client: socket.socket, key: str
+    ) -> None:
+        """Test that adding non-playing cards with enhancement parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 0
+        response = api(client, "add", {"key": key, "enhancement": "BONUS"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Enhancement can only be applied to playing cards",
+        )
+
+
+class TestAddEndpointStickers:
+    """Test sticker parameters (eternal, perishable) for add endpoint."""
+
+    def test_add_joker_with_eternal(self, client: socket.socket) -> None:
+        """Test adding an eternal joker."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "eternal": True})
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
+
+    @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
+    def test_add_non_joker_with_eternal_fails(
+        self, client: socket.socket, key: str
+    ) -> None:
+        """Test that adding non-joker cards with eternal parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["consumables"]["count"] == 0
+        assert_error_response(
+            api(client, "add", {"key": key, "eternal": True}),
+            "SCHEMA_INVALID_VALUE",
+            "Eternal can only be applied to jokers",
+        )
+
+    def test_add_playing_card_with_eternal_fails(self, client: socket.socket) -> None:
+        """Test that adding a playing card with eternal parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        assert_error_response(
+            api(client, "add", {"key": "H_A", "eternal": True}),
+            "SCHEMA_INVALID_VALUE",
+            "Eternal can only be applied to jokers",
+        )
+
+    @pytest.mark.parametrize("rounds", [1, 5, 10])
+    def test_add_joker_with_perishable(
+        self, client: socket.socket, rounds: int
+    ) -> None:
+        """Test adding a perishable joker with valid round values."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "perishable": rounds})
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["perishable"] == rounds
+
+    def test_add_joker_with_eternal_and_perishable(self, client: socket.socket) -> None:
+        """Test adding a joker with both eternal and perishable stickers."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(
+            client, "add", {"key": "j_joker", "eternal": True, "perishable": 5}
+        )
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
+        assert response["jokers"]["cards"][0]["modifier"]["perishable"] == 5
+
+    @pytest.mark.parametrize("invalid_value", [0, -1, 1.5])
+    def test_add_joker_with_perishable_invalid_value_fails(
+        self, client: socket.socket, invalid_value: int | float | str
+    ) -> None:
+        """Test that invalid perishable values (zero, negative, float) are rejected."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "perishable": invalid_value})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Perishable must be a positive integer (>= 1)",
+        )
+
+    def test_add_joker_with_perishable_string_fails(
+        self, client: socket.socket
+    ) -> None:
+        """Test that perishable with string value is rejected."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "perishable": "NOT_INT_1"})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_TYPE",
+            "Field 'perishable' must be of type number",
+        )
+
+    @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
+    def test_add_non_joker_with_perishable_fails(
+        self, client: socket.socket, key: str
+    ) -> None:
+        """Test that adding non-joker cards with perishable parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        response = api(client, "add", {"key": key, "perishable": 5})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Perishable can only be applied to jokers",
+        )
+
+    def test_add_playing_card_with_perishable_fails(
+        self, client: socket.socket
+    ) -> None:
+        """Test that adding a playing card with perishable parameter fails."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        response = api(client, "add", {"key": "H_A", "perishable": 5})
+        assert_error_response(
+            response,
+            "SCHEMA_INVALID_VALUE",
+            "Perishable can only be applied to jokers",
+        )
+
+    def test_add_joker_with_rental(self, client: socket.socket) -> None:
+        """Test adding a rental joker."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(client, "add", {"key": "j_joker", "rental": True})
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["rental"] is True
+
+    @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
+    def test_add_non_joker_with_rental_fails(
+        self, client: socket.socket, key: str
+    ) -> None:
+        """Test that rental can only be applied to jokers."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        assert_error_response(
+            api(client, "add", {"key": key, "rental": True}),
+            "SCHEMA_INVALID_VALUE",
+            "Rental can only be applied to jokers",
+        )
+
+    def test_add_joker_with_rental_and_eternal(self, client: socket.socket) -> None:
+        """Test adding a joker with both rental and eternal stickers."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["jokers"]["count"] == 0
+        response = api(
+            client, "add", {"key": "j_joker", "rental": True, "eternal": True}
+        )
+        assert response["jokers"]["count"] == 1
+        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["jokers"]["cards"][0]["modifier"]["rental"] is True
+        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
+
+    def test_add_playing_card_with_rental_fails(self, client: socket.socket) -> None:
+        """Test that rental cannot be applied to playing cards."""
+        gamestate = load_fixture(
+            client,
+            "add",
+            "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8",
+        )
+        assert gamestate["state"] == "SELECTING_HAND"
+        assert gamestate["hand"]["count"] == 8
+        assert_error_response(
+            api(client, "add", {"key": "H_A", "rental": True}),
+            "SCHEMA_INVALID_VALUE",
+            "Rental can only be applied to jokers",
         )
