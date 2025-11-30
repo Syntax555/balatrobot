@@ -61,7 +61,7 @@ return {
     if G.STAGE and G.STAGE ~= G.STAGES.RUN then
       send_response({
         error = "Can only set during an active run",
-        error_code = BB_ERRORS.GAME_NOT_IN_RUN,
+        error_code = BB_ERRORS.INVALID_STATE,
       })
       return
     end
@@ -78,7 +78,7 @@ return {
     then
       send_response({
         error = "Must provide at least one field to set",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -88,7 +88,7 @@ return {
       if args.money < 0 then
         send_response({
           error = "Money must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -101,7 +101,7 @@ return {
       if args.chips < 0 then
         send_response({
           error = "Chips must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -114,7 +114,7 @@ return {
       if args.ante < 0 then
         send_response({
           error = "Ante must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -127,7 +127,7 @@ return {
       if args.round < 0 then
         send_response({
           error = "Round must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -140,7 +140,7 @@ return {
       if args.hands < 0 then
         send_response({
           error = "Hands must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -153,7 +153,7 @@ return {
       if args.discards < 0 then
         send_response({
           error = "Discards must be a positive integer",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -165,7 +165,7 @@ return {
       if G.STATE ~= G.STATES.SHOP then
         send_response({
           error = "Can re-stock shop only in SHOP state",
-          error_code = BB_ERRORS.GAME_INVALID_STATE,
+          error_code = BB_ERRORS.NOT_ALLOWED,
         })
         return
       end

@@ -16,7 +16,7 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SHOP"
         assert_error_response(
             api(client, "sell", {}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide exactly one of: joker or consumable",
         )
 
@@ -28,7 +28,7 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SHOP"
         assert_error_response(
             api(client, "sell", {"joker": 0, "consumable": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Can only sell one item at a time",
         )
 
@@ -41,7 +41,7 @@ class TestSellEndpoint:
         assert gamestate["jokers"]["count"] == 0
         assert_error_response(
             api(client, "sell", {"joker": 0}),
-            "GAME_INVALID_STATE",
+            "NOT_ALLOWED",
             "No jokers available to sell",
         )
 
@@ -54,7 +54,7 @@ class TestSellEndpoint:
         assert gamestate["consumables"]["count"] == 0
         assert_error_response(
             api(client, "sell", {"consumable": 0}),
-            "GAME_INVALID_STATE",
+            "NOT_ALLOWED",
             "No consumables available to sell",
         )
 
@@ -67,7 +67,7 @@ class TestSellEndpoint:
         assert gamestate["jokers"]["count"] == 1
         assert_error_response(
             api(client, "sell", {"joker": 1}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Index out of range for joker: 1",
         )
 
@@ -80,7 +80,7 @@ class TestSellEndpoint:
         assert gamestate["consumables"]["count"] == 1
         assert_error_response(
             api(client, "sell", {"consumable": 1}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Index out of range for consumable: 1",
         )
 
@@ -143,7 +143,7 @@ class TestSellEndpointValidation:
         assert gamestate["jokers"]["count"] == 1
         assert_error_response(
             api(client, "sell", {"joker": "INVALID_STRING"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'joker' must be an integer",
         )
 
@@ -156,7 +156,7 @@ class TestSellEndpointValidation:
         assert gamestate["consumables"]["count"] == 1
         assert_error_response(
             api(client, "sell", {"consumable": "INVALID_STRING"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'consumable' must be an integer",
         )
 
@@ -170,7 +170,7 @@ class TestSellEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "sell", {}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'sell' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -180,6 +180,6 @@ class TestSellEndpointStateRequirements:
         assert gamestate["state"] == "ROUND_EVAL"
         assert_error_response(
             api(client, "sell", {}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'sell' requires one of these states: SELECTING_HAND, SHOP",
         )

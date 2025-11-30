@@ -34,7 +34,7 @@ class TestDispatcherProtocolValidation:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_MISSING_NAME"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "name" in data["error"].lower()
 
     def test_invalid_name_type(self, client: socket.socket) -> None:
@@ -46,7 +46,7 @@ class TestDispatcherProtocolValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "PROTO_MISSING_NAME"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_missing_arguments_field(self, client: socket.socket) -> None:
         """Test that requests without 'arguments' field are rejected."""
@@ -57,7 +57,7 @@ class TestDispatcherProtocolValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "PROTO_MISSING_ARGUMENTS"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "arguments" in data["error"].lower()
 
     def test_unknown_endpoint(self, client: socket.socket) -> None:
@@ -69,7 +69,7 @@ class TestDispatcherProtocolValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "PROTO_UNKNOWN_ENDPOINT"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "nonexistent_endpoint" in data["error"]
 
     def test_valid_health_endpoint_request(self, client: socket.socket) -> None:
@@ -114,7 +114,7 @@ class TestDispatcherSchemaValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "SCHEMA_MISSING_REQUIRED"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "required_string" in data["error"].lower()
 
     def test_invalid_type_string_instead_of_integer(
@@ -140,7 +140,7 @@ class TestDispatcherSchemaValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "SCHEMA_INVALID_TYPE"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "required_integer" in data["error"].lower()
 
     def test_array_item_type_validation(self, client: socket.socket) -> None:
@@ -169,7 +169,7 @@ class TestDispatcherSchemaValidation:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "SCHEMA_INVALID_ARRAY_ITEMS"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_valid_request_with_all_fields(self, client: socket.socket) -> None:
         """Test that valid requests with multiple fields pass validation."""
@@ -243,7 +243,7 @@ class TestDispatcherStateValidation:
         # Response depends on current game state
         # Either succeeds if in correct state, or fails with STATE_INVALID_STATE
         if "error" in data:
-            assert data["error_code"] == "STATE_INVALID_STATE"
+            assert data["error_code"] == "INVALID_STATE"
             assert "requires" in data["error"].lower()
         else:
             assert "success" in data
@@ -301,7 +301,7 @@ class TestDispatcherExecution:
         data = json.loads(response)
 
         assert "error" in data
-        assert data["error_code"] == "EXEC_INTERNAL_ERROR"
+        assert data["error_code"] == "INTERNAL_ERROR"
         assert "Intentional test error" in data["error"]
 
     def test_execution_error_no_categorization(self, client: socket.socket) -> None:
@@ -323,7 +323,7 @@ class TestDispatcherExecution:
         data = json.loads(response)
 
         # Should always be EXEC_INTERNAL_ERROR (no categorization)
-        assert data["error_code"] == "EXEC_INTERNAL_ERROR"
+        assert data["error_code"] == "INTERNAL_ERROR"
 
     def test_execution_success_when_no_error(self, client: socket.socket) -> None:
         """Test that endpoints can execute successfully."""

@@ -26,7 +26,7 @@ return {
       sendDebugMessage("skip() cannot skip Boss blind: " .. current_blind, "BB.ENDPOINTS")
       send_response({
         error = "Cannot skip Boss blind",
-        error_code = BB_ERRORS.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.NOT_ALLOWED,
       })
       return
     end

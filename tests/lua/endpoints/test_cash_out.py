@@ -39,6 +39,6 @@ class TestCashOutEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "cash_out", {}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'cash_out' requires one of these states: ROUND_EVAL",
         )

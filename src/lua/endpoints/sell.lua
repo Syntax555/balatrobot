@@ -37,13 +37,13 @@ return {
     if param_count == 0 then
       send_response({
         error = "Must provide exactly one of: joker or consumable",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     elseif param_count > 1 then
       send_response({
         error = "Can only sell one item at a time",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -56,7 +56,7 @@ return {
       if not G.jokers or not G.jokers.config or G.jokers.config.card_count == 0 then
         send_response({
           error = "No jokers available to sell",
-          error_code = BB_ERRORS.GAME_INVALID_STATE,
+          error_code = BB_ERRORS.NOT_ALLOWED,
         })
         return
       end
@@ -68,7 +68,7 @@ return {
       if not G.consumeables or not G.consumeables.config or G.consumeables.config.card_count == 0 then
         send_response({
           error = "No consumables available to sell",
-          error_code = BB_ERRORS.GAME_INVALID_STATE,
+          error_code = BB_ERRORS.NOT_ALLOWED,
         })
         return
       end
@@ -81,7 +81,7 @@ return {
     if not source_array[pos] then
       send_response({
         error = "Index out of range for " .. sell_type .. ": " .. (pos - 1),
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end

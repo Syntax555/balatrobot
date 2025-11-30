@@ -159,7 +159,7 @@ return {
     if not card_type then
       send_response({
         error = "Invalid card key format. Expected: joker (j_*), consumable (c_*), voucher (v_*), or playing card (SUIT_RANK)",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -168,7 +168,7 @@ return {
     if card_type == "playing_card" and G.STATE ~= G.STATES.SELECTING_HAND then
       send_response({
         error = "Playing cards can only be added in SELECTING_HAND state",
-        error_code = BB_ERRORS.STATE_INVALID_STATE,
+        error_code = BB_ERRORS.INVALID_STATE,
       })
       return
     end
@@ -177,7 +177,7 @@ return {
     if card_type == "voucher" and G.STATE ~= G.STATES.SHOP then
       send_response({
         error = "Vouchers can only be added in SHOP state",
-        error_code = BB_ERRORS.STATE_INVALID_STATE,
+        error_code = BB_ERRORS.INVALID_STATE,
       })
       return
     end
@@ -186,7 +186,7 @@ return {
     if args.seal and card_type ~= "playing_card" then
       send_response({
         error = "Seal can only be applied to playing cards",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -198,7 +198,7 @@ return {
       if not seal_value then
         send_response({
           error = "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -208,7 +208,7 @@ return {
     if args.edition and card_type == "voucher" then
       send_response({
         error = "Edition cannot be applied to vouchers",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -217,7 +217,7 @@ return {
     if args.edition and card_type == "consumable" and args.edition ~= "NEGATIVE" then
       send_response({
         error = "Consumables can only have NEGATIVE edition",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -229,7 +229,7 @@ return {
       if not edition_value then
         send_response({
           error = "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -239,7 +239,7 @@ return {
     if args.enhancement and card_type ~= "playing_card" then
       send_response({
         error = "Enhancement can only be applied to playing cards",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -251,7 +251,7 @@ return {
       if not enhancement_value then
         send_response({
           error = "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -261,7 +261,7 @@ return {
     if args.eternal and card_type ~= "joker" then
       send_response({
         error = "Eternal can only be applied to jokers",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -270,7 +270,7 @@ return {
     if args.perishable and card_type ~= "joker" then
       send_response({
         error = "Perishable can only be applied to jokers",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -280,7 +280,7 @@ return {
       if type(args.perishable) ~= "number" or args.perishable ~= math.floor(args.perishable) or args.perishable < 1 then
         send_response({
           error = "Perishable must be a positive integer (>= 1)",
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -290,7 +290,7 @@ return {
     if args.rental and card_type ~= "joker" then
       send_response({
         error = "Rental can only be applied to jokers",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -371,7 +371,7 @@ return {
     if not success then
       send_response({
         error = "Failed to add card: " .. args.key,
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end

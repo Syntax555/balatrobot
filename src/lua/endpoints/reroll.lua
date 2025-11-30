@@ -22,7 +22,7 @@ return {
     if G.GAME.dollars < reroll_cost then
       send_response({
         error = "Not enough dollars to reroll. Current: " .. G.GAME.dollars .. ", Required: " .. reroll_cost,
-        error_code = BB_ERRORS.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.NOT_ALLOWED,
       })
       return
     end

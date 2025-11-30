@@ -14,7 +14,7 @@ class TestDiscardEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "discard", {"cards": []}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide at least one card to discard",
         )
 
@@ -24,7 +24,7 @@ class TestDiscardEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "discard", {"cards": [0, 1, 2, 3, 4, 5]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "You can only discard 5 cards",
         )
 
@@ -34,7 +34,7 @@ class TestDiscardEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "discard", {"cards": [999]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid card index: 999",
         )
 
@@ -47,7 +47,7 @@ class TestDiscardEndpoint:
         assert gamestate["round"]["discards_left"] == 0
         assert_error_response(
             api(client, "discard", {"cards": [0]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "No discards left",
         )
 
@@ -83,7 +83,7 @@ class TestDiscardEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "discard", {}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Missing required field 'cards'",
         )
 
@@ -93,7 +93,7 @@ class TestDiscardEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "discard", {"cards": "INVALID_CARDS"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'cards' must be an array",
         )
 
@@ -107,6 +107,6 @@ class TestDiscardEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "discard", {"cards": [0]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'discard' requires one of these states: SELECTING_HAND",
         )

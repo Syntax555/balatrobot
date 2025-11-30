@@ -64,7 +64,7 @@ return {
     if not area then
       send_response({
         error = "Invalid arguments. You must provide one of: card, voucher, pack",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -73,7 +73,7 @@ return {
     if set > 1 then
       send_response({
         error = "Invalid arguments. Cannot provide more than one of: card, voucher, or pack",
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -90,7 +90,7 @@ return {
       end
       send_response({
         error = msg,
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -99,7 +99,7 @@ return {
     if not area.cards[pos] then
       send_response({
         error = "Card index out of range. Index: " .. args.card .. ", Available cards: " .. area.count,
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -111,7 +111,7 @@ return {
     if card.cost.buy > G.GAME.dollars then
       send_response({
         error = "Card is not affordable. Cost: " .. card.cost.buy .. ", Current money: " .. gamestate.money,
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -124,7 +124,7 @@ return {
             .. gamestate.jokers.count
             .. ", Limit: "
             .. gamestate.jokers.limit,
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -138,7 +138,7 @@ return {
             .. gamestate.consumables.count
             .. ", Limit: "
             .. gamestate.consumables.limit,
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -173,7 +173,7 @@ return {
     if not btn then
       send_response({
         error = "No buy button found for card",
-        error_code = BB_ERRORS.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.NOT_ALLOWED,
       })
       return
     end

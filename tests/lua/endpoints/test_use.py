@@ -110,7 +110,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Missing required field 'consumable'",
         )
 
@@ -124,7 +124,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": "NOT_AN_INTEGER"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'consumable' must be an integer",
         )
 
@@ -138,7 +138,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": -1}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumable index out of range: -1",
         )
 
@@ -152,7 +152,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": 999}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumable index out of range: 999",
         )
 
@@ -166,7 +166,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": "NOT_AN_ARRAY_OF_INTEGERS"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'cards' must be an array",
         )
 
@@ -180,7 +180,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": ["NOT_INT_1", "NOT_INT_2"]}),
-            "SCHEMA_INVALID_ARRAY_ITEMS",
+            "BAD_REQUEST",
             "Field 'cards' array item at index 0 must be of type integer",
         )
 
@@ -194,7 +194,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": [-1]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Card index out of range: -1",
         )
 
@@ -208,7 +208,7 @@ class TestUseEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": [999]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Card index out of range: 999",
         )
 
@@ -223,7 +223,7 @@ class TestUseEndpointValidation:
         assert gamestate["consumables"]["cards"][1]["key"] == "c_magician"
         assert_error_response(
             api(client, "use", {"consumable": 1}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Consumable 'The Magician' requires card selection",
         )
 
@@ -238,7 +238,7 @@ class TestUseEndpointValidation:
         assert gamestate["consumables"]["cards"][1]["key"] == "c_magician"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": []}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Consumable 'The Magician' requires card selection",
         )
 
@@ -253,7 +253,7 @@ class TestUseEndpointValidation:
         assert gamestate["consumables"]["cards"][1]["key"] == "c_magician"
         assert_error_response(
             api(client, "use", {"consumable": 1, "cards": [0, 1, 2]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumable 'The Magician' requires at most 2 cards (provided: 3)",
         )
 
@@ -268,7 +268,7 @@ class TestUseEndpointValidation:
         assert gamestate["consumables"]["cards"][0]["key"] == "c_death"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumable 'Death' requires exactly 2 cards (provided: 1)",
         )
 
@@ -283,7 +283,7 @@ class TestUseEndpointValidation:
         assert gamestate["consumables"]["cards"][0]["key"] == "c_death"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0, 1, 2]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumable 'Death' requires exactly 2 cards (provided: 3)",
         )
 
@@ -301,7 +301,7 @@ class TestUseEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -315,7 +315,7 @@ class TestUseEndpointStateRequirements:
         assert gamestate["state"] == "ROUND_EVAL"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -330,7 +330,7 @@ class TestUseEndpointStateRequirements:
         assert gamestate["consumables"]["cards"][0]["key"] == "c_magician"
         assert_error_response(
             api(client, "use", {"consumable": 0, "cards": [0]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Consumable 'The Magician' requires card selection and can only be used in SELECTING_HAND state",
         )
 
@@ -345,6 +345,6 @@ class TestUseEndpointStateRequirements:
         assert gamestate["consumables"]["cards"][0]["key"] == "c_familiar"
         assert_error_response(
             api(client, "use", {"consumable": 0}),
-            "GAME_INVALID_STATE",
+            "NOT_ALLOWED",
             "Consumable 'Familiar' cannot be used at this time",
         )

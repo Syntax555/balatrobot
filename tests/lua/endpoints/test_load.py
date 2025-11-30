@@ -51,7 +51,7 @@ class TestLoadValidation:
         """Test that load fails when path parameter is missing."""
         assert_error_response(
             api(client, "load", {}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Missing required field 'path'",
         )
 
@@ -59,6 +59,6 @@ class TestLoadValidation:
         """Test that load fails when path is not a string."""
         assert_error_response(
             api(client, "load", {"path": 123}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'path' must be of type string",
         )

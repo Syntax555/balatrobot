@@ -14,7 +14,7 @@ class TestSetEndpoint:
         response = api(client, "set", {})
         assert_error_response(
             response,
-            expected_error_code="GAME_NOT_IN_RUN",
+            expected_error_code="INVALID_STATE",
             expected_message_contains="Can only set during an active run",
         )
 
@@ -25,7 +25,7 @@ class TestSetEndpoint:
         response = api(client, "set", {})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Must provide at least one field to set",
         )
 
@@ -36,7 +36,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"money": -100})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Money must be a positive integer",
         )
 
@@ -54,7 +54,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"chips": -100})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Chips must be a positive integer",
         )
 
@@ -72,7 +72,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"ante": -8})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Ante must be a positive integer",
         )
 
@@ -90,7 +90,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"round": -5})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Round must be a positive integer",
         )
 
@@ -108,7 +108,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"hands": -10})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Hands must be a positive integer",
         )
 
@@ -126,7 +126,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"discards": -10})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Discards must be a positive integer",
         )
 
@@ -144,7 +144,7 @@ class TestSetEndpoint:
         response = api(client, "set", {"shop": True})
         assert_error_response(
             response,
-            expected_error_code="GAME_INVALID_STATE",
+            expected_error_code="NOT_ALLOWED",
             expected_message_contains="Can re-stock shop only in SHOP state",
         )
 
@@ -183,7 +183,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"money": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'money' must be an integer",
         )
 
@@ -194,7 +194,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"chips": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'chips' must be an integer",
         )
 
@@ -205,7 +205,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"ante": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'ante' must be an integer",
         )
 
@@ -216,7 +216,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"round": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'round' must be an integer",
         )
 
@@ -227,7 +227,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"hands": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'hands' must be an integer",
         )
 
@@ -238,7 +238,7 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"discards": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'discards' must be an integer",
         )
 
@@ -249,6 +249,6 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"shop": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'shop' must be of type boolean",
         )

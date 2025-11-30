@@ -47,7 +47,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="string_field",
         )
 
@@ -75,7 +75,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="integer_field",
         )
 
@@ -91,7 +91,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="integer_field",
         )
 
@@ -119,7 +119,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="array_field",
         )
 
@@ -135,7 +135,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="array_field",
         )
 
@@ -175,7 +175,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="boolean_field",
         )
 
@@ -191,7 +191,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="boolean_field",
         )
 
@@ -231,7 +231,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="table_field",
         )
 
@@ -247,7 +247,7 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="table_field",
         )
 
@@ -278,7 +278,7 @@ class TestRequiredFields:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_MISSING_REQUIRED",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="required_field",
         )
 
@@ -327,7 +327,7 @@ class TestArrayItemTypes:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_ARRAY_ITEMS",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="array_of_integers",
         )
 
@@ -343,7 +343,7 @@ class TestArrayItemTypes:
         )
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_ARRAY_ITEMS",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="array_of_integers",
         )
 
@@ -372,8 +372,8 @@ class TestFailFastBehavior:
         assert_error_response(response)
         # Verify it's one of the expected error codes
         assert response["error_code"] in [
-            "SCHEMA_MISSING_REQUIRED",
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
+            "BAD_REQUEST",
         ]
 
 

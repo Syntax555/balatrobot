@@ -24,7 +24,7 @@ class TestRerollEndpoint:
         assert gamestate["money"] == 0
         assert_error_response(
             api(client, "reroll", {}),
-            "GAME_INVALID_STATE",
+            "NOT_ALLOWED",
             "Not enough dollars to reroll",
         )
 
@@ -38,6 +38,6 @@ class TestRerollEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "reroll", {}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'reroll' requires one of these states: SHOP",
         )

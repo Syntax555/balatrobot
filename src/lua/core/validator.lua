@@ -71,21 +71,21 @@ local function validate_field(field_name, value, field_schema)
   -- Check type
   if expected_type == "integer" then
     if not is_integer(value) then
-      return false, "Field '" .. field_name .. "' must be an integer", errors.SCHEMA_INVALID_TYPE
+      return false, "Field '" .. field_name .. "' must be an integer", errors.BAD_REQUEST
     end
   elseif expected_type == "array" then
     if not is_array(value) then
-      return false, "Field '" .. field_name .. "' must be an array", errors.SCHEMA_INVALID_TYPE
+      return false, "Field '" .. field_name .. "' must be an array", errors.BAD_REQUEST
     end
   elseif expected_type == "table" then
     -- Empty tables are allowed, non-empty arrays are rejected
     if type(value) ~= "table" or (next(value) ~= nil and is_array(value)) then
-      return false, "Field '" .. field_name .. "' must be a table", errors.SCHEMA_INVALID_TYPE
+      return false, "Field '" .. field_name .. "' must be a table", errors.BAD_REQUEST
     end
   else
     -- Standard Lua types: string, boolean
     if type(value) ~= expected_type then
-      return false, "Field '" .. field_name .. "' must be of type " .. expected_type, errors.SCHEMA_INVALID_TYPE
+      return false, "Field '" .. field_name .. "' must be of type " .. expected_type, errors.BAD_REQUEST
     end
   end
 
@@ -104,7 +104,7 @@ local function validate_field(field_name, value, field_schema)
       if not item_valid then
         return false,
           "Field '" .. field_name .. "' array item at index " .. (i - 1) .. " must be of type " .. item_type,
-          errors.SCHEMA_INVALID_ARRAY_ITEMS
+          errors.BAD_REQUEST
       end
     end
   end
@@ -121,7 +121,7 @@ end
 function Validator.validate(args, schema)
   -- Ensure args is a table
   if type(args) ~= "table" then
-    return false, "Arguments must be a table", errors.SCHEMA_INVALID_TYPE
+    return false, "Arguments must be a table", errors.BAD_REQUEST
   end
 
   -- Validate each field in the schema
@@ -130,7 +130,7 @@ function Validator.validate(args, schema)
 
     -- Check required fields
     if field_schema.required and value == nil then
-      return false, "Missing required field '" .. field_name .. "'", errors.SCHEMA_MISSING_REQUIRED
+      return false, "Missing required field '" .. field_name .. "'", errors.BAD_REQUEST
     end
 
     -- Validate field if present (skip optional fields that are nil)

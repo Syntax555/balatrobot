@@ -72,7 +72,7 @@ class TestRearrangeEndpointValidation:
         response = api(client, "rearrange", {})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide exactly one of: hand, jokers, or consumables",
         )
 
@@ -87,7 +87,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Can only rearrange one type at a time",
         )
 
@@ -105,7 +105,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide exactly 8 indices for hand",
         )
 
@@ -123,7 +123,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide exactly 4 indices for jokers",
         )
 
@@ -141,7 +141,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide exactly 2 indices for consumables",
         )
 
@@ -159,7 +159,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Index out of range for hand: -1",
         )
 
@@ -177,7 +177,7 @@ class TestRearrangeEndpointValidation:
         )
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Duplicate index in hand: 1",
         )
 
@@ -191,7 +191,7 @@ class TestRearrangeEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "rearrange", {"hand": [0, 1, 2, 3, 4, 5, 6, 7]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -201,7 +201,7 @@ class TestRearrangeEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "rearrange", {"jokers": [0, 1, 2, 3, 4]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -213,7 +213,7 @@ class TestRearrangeEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "rearrange", {"jokers": [0, 1]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
@@ -225,6 +225,6 @@ class TestRearrangeEndpointStateRequirements:
         assert gamestate["state"] == "SHOP"
         assert_error_response(
             api(client, "rearrange", {"hand": [0, 1, 2, 3, 4, 5, 6, 7]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Can only rearrange hand during hand selection",
         )

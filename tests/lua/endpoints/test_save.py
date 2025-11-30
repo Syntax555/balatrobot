@@ -48,7 +48,7 @@ class TestSaveValidation:
         response = api(client, "save", {})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_MISSING_REQUIRED",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Missing required field 'path'",
         )
 
@@ -57,7 +57,7 @@ class TestSaveValidation:
         response = api(client, "save", {"path": 123})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'path' must be of type string",
         )
 
@@ -72,7 +72,7 @@ class TestSaveStateRequirements:
         response = api(client, "save", {"path": str(temp_file)})
         assert_error_response(
             response,
-            expected_error_code="STATE_INVALID_STATE",
+            expected_error_code="INVALID_STATE",
             expected_message_contains="Endpoint 'save' requires one of these states: SELECTING_HAND, HAND_PLAYED, DRAW_TO_HAND, GAME_OVER, SHOP, PLAY_TAROT, BLIND_SELECT, ROUND_EVAL, TAROT_PACK, PLANET_PACK, SPECTRAL_PACK, STANDARD_PACK, BUFFOON_PACK, NEW_ROUND",
         )
         assert not temp_file.exists()

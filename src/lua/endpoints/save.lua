@@ -50,7 +50,7 @@ return {
     if not G.STAGE or G.STAGE ~= G.STAGES.RUN then
       send_response({
         error = "Can only save during an active run",
-        error_code = BB_ERRORS.GAME_NOT_IN_RUN,
+        error_code = BB_ERRORS.INVALID_STATE,
       })
       return
     end
@@ -70,7 +70,7 @@ return {
     if not compressed_data then
       send_response({
         error = "Failed to save game state",
-        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.INTERNAL_ERROR,
       })
       return
     end
@@ -79,7 +79,7 @@ return {
     if not write_success then
       send_response({
         error = "Failed to write save file to '" .. path .. "'",
-        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.INTERNAL_ERROR,
       })
       return
     end

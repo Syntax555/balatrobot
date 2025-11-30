@@ -14,7 +14,7 @@ class TestPlayEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "play", {"cards": []}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Must provide at least one card to play",
         )
 
@@ -24,7 +24,7 @@ class TestPlayEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "play", {"cards": [0, 1, 2, 3, 4, 5]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "You can only play 5 cards",
         )
 
@@ -34,7 +34,7 @@ class TestPlayEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "play", {"cards": [999]}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid card index: 999",
         )
 
@@ -91,7 +91,7 @@ class TestPlayEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "play", {}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Missing required field 'cards'",
         )
 
@@ -101,7 +101,7 @@ class TestPlayEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "play", {"cards": "INVALID_CARDS"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'cards' must be an array",
         )
 
@@ -115,6 +115,6 @@ class TestPlayEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "play", {"cards": [0]}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'play' requires one of these states: SELECTING_HAND",
         )

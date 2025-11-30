@@ -32,7 +32,7 @@ return {
     if args.consumable < 0 or args.consumable >= #G.consumeables.cards then
       send_response({
         error = "Consumable index out of range: " .. args.consumable,
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -48,7 +48,7 @@ return {
         error = "Consumable '"
           .. consumable_card.ability.name
           .. "' requires card selection and can only be used in SELECTING_HAND state",
-        error_code = BB_ERRORS.STATE_INVALID_STATE,
+        error_code = BB_ERRORS.INVALID_STATE,
       })
       return
     end
@@ -58,7 +58,7 @@ return {
       if not args.cards or #args.cards == 0 then
         send_response({
           error = "Consumable '" .. consumable_card.ability.name .. "' requires card selection",
-          error_code = BB_ERRORS.SCHEMA_MISSING_REQUIRED,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -68,7 +68,7 @@ return {
         if card_idx < 0 or card_idx >= #G.hand.cards then
           send_response({
             error = "Card index out of range: " .. card_idx,
-            error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+            error_code = BB_ERRORS.BAD_REQUEST,
           })
           return
         end
@@ -91,7 +91,7 @@ return {
             min_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -106,7 +106,7 @@ return {
             min_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -120,7 +120,7 @@ return {
             max_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+          error_code = BB_ERRORS.BAD_REQUEST,
         })
         return
       end
@@ -149,7 +149,7 @@ return {
     if not consumable_card:can_use_consumeable() then
       send_response({
         error = "Consumable '" .. consumable_card.ability.name .. "' cannot be used at this time",
-        error_code = BB_ERRORS.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.NOT_ALLOWED,
       })
       return
     end
@@ -158,7 +158,7 @@ return {
     if consumable_card:check_use() then
       send_response({
         error = "Cannot use consumable '" .. consumable_card.ability.name .. "': insufficient space",
-        error_code = BB_ERRORS.GAME_INVALID_STATE,
+        error_code = BB_ERRORS.NOT_ALLOWED,
       })
       return
     end

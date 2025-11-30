@@ -120,7 +120,7 @@ function BB_SERVER.receive()
 
   -- Check message size (line doesn't include the \n, so +1 for newline)
   if #line + 1 > 256 then
-    BB_SERVER.send_error("Request too large: maximum 256 bytes including newline", "PROTO_PAYLOAD")
+    BB_SERVER.send_error("Request too large: maximum 256 bytes including newline", "BAD_REQUEST")
     return {}
   end
 
@@ -132,7 +132,7 @@ function BB_SERVER.receive()
   -- Check that JSON starts with '{' (must be object, not array/primitive)
   local trimmed = line:match("^%s*(.-)%s*$")
   if not trimmed:match("^{") then
-    BB_SERVER.send_error("Invalid JSON in request: must be object (start with '{')", "PROTO_INVALID_JSON")
+    BB_SERVER.send_error("Invalid JSON in request: must be object (start with '{')", "BAD_REQUEST")
     return {}
   end
 
@@ -141,7 +141,7 @@ function BB_SERVER.receive()
   if success and type(parsed) == "table" then
     return { parsed }
   else
-    BB_SERVER.send_error("Invalid JSON in request", "PROTO_INVALID_JSON")
+    BB_SERVER.send_error("Invalid JSON in request", "BAD_REQUEST")
     return {}
   end
 end
@@ -204,7 +204,7 @@ function BB_SERVER.update(dispatcher)
         dispatcher.dispatch(request, BB_SERVER.client_socket)
       else
         -- Placeholder: send error that dispatcher not ready
-        BB_SERVER.send_error("Server not fully initialized (dispatcher not ready)", "STATE_NOT_READY")
+        BB_SERVER.send_error("Server not fully initialized (dispatcher not ready)", "INVALID_STATE")
       end
     end
   end

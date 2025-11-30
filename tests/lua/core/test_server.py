@@ -180,7 +180,7 @@ class TestBBServerReceive:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_PAYLOAD"
+        assert data["error_code"] == "BAD_REQUEST"
         assert "too large" in data["error"].lower()
 
     def test_pipelined_messages_rejected(self, client: socket.socket) -> None:
@@ -218,7 +218,7 @@ class TestBBServerReceive:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_INVALID_JSON"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_json_string_rejected(self, client: socket.socket) -> None:
         """Test that JSON strings are rejected (must be object)."""
@@ -229,7 +229,7 @@ class TestBBServerReceive:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_INVALID_JSON"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_json_number_rejected(self, client: socket.socket) -> None:
         """Test that JSON numbers are rejected (must be object)."""
@@ -240,7 +240,7 @@ class TestBBServerReceive:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_INVALID_JSON"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_json_array_rejected(self, client: socket.socket) -> None:
         """Test that JSON arrays are rejected (must be object starting with '{')."""
@@ -251,7 +251,7 @@ class TestBBServerReceive:
 
         assert "error" in data
         assert "error_code" in data
-        assert data["error_code"] == "PROTO_INVALID_JSON"
+        assert data["error_code"] == "BAD_REQUEST"
 
     def test_only_whitespace_line_rejected(self, client: socket.socket) -> None:
         """Test that whitespace-only lines are rejected as invalid JSON."""
@@ -263,44 +263,7 @@ class TestBBServerReceive:
 
         # Should be rejected as invalid JSON (trimmed to empty, doesn't start with '{')
         assert "error" in data
-        assert data["error_code"] == "PROTO_INVALID_JSON"
-
-    def test_valid_json_with_nested_objects(self, client: socket.socket) -> None:
-        """Test complex valid JSON with nested structures is accepted."""
-        complex_msg = {
-            "name": "test",
-            "arguments": {
-                "nested": {"level1": {"level2": {"level3": "value"}}},
-                "array": [1, 2, 3],
-                "mixed": {"a": [{"b": "c"}]},
-            },
-        }
-        msg = json.dumps(complex_msg) + "\n"
-
-        # Ensure it's under size limit
-        if len(msg) <= 256:
-            client.send(msg.encode())
-
-            response = client.recv(BUFFER_SIZE).decode().strip()
-            data = json.loads(response)
-
-            # Should be parsed successfully (not a protocol error)
-            if "error" in data:
-                assert data["error_code"] != "PROTO_INVALID_JSON"
-
-    def test_json_with_escaped_characters(self, client: socket.socket) -> None:
-        """Test JSON with escaped quotes, newlines in strings, etc."""
-        msg = json.dumps({"name": "test", "data": 'quotes: "hello"\nnewline'}) + "\n"
-
-        if len(msg) <= 256:
-            client.send(msg.encode())
-
-            response = client.recv(BUFFER_SIZE).decode().strip()
-            data = json.loads(response)
-
-            # Should be parsed successfully
-            if "error" in data:
-                assert data["error_code"] != "PROTO_INVALID_JSON"
+        assert data["error_code"] == "BAD_REQUEST"
 
 
 class TestBBServerSendResponse:

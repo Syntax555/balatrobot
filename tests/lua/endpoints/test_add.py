@@ -98,7 +98,7 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "add", {}),
-            "SCHEMA_MISSING_REQUIRED",
+            "BAD_REQUEST",
             "Missing required field 'key'",
         )
 
@@ -116,7 +116,7 @@ class TestAddEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "add", {"key": 123}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'key' must be of type string",
         )
 
@@ -130,7 +130,7 @@ class TestAddEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "add", {"key": "x_unknown"}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid card key format. Expected: joker (j_*), consumable (c_*), voucher (v_*), or playing card (SUIT_RANK)",
         )
 
@@ -144,7 +144,7 @@ class TestAddEndpointValidation:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "add", {"key": "j_NON_EXTING_JOKER"}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Failed to add card: j_NON_EXTING_JOKER",
         )
 
@@ -158,7 +158,7 @@ class TestAddEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "add", {"key": "j_joker"}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'add' requires one of these states: SELECTING_HAND, SHOP, ROUND_EVAL",
         )
 
@@ -172,7 +172,7 @@ class TestAddEndpointStateRequirements:
         assert gamestate["state"] == "SHOP"
         assert_error_response(
             api(client, "add", {"key": "H_A"}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Playing cards can only be added in SELECTING_HAND state",
         )
 
@@ -186,7 +186,7 @@ class TestAddEndpointStateRequirements:
         assert gamestate["state"] == "SELECTING_HAND"
         assert_error_response(
             api(client, "add", {"key": "v_overstock"}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Vouchers can only be added in SHOP state",
         )
 
@@ -221,7 +221,7 @@ class TestAddEndpointSeal:
         response = api(client, "add", {"key": "H_A", "seal": "WHITE"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
         )
 
@@ -239,7 +239,7 @@ class TestAddEndpointSeal:
         response = api(client, "add", {"key": key, "seal": "RED"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Seal can only be applied to playing cards",
         )
 
@@ -308,7 +308,7 @@ class TestAddEndpointEdition:
         response = api(client, "add", {"key": "c_fool", "edition": edition})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Consumables can only have NEGATIVE edition",
         )
 
@@ -323,7 +323,7 @@ class TestAddEndpointEdition:
         assert gamestate["vouchers"]["count"] == 0
         response = api(client, "add", {"key": "v_overstock_norm", "edition": "FOIL"})
         assert_error_response(
-            response, "SCHEMA_INVALID_VALUE", "Edition cannot be applied to vouchers"
+            response, "BAD_REQUEST", "Edition cannot be applied to vouchers"
         )
 
     def test_add_playing_card_invalid_edition(self, client: socket.socket) -> None:
@@ -338,7 +338,7 @@ class TestAddEndpointEdition:
         response = api(client, "add", {"key": "H_A", "edition": "WHITE"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
         )
 
@@ -378,7 +378,7 @@ class TestAddEndpointEnhancement:
         response = api(client, "add", {"key": "H_A", "enhancement": "WHITE"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
         )
 
@@ -397,7 +397,7 @@ class TestAddEndpointEnhancement:
         response = api(client, "add", {"key": key, "enhancement": "BONUS"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Enhancement can only be applied to playing cards",
         )
 
@@ -433,7 +433,7 @@ class TestAddEndpointStickers:
         assert gamestate["consumables"]["count"] == 0
         assert_error_response(
             api(client, "add", {"key": key, "eternal": True}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Eternal can only be applied to jokers",
         )
 
@@ -448,7 +448,7 @@ class TestAddEndpointStickers:
         assert gamestate["hand"]["count"] == 8
         assert_error_response(
             api(client, "add", {"key": "H_A", "eternal": True}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Eternal can only be applied to jokers",
         )
 
@@ -501,7 +501,7 @@ class TestAddEndpointStickers:
         response = api(client, "add", {"key": "j_joker", "perishable": invalid_value})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Perishable must be a positive integer (>= 1)",
         )
 
@@ -519,7 +519,7 @@ class TestAddEndpointStickers:
         response = api(client, "add", {"key": "j_joker", "perishable": "NOT_INT_1"})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'perishable' must be of type number",
         )
 
@@ -537,7 +537,7 @@ class TestAddEndpointStickers:
         response = api(client, "add", {"key": key, "perishable": 5})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Perishable can only be applied to jokers",
         )
 
@@ -555,7 +555,7 @@ class TestAddEndpointStickers:
         response = api(client, "add", {"key": "H_A", "perishable": 5})
         assert_error_response(
             response,
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Perishable can only be applied to jokers",
         )
 
@@ -587,7 +587,7 @@ class TestAddEndpointStickers:
         assert gamestate["jokers"]["count"] == 0
         assert_error_response(
             api(client, "add", {"key": key, "rental": True}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Rental can only be applied to jokers",
         )
 
@@ -619,6 +619,6 @@ class TestAddEndpointStickers:
         assert gamestate["hand"]["count"] == 8
         assert_error_response(
             api(client, "add", {"key": "H_A", "rental": True}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Rental can only be applied to jokers",
         )

@@ -54,7 +54,7 @@ class TestSkipEndpoint:
         assert gamestate["blinds"]["boss"]["status"] == "SELECT"
         assert_error_response(
             api(client, "skip", {}),
-            "GAME_INVALID_STATE",
+            "NOT_ALLOWED",
             "Cannot skip Boss blind",
         )
 
@@ -68,6 +68,6 @@ class TestSkipEndpointStateRequirements:
         assert response["state"] == "MENU"
         assert_error_response(
             api(client, "skip", {}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'skip' requires one of these states: BLIND_SELECT",
         )

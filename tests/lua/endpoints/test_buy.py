@@ -18,7 +18,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid arguments. You must provide one of: card, voucher, pack",
         )
 
@@ -30,7 +30,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"card": 0, "voucher": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Invalid arguments. Cannot provide more than one of: card, voucher, or pack",
         )
 
@@ -41,7 +41,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["count"] == 0
         assert_error_response(
             api(client, "buy", {"card": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "No jokers/consumables/cards in the shop. Reroll to restock the shop",
         )
 
@@ -52,7 +52,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"card": 999}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Card index out of range. Index: 999, Available cards: 2",
         )
 
@@ -63,7 +63,7 @@ class TestBuyEndpoint:
         assert gamestate["money"] == 0
         assert_error_response(
             api(client, "buy", {"card": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Card is not affordable. Cost: 5, Current money: 0",
         )
 
@@ -77,7 +77,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"card": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Cannot purchase joker card, joker slots are full. Current: 5, Limit: 5",
         )
 
@@ -93,7 +93,7 @@ class TestBuyEndpoint:
         assert gamestate["shop"]["cards"][1]["set"] == "PLANET"
         assert_error_response(
             api(client, "buy", {"card": 1}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "Cannot purchase consumable card, consumable slots are full. Current: 2, Limit: 2",
         )
 
@@ -104,7 +104,7 @@ class TestBuyEndpoint:
         assert gamestate["vouchers"]["count"] == 0
         assert_error_response(
             api(client, "buy", {"voucher": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "No vouchers to redeem. Defeat boss blind to restock",
         )
 
@@ -118,7 +118,7 @@ class TestBuyEndpoint:
         assert gamestate["packs"]["count"] == 0
         assert_error_response(
             api(client, "buy", {"voucher": 0}),
-            "SCHEMA_INVALID_VALUE",
+            "BAD_REQUEST",
             "No vouchers to redeem. Defeat boss blind to restock",
         )
 
@@ -174,7 +174,7 @@ class TestBuyEndpointValidation:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"card": "INVALID_STRING"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'card' must be an integer",
         )
 
@@ -185,7 +185,7 @@ class TestBuyEndpointValidation:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"voucher": "INVALID_STRING"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'voucher' must be an integer",
         )
 
@@ -196,7 +196,7 @@ class TestBuyEndpointValidation:
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         assert_error_response(
             api(client, "buy", {"pack": "INVALID_STRING"}),
-            "SCHEMA_INVALID_TYPE",
+            "BAD_REQUEST",
             "Field 'pack' must be an integer",
         )
 
@@ -210,6 +210,6 @@ class TestBuyEndpointStateRequirements:
         assert gamestate["state"] == "BLIND_SELECT"
         assert_error_response(
             api(client, "buy", {"card": 0}),
-            "STATE_INVALID_STATE",
+            "INVALID_STATE",
             "Endpoint 'buy' requires one of these states: SHOP",
         )

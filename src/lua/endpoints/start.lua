@@ -76,7 +76,7 @@ return {
       send_response({
         error = "Invalid stake enum. Must be one of: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD. Got: "
           .. tostring(args.stake),
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -88,7 +88,7 @@ return {
       send_response({
         error = "Invalid deck enum. Must be one of: RED, BLUE, YELLOW, GREEN, BLACK, MAGIC, NEBULA, GHOST, ABANDONED, CHECKERED, ZODIAC, PAINTED, ANAGLYPH, PLASMA, ERRATIC. Got: "
           .. tostring(args.deck),
-        error_code = BB_ERRORS.SCHEMA_INVALID_VALUE,
+        error_code = BB_ERRORS.BAD_REQUEST,
       })
       return
     end
@@ -115,7 +115,7 @@ return {
       sendDebugMessage("start() deck not found in game data: " .. deck_name, "BB.ENDPOINTS")
       send_response({
         error = "Deck not found in game data: " .. deck_name,
-        error_code = BB_ERRORS.EXEC_INTERNAL_ERROR,
+        error_code = BB_ERRORS.INTERNAL_ERROR,
       })
       return
     end

@@ -85,7 +85,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_MISSING_REQUIRED",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Missing required field 'deck'",
         )
 
@@ -96,7 +96,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_MISSING_REQUIRED",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Missing required field 'stake'",
         )
 
@@ -107,7 +107,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "INVALID_DECK", "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Invalid deck enum. Must be one of:",
         )
 
@@ -118,7 +118,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED", "stake": "INVALID_STAKE"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_VALUE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Invalid stake enum. Must be one of:",
         )
 
@@ -129,7 +129,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": 123, "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'deck' must be of type string",
         )
 
@@ -140,7 +140,7 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED", "stake": 1})
         assert_error_response(
             response,
-            expected_error_code="SCHEMA_INVALID_TYPE",
+            expected_error_code="BAD_REQUEST",
             expected_message_contains="Field 'stake' must be of type string",
         )
 
@@ -155,6 +155,6 @@ class TestStartEndpointStateRequirements:
         response = api(client, "start", {"deck": "RED", "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="STATE_INVALID_STATE",
+            expected_error_code="INVALID_STATE",
             expected_message_contains="Endpoint 'start' requires one of these states: MENU",
         )

@@ -201,20 +201,20 @@ function BB_DISPATCHER.dispatch(request)
 
   -- Validate request has 'name' field
   if not request.name or type(request.name) ~= "string" then
-    BB_DISPATCHER.send_error("Request missing 'name' field", errors.PROTO_MISSING_NAME)
+    BB_DISPATCHER.send_error("Request missing 'name' field", errors.BAD_REQUEST)
     return
   end
 
   -- Validate request has 'arguments' field
   if not request.arguments then
-    BB_DISPATCHER.send_error("Request missing 'arguments' field", errors.PROTO_MISSING_ARGUMENTS)
+    BB_DISPATCHER.send_error("Request missing 'arguments' field", errors.BAD_REQUEST)
     return
   end
 
   -- Find endpoint
   local endpoint = BB_DISPATCHER.endpoints[request.name]
   if not endpoint then
-    BB_DISPATCHER.send_error("Unknown endpoint: " .. request.name, errors.PROTO_UNKNOWN_ENDPOINT)
+    BB_DISPATCHER.send_error("Unknown endpoint: " .. request.name, errors.BAD_REQUEST)
     return
   end
 
@@ -255,7 +255,7 @@ function BB_DISPATCHER.dispatch(request)
 
       BB_DISPATCHER.send_error(
         "Endpoint '" .. request.name .. "' requires one of these states: " .. table.concat(state_names, ", "),
-        errors.STATE_INVALID_STATE
+        errors.INVALID_STATE
       )
       return
     end
@@ -283,6 +283,6 @@ function BB_DISPATCHER.dispatch(request)
     -- Endpoint threw an error
     local error_message = tostring(exec_error)
 
-    BB_DISPATCHER.send_error(error_message, errors.EXEC_INTERNAL_ERROR)
+    BB_DISPATCHER.send_error(error_message, errors.INTERNAL_ERROR)
   end
 end
