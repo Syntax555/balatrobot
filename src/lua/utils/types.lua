@@ -97,7 +97,7 @@
 ---@field name string The endpoint name
 ---@field description string Brief description of the endpoint
 ---@field schema table<string, SchemaField> Schema definition for arguments validation
----@field requires_state string[]? Optional list of required game states
+---@field requires_state integer[]? Optional list of required game states
 ---@field execute fun(args: Request.Params, send_response: fun(response: table)) Execute function
 
 -- ==========================================================================
