@@ -14,8 +14,8 @@ class TestSetEndpoint:
         response = api(client, "set", {})
         assert_error_response(
             response,
-            expected_error_code="INVALID_STATE",
-            expected_message_contains="Can only set during an active run",
+            "INVALID_STATE",
+            "Can only set during an active run",
         )
 
     def test_set_no_fields(self, client: socket.socket) -> None:
@@ -25,8 +25,8 @@ class TestSetEndpoint:
         response = api(client, "set", {})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Must provide at least one field to set",
+            "BAD_REQUEST",
+            "Must provide at least one field to set",
         )
 
     def test_set_negative_money(self, client: socket.socket) -> None:
@@ -36,8 +36,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"money": -100})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Money must be a positive integer",
+            "BAD_REQUEST",
+            "Money must be a positive integer",
         )
 
     def test_set_money(self, client: socket.socket) -> None:
@@ -54,8 +54,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"chips": -100})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Chips must be a positive integer",
+            "BAD_REQUEST",
+            "Chips must be a positive integer",
         )
 
     def test_set_chips(self, client: socket.socket) -> None:
@@ -72,8 +72,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"ante": -8})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Ante must be a positive integer",
+            "BAD_REQUEST",
+            "Ante must be a positive integer",
         )
 
     def test_set_ante(self, client: socket.socket) -> None:
@@ -90,8 +90,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"round": -5})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Round must be a positive integer",
+            "BAD_REQUEST",
+            "Round must be a positive integer",
         )
 
     def test_set_round(self, client: socket.socket) -> None:
@@ -108,8 +108,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"hands": -10})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Hands must be a positive integer",
+            "BAD_REQUEST",
+            "Hands must be a positive integer",
         )
 
     def test_set_hands(self, client: socket.socket) -> None:
@@ -126,8 +126,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"discards": -10})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Discards must be a positive integer",
+            "BAD_REQUEST",
+            "Discards must be a positive integer",
         )
 
     def test_set_discards(self, client: socket.socket) -> None:
@@ -144,8 +144,8 @@ class TestSetEndpoint:
         response = api(client, "set", {"shop": True})
         assert_error_response(
             response,
-            expected_error_code="NOT_ALLOWED",
-            expected_message_contains="Can re-stock shop only in SHOP state",
+            "NOT_ALLOWED",
+            "Can re-stock shop only in SHOP state",
         )
 
     def test_set_shop_from_SHOP(self, client: socket.socket) -> None:
@@ -183,8 +183,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"money": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'money' must be an integer",
+            "BAD_REQUEST",
+            "Field 'money' must be an integer",
         )
 
     def test_invalid_chips_type(self, client: socket.socket):
@@ -194,8 +194,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"chips": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'chips' must be an integer",
+            "BAD_REQUEST",
+            "Field 'chips' must be an integer",
         )
 
     def test_invalid_ante_type(self, client: socket.socket):
@@ -205,8 +205,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"ante": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'ante' must be an integer",
+            "BAD_REQUEST",
+            "Field 'ante' must be an integer",
         )
 
     def test_invalid_round_type(self, client: socket.socket):
@@ -216,8 +216,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"round": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'round' must be an integer",
+            "BAD_REQUEST",
+            "Field 'round' must be an integer",
         )
 
     def test_invalid_hands_type(self, client: socket.socket):
@@ -227,8 +227,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"hands": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'hands' must be an integer",
+            "BAD_REQUEST",
+            "Field 'hands' must be an integer",
         )
 
     def test_invalid_discards_type(self, client: socket.socket):
@@ -238,8 +238,8 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"discards": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'discards' must be an integer",
+            "BAD_REQUEST",
+            "Field 'discards' must be an integer",
         )
 
     def test_invalid_shop_type(self, client: socket.socket):
@@ -249,6 +249,6 @@ class TestSetEndpointValidation:
         response = api(client, "set", {"shop": "INVALID_STRING"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'shop' must be of type boolean",
+            "BAD_REQUEST",
+            "Field 'shop' must be of type boolean",
         )

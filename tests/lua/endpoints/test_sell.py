@@ -171,7 +171,7 @@ class TestSellEndpointStateRequirements:
         assert_error_response(
             api(client, "sell", {}),
             "INVALID_STATE",
-            "Endpoint 'sell' requires one of these states: SELECTING_HAND, SHOP",
+            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
         )
 
     def test_sell_from_ROUND_EVAL(self, client: socket.socket) -> None:
@@ -181,5 +181,5 @@ class TestSellEndpointStateRequirements:
         assert_error_response(
             api(client, "sell", {}),
             "INVALID_STATE",
-            "Endpoint 'sell' requires one of these states: SELECTING_HAND, SHOP",
+            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
         )

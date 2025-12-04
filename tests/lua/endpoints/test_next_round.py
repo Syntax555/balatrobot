@@ -39,6 +39,6 @@ class TestNextRoundEndpointStateRequirements:
         response = api(client, "next_round", {})
         assert_error_response(
             response,
-            expected_error_code="INVALID_STATE",
-            expected_message_contains="Endpoint 'next_round' requires one of these states: SHOP",
+            "INVALID_STATE",
+            "Method 'next_round' requires one of these states: SHOP",
         )

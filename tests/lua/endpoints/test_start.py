@@ -85,8 +85,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Missing required field 'deck'",
+            "BAD_REQUEST",
+            "Missing required field 'deck'",
         )
 
     def test_missing_stake_parameter(self, client: socket.socket):
@@ -96,8 +96,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Missing required field 'stake'",
+            "BAD_REQUEST",
+            "Missing required field 'stake'",
         )
 
     def test_invalid_deck_value(self, client: socket.socket):
@@ -107,8 +107,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "INVALID_DECK", "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Invalid deck enum. Must be one of:",
+            "BAD_REQUEST",
+            "Invalid deck enum. Must be one of:",
         )
 
     def test_invalid_stake_value(self, client: socket.socket):
@@ -118,8 +118,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED", "stake": "INVALID_STAKE"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Invalid stake enum. Must be one of:",
+            "BAD_REQUEST",
+            "Invalid stake enum. Must be one of:",
         )
 
     def test_invalid_deck_type(self, client: socket.socket):
@@ -129,8 +129,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": 123, "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'deck' must be of type string",
+            "BAD_REQUEST",
+            "Field 'deck' must be of type string",
         )
 
     def test_invalid_stake_type(self, client: socket.socket):
@@ -140,8 +140,8 @@ class TestStartEndpointValidation:
         response = api(client, "start", {"deck": "RED", "stake": 1})
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="Field 'stake' must be of type string",
+            "BAD_REQUEST",
+            "Field 'stake' must be of type string",
         )
 
 
@@ -155,6 +155,6 @@ class TestStartEndpointStateRequirements:
         response = api(client, "start", {"deck": "RED", "stake": "WHITE"})
         assert_error_response(
             response,
-            expected_error_code="INVALID_STATE",
-            expected_message_contains="Endpoint 'start' requires one of these states: MENU",
+            "INVALID_STATE",
+            "Method 'start' requires one of these states: MENU",
         )

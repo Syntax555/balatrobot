@@ -159,7 +159,7 @@ class TestAddEndpointStateRequirements:
         assert_error_response(
             api(client, "add", {"key": "j_joker"}),
             "INVALID_STATE",
-            "Endpoint 'add' requires one of these states: SELECTING_HAND, SHOP, ROUND_EVAL",
+            "Method 'add' requires one of these states: SELECTING_HAND, SHOP, ROUND_EVAL",
         )
 
     def test_add_playing_card_from_SHOP(self, client: socket.socket) -> None:

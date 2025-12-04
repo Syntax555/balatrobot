@@ -39,5 +39,5 @@ class TestRerollEndpointStateRequirements:
         assert_error_response(
             api(client, "reroll", {}),
             "INVALID_STATE",
-            "Endpoint 'reroll' requires one of these states: SHOP",
+            "Method 'reroll' requires one of these states: SHOP",
         )

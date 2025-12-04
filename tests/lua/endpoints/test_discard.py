@@ -108,5 +108,5 @@ class TestDiscardEndpointStateRequirements:
         assert_error_response(
             api(client, "discard", {"cards": [0]}),
             "INVALID_STATE",
-            "Endpoint 'discard' requires one of these states: SELECTING_HAND",
+            "Method 'discard' requires one of these states: SELECTING_HAND",
         )
