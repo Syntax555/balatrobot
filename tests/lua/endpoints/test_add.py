@@ -486,9 +486,9 @@ class TestAddEndpointStickers:
         assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
         assert response["jokers"]["cards"][0]["modifier"]["perishable"] == 5
 
-    @pytest.mark.parametrize("invalid_value", [0, -1, 1.5])
-    def test_add_joker_with_perishable_invalid_value_fails(
-        self, client: socket.socket, invalid_value: int | float | str
+    @pytest.mark.parametrize("invalid_value", [0, -1])
+    def test_add_joker_with_perishable_invalid_integer_fails(
+        self, client: socket.socket, invalid_value: int
     ) -> None:
         """Test that invalid perishable values (zero, negative, float) are rejected."""
         gamestate = load_fixture(
@@ -505,8 +505,9 @@ class TestAddEndpointStickers:
             "Perishable must be a positive integer (>= 1)",
         )
 
-    def test_add_joker_with_perishable_string_fails(
-        self, client: socket.socket
+    @pytest.mark.parametrize("invalid_value", [1.5, "NOT_INT_1"])
+    def test_add_joker_with_perishable_invalid_type_fails(
+        self, client: socket.socket, invalid_value: float | str
     ) -> None:
         """Test that perishable with string value is rejected."""
         gamestate = load_fixture(
@@ -516,11 +517,11 @@ class TestAddEndpointStickers:
         )
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 0
-        response = api(client, "add", {"key": "j_joker", "perishable": "NOT_INT_1"})
+        response = api(client, "add", {"key": "j_joker", "perishable": invalid_value})
         assert_error_response(
             response,
             "BAD_REQUEST",
-            "Field 'perishable' must be of type number",
+            "Field 'perishable' must be an integer",
         )
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
