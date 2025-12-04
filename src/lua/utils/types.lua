@@ -98,4 +98,69 @@
 ---@field description string Brief description of the endpoint
 ---@field schema table<string, SchemaField> Schema definition for arguments validation
 ---@field requires_state string[]? Optional list of required game states
----@field execute fun(args: table, send_response: fun(response: table)) Execute function
+---@field execute fun(args: Request.Params, send_response: fun(response: table)) Execute function
+
+-- ==========================================================================
+-- Request Types (JSON-RPC 2.0)
+-- ==========================================================================
+
+---@class Request
+---@field jsonrpc "2.0"
+---@field method Request.Method Request method name. This corresponse to the endpoint name
+---@field params Request.Params Params to use for the requests
+---@field id integer|string|nil Request ID
+
+---@alias Request.Method
+---| "echo" | "endpoint" | "error" | "state" | "validation" #  Test Endpoints
+---| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health" | "load"
+---| "menu" | "next_round" | "play" | "rearrange" | "reroll" | "save" | "select"
+---| "sell" | "set" | "skip" | "start" | "use"
+
+---@alias Request.Params
+---| Endpoint.Add.Params
+---| Endpoint.Buy.Params
+---| Endpoint.Discard.Params
+---| Endpoint.Load.Params
+---| Endpoint.Play.Params
+---| Endpoint.Rearrange.Params
+---| Endpoint.Save.Params
+---| Endpoint.Sell.Params
+---| Endpoint.Set.Params
+---| Endpoint.Run.Params
+---| Endpoint.Use.Params
+---| TestEndpoint.Echo.Params
+---| TestEndpoint.Endpoint.Params
+---| TestEndpoint.Error.Params
+---| TestEndpoint.State.Params
+---| TestEndpoint.Validation.Params
+
+-- ==========================================================================
+-- Response Types (JSON-RPC 2.0)
+-- ==========================================================================
+
+---@class PathResponse
+---@field success boolean Whether the request was successful
+---@field path string Path to the file
+
+---@class HealthResponse
+---@field success boolean Whether the request was successful
+
+---@alias GameStateResponse GameState
+
+---@class ResponseSuccess
+---@field jsonrpc "2.0"
+---@field result HealthResponse | PathResponse | GameStateResponse Response payload
+---@field id integer|string|nil Request ID
+
+---@class ResponseError
+---@field jsonrpc "2.0"
+---@field error ResponseError.Error Response error
+---@field id integer|string|nil Request ID
+
+---@class ResponseError.Error
+---@field code ErrorCode Numeric error code following JSON-RPC 2.0 convention
+---@field message string Human-readable error message
+---@field data ResponseError.Error.Data
+
+---@class ResponseError.Error.Data
+---@field name ErrorName Semantic error code
