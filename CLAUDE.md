@@ -2,110 +2,129 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+## Overview
 
-### Quick Start with Makefile
+BalatroBot is a framework for Balatro bot development. This repository contains a Lua-based API that communicates with the Balatro game via a TCP server. The API allows external clients (primarily Python-based bots) to control the game, query game state, and execute actions.
 
-The project includes a comprehensive Makefile with all development workflows. Run `make help` to see all available commands:
-
-```bash
-# Show all available commands with descriptions
-make help
-
-# Quick development workflow (format + lint + typecheck)
-make dev
-
-# Complete workflow including tests
-make all
-
-# Install development dependencies
-make install-dev
-```
-
-### Code Quality and Linting
-
-```bash
-make lint              # Check code with ruff linter
-make lint-fix          # Auto-fix linting issues
-make format            # Format code with ruff and stylua
-make format-md         # Format markdown files
-make typecheck         # Run type checker
-make quality           # Run all quality checks
-```
+**Important**: Focus on the Lua API code in `src/lua/` and `tests/lua/`. Ignore the Python package `src/balatrobot/` and `tests/balatrobot/`.
 
 ### Testing
 
 ```bash
-make test              # Run tests with single instance (auto-starts if needed)
-make test-parallel     # Run tests on 4 instances (auto-starts if needed)
-make test-teardown     # Kill all Balatro instances
+# Start Balatro game instance (if you need to restart the game)
+python balatro.py start --fast --debug
+
+# Run all Lua tests (it automatically restarts the game)
+make test
+
+# Run tests with specific marker (it automatically restarts the game)
+make test PYTEST_MARKER=dev
+
+# Run a single test file (we need to restart the game with `python balatro.py start --fast --debug` if the lua code was changed before running the test)
+pytest tests/lua/endpoints/test_health.py -v
+
+# Run a specific test (we need to restart the game with `python balatro.py start --fast --debug` if the lua code was changed before running the test)
+pytest tests/lua/endpoints/test_health.py::TestHealthEndpoint::test_health_from_MENU -v
 ```
 
-**Testing Features:**
+**Tip**: When we are focused on a specific test/group of tests (e.g. implementation of tests, understand why a test fails, etc.), we can mark the tests with `@pytest.mark.dev` and run them with `make test PYTEST_MARKER=dev` (so the game is restarted and relevant tests are run). So te `dev` pytest tag is reserved for test we are actually working on.
 
-- **Auto-start**: Both `test` and `test-parallel` automatically start Balatro instances if not running
-- **Parallel speedup**: `test-parallel` provides ~4x speedup with 4 workers
-- **Instance management**: Tests keep instances running after completion
-- **Port isolation**: Each worker uses its dedicated Balatro instance (ports 12346-12349)
+## Architecture
 
-**Usage:**
+### Core Components
 
-- `make test` - Simple single-instance testing (auto-handles everything)
-- `make test-parallel` - Fast parallel testing (auto-handles everything)
-- `make test-teardown` - Clean up when done testing
+The Lua API is structured around three core layers:
 
-**Notes:**
+1. **TCP Server** (`src/lua/core/server.lua`)
 
-- Monitor logs for each instance: `tail -f logs/balatro_12346.log`
-- Logs are automatically created in the `logs/` directory with format `balatro_PORT.log`
+    - Single-client TCP server on port 12346 (default)
+    - Non-blocking socket I/O
+    - JSON-only protocol: `{"name": "endpoint", "arguments": {...}}\n`
+    - Max message size: 256 bytes
+    - Ultra-simple: JSON object + newline delimiter
 
-### Documentation
+2. **Dispatcher** (`src/lua/core/dispatcher.lua`)
 
-```bash
-make docs-serve        # Serve documentation locally
-make docs-build        # Build documentation
-make docs-clean        # Clean documentation build
+    - Routes requests to endpoints with 4-tier validation:
+        1. Protocol validation (has name, arguments)
+        2. Schema validation (via Validator)
+        3. Game state validation (requires_state check)
+        4. Endpoint execution (with error handling)
+    - Auto-discovers and registers endpoints at startup (fail-fast)
+    - Converts numeric state values to human-readable names for error messages
+
+3. **Validator** (`src/lua/core/validator.lua`)
+
+    - Schema-based validation for endpoint arguments
+    - Fail-fast: returns first error encountered
+    - Type-strict: no implicit conversions
+    - Supported types: string, integer, boolean, array, table
+    - **Important**: No automatic defaults or range validation (endpoints handle this)
+
+### Endpoint Structure
+
+All endpoints follow this pattern (`src/lua/endpoints/*.lua`):
+
+```lua
+return {
+  name = "endpoint_name",
+  description = "Brief description",
+  schema = {
+    field_name = {
+      type = "string" | "integer" | "boolean" | "array" | "table",
+      required = true | false,
+      items = "integer",  -- For array types only
+      description = "Field description",
+    },
+  },
+  requires_state = { G.STATES.SELECTING_HAND },  -- Optional state requirement
+  execute = function(args, send_response)
+    -- Endpoint implementation
+    -- Call send_response() with result or error
+  end,
+}
 ```
 
-### Build and Maintenance
+**Key patterns**:
 
-```bash
-make install           # Install package dependencies
-make install-dev       # Install with development dependencies
-make build             # Build package for distribution
-make clean             # Clean all build artifacts and caches
+- Endpoints are stateless modules that return a table
+- Use `send_response()` callback to send results (synchronous or async)
+- For async operations, use `G.E_MANAGER:add_event()` to wait for state transitions
+- Card indices are **0-based** in the API (but Lua uses 1-based indexing internally)
+- Always convert between API (0-based) and internal (1-based) indexing
+
+### Error Handling
+
+Error codes are defined in `src/lua/utils/errors.lua`:
+
+- `BAD_REQUEST`: Client sent invalid data (protocol/parameter errors)
+- `INVALID_STATE`: Action not allowed in current game state
+- `NOT_ALLOWED`: Game rules prevent this action
+- `INTERNAL_ERROR`: Server-side failure (runtime/execution errors)
+
+Endpoints send errors via:
+
+```lua
+send_response({
+  error = "Human-readable message",
+  error_code = BB_ERROR_NAMES.BAD_REQUEST,
+})
 ```
 
-## Architecture Overview
+### Game State Management
 
-BalatroBot is a Python framework for developing automated bots to play the card game Balatro. The architecture consists of three main layers:
+The `src/lua/utils/gamestate.lua` module provides:
 
-### 1. Communication Layer (TCP Protocol)
+- `BB_GAMESTATE.get_gamestate()`: Extract complete game state
+- State conversion utilities (deck names, stake names, card data)
+- Special GAME_OVER callback support for async endpoints
 
-- **Lua API** (`src/lua/api.lua`): Game-side mod that handles socket communication
-- **TCP Socket Communication**: Real-time bidirectional communication between game and bot
-- **Protocol**: Bot sends "HELLO" → Game responds with JSON state → Bot sends action strings
+## Key Files
 
-### 2. Python Framework Layer (`src/balatrobot/`)
-
-- **BalatroClient** (`client.py`): TCP client for communicating with game API via JSON messages
-- **Type-Safe Models** (`models.py`): Pydantic models matching Lua game state structure (G, GGame, GHand, etc.)
-- **Enums** (`enums.py`): Game state enums (Actions, Decks, Stakes, State, ErrorCode)
-- **Exception Hierarchy** (`exceptions.py`): Structured error handling with game-specific exceptions
-- **API Communication**: JSON request/response protocol with timeout handling and error recovery
-
-## Development Standards
-
-- Use modern Python 3.13+ syntax with built-in collection types
-- Type annotations with pipe operator for unions: `str | int | None`
-- Use `type` statement for type aliases
-- Google-style docstrings without type information (since type annotations are present)
-- Modern generic class syntax: `class Container[T]:`
-
-## Project Structure Context
-
-- **Dual Implementation**: Both Python framework and Lua game mod
-- **TCP Communication**: Port 12346 for real-time game interaction
-- **MkDocs Documentation**: Comprehensive guides with Material theme
-- **Pytest Testing**: TCP socket testing with fixtures
-- **Development Tools**: Ruff, basedpyright, modern Python tooling
+- `balatrobot.lua`: Entry point that loads all modules and initializes the API
+- `src/lua/core/`: Core infrastructure (server, dispatcher, validator)
+- `src/lua/endpoints/`: API endpoint implementations
+- `src/lua/utils/`: Utilities (gamestate extraction, error definitions, types)
+- `tests/lua/conftest.py`: Test fixtures and helpers
+- `Makefile`: Common development commands
+- `balatro.py`: Game launcher with environment variable setup
