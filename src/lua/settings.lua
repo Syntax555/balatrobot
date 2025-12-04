@@ -201,8 +201,8 @@ end
 ---@return nil
 local function configure_no_shaders()
   local love_graphics_setShader = love.graphics.setShader
-  love.graphics.setShader = function(_)
-    return love_graphics_setShader(nil)
+  love.graphics.setShader = function()
+    return love_graphics_setShader()
   end
   sendDebugMessage("Disabled all shaders", "BB.SETTINGS")
 end
