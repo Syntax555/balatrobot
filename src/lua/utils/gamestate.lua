@@ -126,7 +126,7 @@ end
 
 ---Converts Balatro suit name to enum format
 ---@param suit_name string The suit name from card.config.card.suit
----@return Suit? suit_enum The single-letter suit enum ("H", "D", "C", "S")
+---@return Card.Value.Suit? suit_enum The single-letter suit enum ("H", "D", "C", "S")
 local function convert_suit_to_enum(suit_name)
   if suit_name == "Hearts" then
     return "H"
@@ -142,7 +142,7 @@ end
 
 ---Converts Balatro rank value to enum format
 ---@param rank_value string The rank value from card.config.card.value
----@return Rank? rank_enum The single-character rank enum
+---@return Card.Value.Rank? rank_enum The single-character rank enum
 local function convert_rank_to_enum(rank_value)
   -- Numbers 2-9 stay the same
   if
