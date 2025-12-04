@@ -18,8 +18,6 @@
 
 ---@type Validator
 local Validator = assert(SMODS.load_file("src/lua/core/validator.lua"))()
----@type ErrorCodes
-local errors = assert(SMODS.load_file("src/lua/utils/errors.lua"))()
 
 -- State name lookup cache (built lazily from G.STATES)
 ---@type table<number, string>?
@@ -201,20 +199,20 @@ function BB_DISPATCHER.dispatch(request)
 
   -- Validate request has 'name' field
   if not request.name or type(request.name) ~= "string" then
-    BB_DISPATCHER.send_error("Request missing 'name' field", errors.BAD_REQUEST)
+    BB_DISPATCHER.send_error("Request missing 'name' field", BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
 
   -- Validate request has 'arguments' field
   if not request.arguments then
-    BB_DISPATCHER.send_error("Request missing 'arguments' field", errors.BAD_REQUEST)
+    BB_DISPATCHER.send_error("Request missing 'arguments' field", BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
 
   -- Find endpoint
   local endpoint = BB_DISPATCHER.endpoints[request.name]
   if not endpoint then
-    BB_DISPATCHER.send_error("Unknown endpoint: " .. request.name, errors.BAD_REQUEST)
+    BB_DISPATCHER.send_error("Unknown endpoint: " .. request.name, BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
 
@@ -255,7 +253,7 @@ function BB_DISPATCHER.dispatch(request)
 
       BB_DISPATCHER.send_error(
         "Endpoint '" .. request.name .. "' requires one of these states: " .. table.concat(state_names, ", "),
-        errors.INVALID_STATE
+        BB_ERROR_NAMES.INVALID_STATE
       )
       return
     end
@@ -283,6 +281,6 @@ function BB_DISPATCHER.dispatch(request)
     -- Endpoint threw an error
     local error_message = tostring(exec_error)
 
-    BB_DISPATCHER.send_error(error_message, errors.INTERNAL_ERROR)
+    BB_DISPATCHER.send_error(error_message, BB_ERROR_NAMES.INTERNAL_ERROR)
   end
 end

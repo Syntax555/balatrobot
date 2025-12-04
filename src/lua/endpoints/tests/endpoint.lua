@@ -3,7 +3,7 @@
 --
 -- Simplified endpoint for testing the dispatcher with the simplified validator
 
----@class Endpoint.TestEndpoint.Params
+---@class TestEndpoint.Endpoint.Params
 ---@field required_string string A required string field
 ---@field optional_string? string Optional string field
 ---@field required_integer integer Required integer field
@@ -53,7 +53,7 @@ return {
 
   requires_state = nil, -- Can be called from any state
 
-  ---@param args Endpoint.TestEndpoint.Params The validated arguments
+  ---@param args TestEndpoint.Endpoint.Params The validated arguments
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     -- Echo back the received arguments

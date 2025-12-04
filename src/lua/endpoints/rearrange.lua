@@ -43,13 +43,13 @@ return {
     if param_count == 0 then
       send_response({
         error = "Must provide exactly one of: hand, jokers, or consumables",
-        error_code = BB_ERRORS.BAD_REQUEST,
+        error_code = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     elseif param_count > 1 then
       send_response({
         error = "Can only rearrange one type at a time",
-        error_code = BB_ERRORS.BAD_REQUEST,
+        error_code = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -62,7 +62,7 @@ return {
       if G.STATE ~= G.STATES.SELECTING_HAND then
         send_response({
           error = "Can only rearrange hand during hand selection",
-          error_code = BB_ERRORS.INVALID_STATE,
+          error_code = BB_ERROR_NAMES.INVALID_STATE,
         })
         return
       end
@@ -71,7 +71,7 @@ return {
       if not G.hand or not G.hand.cards then
         send_response({
           error = "No hand available to rearrange",
-          error_code = BB_ERRORS.NOT_ALLOWED,
+          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -85,7 +85,7 @@ return {
       if not G.jokers or not G.jokers.cards then
         send_response({
           error = "No jokers available to rearrange",
-          error_code = BB_ERRORS.NOT_ALLOWED,
+          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -99,7 +99,7 @@ return {
       if not G.consumeables or not G.consumeables.cards then
         send_response({
           error = "No consumables available to rearrange",
-          error_code = BB_ERRORS.NOT_ALLOWED,
+          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -117,7 +117,7 @@ return {
     if #indices ~= #source_array then
       send_response({
         error = "Must provide exactly " .. #source_array .. " indices for " .. type_name,
-        error_code = BB_ERRORS.BAD_REQUEST,
+        error_code = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -129,7 +129,7 @@ return {
       if idx < 0 or idx >= #source_array then
         send_response({
           error = "Index out of range for " .. type_name .. ": " .. idx,
-          error_code = BB_ERRORS.BAD_REQUEST,
+          error_code = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -138,7 +138,7 @@ return {
       if seen[idx] then
         send_response({
           error = "Duplicate index in " .. type_name .. ": " .. idx,
-          error_code = BB_ERRORS.BAD_REQUEST,
+          error_code = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end

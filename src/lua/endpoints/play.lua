@@ -26,7 +26,7 @@ return {
     if #args.cards == 0 then
       send_response({
         error = "Must provide at least one card to play",
-        error_code = BB_ERRORS.BAD_REQUEST,
+        error_code = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -34,7 +34,7 @@ return {
     if #args.cards > G.hand.config.highlighted_limit then
       send_response({
         error = "You can only play " .. G.hand.config.highlighted_limit .. " cards",
-        error_code = BB_ERRORS.BAD_REQUEST,
+        error_code = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -43,7 +43,7 @@ return {
       if not G.hand.cards[card_index + 1] then
         send_response({
           error = "Invalid card index: " .. card_index,
-          error_code = BB_ERRORS.BAD_REQUEST,
+          error_code = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
