@@ -5,7 +5,7 @@
 
 local nativefs = require("nativefs")
 
----@class Endpoint.Load.Args
+---@class Endpoint.Load.Params
 ---@field path string File path to the save file
 
 ---@type Endpoint
@@ -24,7 +24,7 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Load.Args The arguments with 'path' field
+  ---@param args Endpoint.Load.Params The arguments with 'path' field
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     local path = args.path

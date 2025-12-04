@@ -1,6 +1,6 @@
 -- Set a in-game value
 
----@class Endpoint.Set.Args
+---@class Endpoint.Set.Params
 ---@field money integer? New money amount
 ---@field chips integer? New chips amount
 ---@field ante integer? New ante number
@@ -52,7 +52,7 @@ return {
   },
   requires_state = nil,
 
-  ---@param args Endpoint.Set.Args The arguments
+  ---@param args Endpoint.Set.Params The arguments
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init set()", "BB.ENDPOINTS")

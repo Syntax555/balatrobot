@@ -3,7 +3,7 @@
 --
 -- Add a new card to the game using SMODS.add_card
 
----@class Endpoint.Add.Args
+---@class Endpoint.Add.Params
 ---@field key Card.Key The card key to add (j_* for jokers, c_* for consumables, v_* for vouchers, SUIT_RANK for playing cards)
 ---@field seal Card.Modifier.Seal? The card seal to apply (only for playing cards)
 ---@field edition Card.Modifier.Edition? The card edition to apply (jokers, playing cards and NEGATIVE consumables)
@@ -136,7 +136,7 @@ return {
       description = "If true, the card will be eternal (cannot be sold or destroyed) - only valid for jokers",
     },
     perishable = {
-      type = "number",
+      type = "integer",
       required = false,
       description = "Number of rounds before card perishes (must be positive integer >= 1) - only valid for jokers",
     },
@@ -148,7 +148,7 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP, G.STATES.ROUND_EVAL },
 
-  ---@param args Endpoint.Add.Args The arguments (key)
+  ---@param args Endpoint.Add.Params The arguments for the endpoint
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init add()", "BB.ENDPOINTS")

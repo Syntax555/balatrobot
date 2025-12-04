@@ -3,7 +3,7 @@
 --
 -- Play a card from the hand
 
----@class Endpoint.Play.Args
+---@class Endpoint.Play.Params
 ---@field cards integer[] 0-based indices of cards to play
 
 ---@type Endpoint
@@ -20,7 +20,7 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND },
 
-  ---@param args Endpoint.Play.Args The arguments (cards)
+  ---@param args Endpoint.Play.Params The arguments (cards)
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     if #args.cards == 0 then

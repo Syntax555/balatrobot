@@ -6,6 +6,15 @@
 -- - Required field validation
 -- - Array item type validation (integer arrays only)
 
+---@class Endpoint.TestValidation.Params
+---@field required_field string Required string field for basic validation testing
+---@field string_field? string Optional string field for type validation
+---@field integer_field? integer Optional integer field for type validation
+---@field boolean_field? boolean Optional boolean field for type validation
+---@field array_field? table Optional array field for type validation
+---@field table_field? table Optional table field for type validation
+---@field array_of_integers? integer[] Optional array that must contain only integers
+
 ---@type Endpoint
 return {
   name = "test_validation",
@@ -56,7 +65,7 @@ return {
 
   requires_state = nil, -- Can be called from any state
 
-  ---@param args table The validated arguments
+  ---@param args Endpoint.TestValidation.Params The validated arguments
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     -- Simply return success with the received arguments

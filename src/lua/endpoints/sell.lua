@@ -3,7 +3,7 @@
 --
 -- Sell a joker or consumable from player inventory
 
----@class Endpoint.Sell.Args
+---@class Endpoint.Sell.Params
 ---@field joker integer? 0-based index of joker to sell
 ---@field consumable integer? 0-based index of consumable to sell
 -- One (and only one) parameter is required
@@ -27,7 +27,7 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Sell.Args The arguments (joker or consumable)
+  ---@param args Endpoint.Sell.Params The arguments (joker or consumable)
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init sell()", "BB.ENDPOINTS")

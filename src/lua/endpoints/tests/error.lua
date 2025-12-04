@@ -3,6 +3,9 @@
 --
 -- Used for testing TIER 4: Execution Error Handling
 
+---@class Endpoint.TestErrorEndpoint.Params
+---@field error_type "throw_error"|"success" Whether to throw an error or succeed
+
 ---@type Endpoint
 return {
   name = "test_error_endpoint",
@@ -20,7 +23,7 @@ return {
 
   requires_state = nil,
 
-  ---@param args table The arguments
+  ---@param args Endpoint.TestErrorEndpoint.Params The arguments
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     if args.error_type == "throw_error" then

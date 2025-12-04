@@ -3,7 +3,7 @@
 --
 -- Rearrange cards in hand, jokers, or consumables
 
----@class Endpoint.Rearrange.Args
+---@class Endpoint.Rearrange.Params
 ---@field hand integer[]? 0-based indices representing new order of cards in hand
 ---@field jokers integer[]? 0-based indices representing new order of jokers
 ---@field consumables integer[]? 0-based indices representing new order of consumables
@@ -35,7 +35,7 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Rearrange.Args The arguments (hand, jokers, or consumables)
+  ---@param args Endpoint.Rearrange.Params The arguments (hand, jokers, or consumables)
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     -- Validate exactly one parameter is provided

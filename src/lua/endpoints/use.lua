@@ -2,7 +2,7 @@
 --
 -- Use a consumable card (Tarot, Planet, or Spectral) with optional target cards
 
----@class Endpoint.Use.Args
+---@class Endpoint.Use.Params
 ---@field consumable integer 0-based index of consumable to use
 ---@field cards integer[]? 0-based indices of cards to target
 
@@ -25,6 +25,8 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
+  ---@param args Endpoint.Use.Params The arguments
+  ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init use()", "BB.ENDPOINTS")
 
@@ -64,7 +66,7 @@ return {
       end
 
       -- Validate each card index is in range
-      for i, card_idx in ipairs(args.cards) do
+      for _, card_idx in ipairs(args.cards) do
         if card_idx < 0 or card_idx >= #G.hand.cards then
           send_response({
             error = "Card index out of range: " .. card_idx,
@@ -134,7 +136,7 @@ return {
       end
 
       -- Add cards using proper method
-      for i, card_idx in ipairs(args.cards) do
+      for _, card_idx in ipairs(args.cards) do
         local hand_card = G.hand.cards[card_idx + 1] -- Convert 0-based to 1-based
         G.hand:add_to_highlighted(hand_card, true) -- silent=true
       end

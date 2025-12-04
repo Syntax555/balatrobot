@@ -3,7 +3,7 @@
 --
 -- Discard cards from the hand
 
----@class Endpoint.Discard.Args
+---@class Endpoint.Discard.Params
 ---@field cards integer[] 0-based indices of cards to discard
 
 ---@type Endpoint
@@ -20,7 +20,7 @@ return {
   },
   requires_state = { G.STATES.SELECTING_HAND },
 
-  ---@param args Endpoint.Discard.Args The arguments (cards)
+  ---@param args Endpoint.Discard.Params The arguments (cards)
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     if #args.cards == 0 then

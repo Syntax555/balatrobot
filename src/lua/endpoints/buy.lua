@@ -3,7 +3,7 @@
 --
 -- Buy a card from the shop
 
----@class Endpoint.Buy.Args
+---@class Endpoint.Buy.Params
 ---@field card integer? 0-based index of card to buy
 ---@field voucher integer? 0-based index of voucher to buy
 ---@field pack integer? 0-based index of pack to buy
@@ -31,7 +31,7 @@ return {
   },
   requires_state = { G.STATES.SHOP },
 
-  ---@param args Endpoint.Buy.Args The arguments (card)
+  ---@param args Endpoint.Buy.Params The arguments for the endpoint
   ---@param send_response fun(response: table) Callback to send response
   execute = function(args, send_response)
     sendDebugMessage("Init buy()", "BB.ENDPOINTS")
