@@ -12,7 +12,7 @@ import socket
 from tests.lua.conftest import (
     api,
     assert_error_response,
-    assert_success_response,
+    assert_test_response,
 )
 
 # ============================================================================
@@ -33,7 +33,7 @@ class TestTypeValidation:
                 "string_field": "hello",
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_invalid_string_type(self, client: socket.socket) -> None:
         """Test that invalid string type fails validation."""
@@ -61,7 +61,7 @@ class TestTypeValidation:
                 "integer_field": 42,
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_invalid_integer_type_float(self, client: socket.socket) -> None:
         """Test that float fails integer validation."""
@@ -105,7 +105,7 @@ class TestTypeValidation:
                 "array_field": [1, 2, 3],
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_invalid_array_type_not_sequential(self, client: socket.socket) -> None:
         """Test that non-sequential table fails array validation."""
@@ -149,7 +149,7 @@ class TestTypeValidation:
                 "boolean_field": True,
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_valid_boolean_type_false(self, client: socket.socket) -> None:
         """Test that boolean false passes validation."""
@@ -161,7 +161,7 @@ class TestTypeValidation:
                 "boolean_field": False,
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_invalid_boolean_type_string(self, client: socket.socket) -> None:
         """Test that string fails boolean validation."""
@@ -205,7 +205,7 @@ class TestTypeValidation:
                 "table_field": {"key": "value", "nested": {"data": 123}},
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_valid_table_type_empty(self, client: socket.socket) -> None:
         """Test that empty table passes validation."""
@@ -217,7 +217,7 @@ class TestTypeValidation:
                 "table_field": {},
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_invalid_table_type_array(self, client: socket.socket) -> None:
         """Test that array fails table validation (arrays should use 'array' type)."""
@@ -267,7 +267,7 @@ class TestRequiredFields:
             "test_validation",
             {"required_field": "present"},
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_required_field_missing(self, client: socket.socket) -> None:
         """Test that request without required field fails."""
@@ -292,7 +292,7 @@ class TestRequiredFields:
                 # All other fields are optional
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
 
 # ============================================================================
@@ -313,7 +313,7 @@ class TestArrayItemTypes:
                 "array_of_integers": [1, 2, 3],
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_array_of_integers_invalid_float(self, client: socket.socket) -> None:
         """Test that array with float items fails integer validation."""
@@ -394,7 +394,7 @@ class TestEdgeCases:
             "test_validation",
             {"required_field": "only this"},
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_all_fields_provided(self, client: socket.socket) -> None:
         """Test request with multiple valid fields."""
@@ -411,7 +411,7 @@ class TestEdgeCases:
                 "array_of_integers": [4, 5, 6],
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_empty_array_when_allowed(self, client: socket.socket) -> None:
         """Test that empty array passes when no min constraint."""
@@ -423,7 +423,7 @@ class TestEdgeCases:
                 "array_field": [],
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)
 
     def test_empty_string_when_allowed(self, client: socket.socket) -> None:
         """Test that empty string passes when no min constraint."""
@@ -434,4 +434,4 @@ class TestEdgeCases:
                 "required_field": "",  # Empty but present
             },
         )
-        assert_success_response(response)
+        assert_test_response(response)

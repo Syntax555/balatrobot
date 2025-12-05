@@ -6,7 +6,7 @@ from pathlib import Path
 from tests.lua.conftest import (
     api,
     assert_error_response,
-    assert_success_response,
+    assert_path_response,
     get_fixture_path,
     load_fixture,
 )
@@ -21,7 +21,7 @@ class TestLoadEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         fixture_path = get_fixture_path("load", "state-BLIND_SELECT")
         response = api(client, "load", {"path": str(fixture_path)})
-        assert_success_response(response)
+        assert_path_response(response)
         assert response["result"]["path"] == str(fixture_path)
 
     def test_load_save_roundtrip(self, client: socket.socket, tmp_path: Path) -> None:
@@ -31,17 +31,17 @@ class TestLoadEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         fixture_path = get_fixture_path("load", "state-BLIND_SELECT")
         load_response = api(client, "load", {"path": str(fixture_path)})
-        assert_success_response(load_response)
+        assert_path_response(load_response)
 
         # Save to temp path
         temp_file = tmp_path / "save"
         save_response = api(client, "save", {"path": str(temp_file)})
-        assert_success_response(save_response)
+        assert_path_response(save_response)
         assert temp_file.exists()
 
         # Load the saved file back
         load_again_response = api(client, "load", {"path": str(temp_file)})
-        assert_success_response(load_again_response)
+        assert_path_response(load_again_response)
 
 
 class TestLoadValidation:

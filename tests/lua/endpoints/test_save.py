@@ -6,7 +6,7 @@ from pathlib import Path
 from tests.lua.conftest import (
     api,
     assert_error_response,
-    assert_success_response,
+    assert_path_response,
     load_fixture,
 )
 
@@ -22,7 +22,7 @@ class TestSaveEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         temp_file = tmp_path / "save"
         response = api(client, "save", {"path": str(temp_file)})
-        assert_success_response(response)
+        assert_path_response(response)
         assert response["result"]["path"] == str(temp_file)
         assert temp_file.exists()
         assert temp_file.stat().st_size > 0
@@ -35,9 +35,9 @@ class TestSaveEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         temp_file = tmp_path / "save"
         save_response = api(client, "save", {"path": str(temp_file)})
-        assert_success_response(save_response)
+        assert_path_response(save_response)
         load_response = api(client, "load", {"path": str(temp_file)})
-        assert_success_response(load_response)
+        assert_path_response(load_response)
 
 
 class TestSaveValidation:

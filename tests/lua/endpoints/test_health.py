@@ -8,13 +8,7 @@
 import socket
 from typing import Any
 
-from tests.lua.conftest import api, load_fixture
-
-
-def assert_health_response(response: dict[str, Any]) -> None:
-    assert "result" in response
-    assert "status" in response["result"]
-    assert response["result"]["status"] == "ok"
+from tests.lua.conftest import api, assert_health_response, load_fixture
 
 
 class TestHealthEndpoint:
