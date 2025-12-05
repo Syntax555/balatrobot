@@ -1,5 +1,5 @@
 """
-Integration tests for BB_SERVER TCP communication.
+Integration tests for BB_SERVER TCP communication (JSON-RPC 2.0).
 
 Test classes are organized by BB_SERVER function:
 - TestBBServerInit: BB_SERVER.init() - server initialization and port binding
@@ -16,6 +16,26 @@ import time
 import pytest
 
 from tests.lua.conftest import BUFFER_SIZE
+
+# Request ID counter for JSON-RPC 2.0
+_test_request_id = 0
+
+
+def make_request(method: str, params: dict = {}) -> str:
+    """Create a JSON-RPC 2.0 request string."""
+    global _test_request_id
+    _test_request_id += 1
+    return (
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": method,
+                "params": params,
+                "id": _test_request_id,
+            }
+        )
+        + "\n"
+    )
 
 
 class TestBBServerInit:
@@ -112,8 +132,8 @@ class TestBBServerAccept:
         sock1.settimeout(2)
         sock1.connect(("127.0.0.1", port))
 
-        # Send a request
-        msg = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        # Send a JSON-RPC 2.0 request
+        msg = make_request("health", {})
         sock1.send(msg.encode())
         sock1.recv(BUFFER_SIZE)  # Consume response
 
@@ -128,7 +148,7 @@ class TestBBServerAccept:
             assert sock2.fileno() != -1, "Should reconnect successfully"
 
             # Verify new connection works
-            sock2.send(msg.encode())
+            sock2.send(make_request("health", {}).encode())
             response = sock2.recv(BUFFER_SIZE)
             assert len(response) > 0, "Should receive response after reconnect"
         finally:
@@ -167,26 +187,29 @@ class TestBBServerReceive:
     def test_message_too_large(self, client: socket.socket) -> None:
         """Test that messages exceeding 256 bytes are rejected."""
         # Create message > 255 bytes (line + newline must be <= 256)
-        large_msg = {"name": "test", "data": "x" * 300}
+        large_msg = {
+            "jsonrpc": "2.0",
+            "method": "test",
+            "params": {"data": "x" * 300},
+            "id": 1,
+        }
         msg = json.dumps(large_msg) + "\n"
         assert len(msg) > 256, "Test message should exceed 256 bytes"
 
         client.send(msg.encode())
 
-        # Give game loop time to process and respond
-
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "BAD_REQUEST"
-        assert "too large" in data["error"].lower()
+        # Response is JSON-RPC 2.0 error format
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
+        assert "too large" in raw_data["error"]["message"].lower()
 
     def test_pipelined_messages_rejected(self, client: socket.socket) -> None:
         """Test that sending multiple messages at once are processed sequentially."""
-        msg1 = json.dumps({"name": "health", "arguments": {}}) + "\n"
-        msg2 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        msg1 = make_request("health", {})
+        msg2 = make_request("health", {})
 
         # Send both messages in one packet (pipelining)
         client.send((msg1 + msg2).encode())
@@ -197,61 +220,59 @@ class TestBBServerReceive:
         # We may get one or both responses depending on timing
         # The important thing is no error occurred
         lines = response.split("\n")
-        data1 = json.loads(lines[0])
+        raw_data1 = json.loads(lines[0])
 
         # First response should be successful
-        assert "status" in data1
-        assert data1["status"] == "ok"
+        assert "result" in raw_data1
+        assert "status" in raw_data1["result"]
+        assert raw_data1["result"]["status"] == "ok"
 
         # If we got both in one recv, verify second is also good
         if len(lines) > 1 and lines[1]:
-            data2 = json.loads(lines[1])
-            assert "status" in data2
-            assert data2["status"] == "ok"
+            raw_data2 = json.loads(lines[1])
+            assert "result" in raw_data2
+            assert "status" in raw_data2["result"]
+            assert raw_data2["result"]["status"] == "ok"
 
     def test_invalid_json_syntax(self, client: socket.socket) -> None:
         """Test that malformed JSON is rejected."""
         client.send(b"{invalid json}\n")
 
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "BAD_REQUEST"
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
 
     def test_json_string_rejected(self, client: socket.socket) -> None:
         """Test that JSON strings are rejected (must be object)."""
         client.send(b'"just a string"\n')
 
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "BAD_REQUEST"
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
 
     def test_json_number_rejected(self, client: socket.socket) -> None:
         """Test that JSON numbers are rejected (must be object)."""
         client.send(b"42\n")
 
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "BAD_REQUEST"
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
 
     def test_json_array_rejected(self, client: socket.socket) -> None:
         """Test that JSON arrays are rejected (must be object starting with '{')."""
         client.send(b'["array", "of", "values"]\n')
 
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
-        assert "error" in data
-        assert "error_code" in data
-        assert data["error_code"] == "BAD_REQUEST"
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
 
     def test_only_whitespace_line_rejected(self, client: socket.socket) -> None:
         """Test that whitespace-only lines are rejected as invalid JSON."""
@@ -259,11 +280,11 @@ class TestBBServerReceive:
         client.send(b"   \t  \n")
 
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
         # Should be rejected as invalid JSON (trimmed to empty, doesn't start with '{')
-        assert "error" in data
-        assert data["error_code"] == "BAD_REQUEST"
+        assert "error" in raw_data
+        assert raw_data["error"]["data"]["name"] == "BAD_REQUEST"
 
 
 class TestBBServerSendResponse:
@@ -278,27 +299,46 @@ class TestBBServerSendResponse:
     def test_multiple_sequential_valid_requests(self, client: socket.socket) -> None:
         """Test handling multiple valid requests sent sequentially (not pipelined)."""
         # Send first request
-        msg1 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        msg1 = make_request("health", {})
         client.send(msg1.encode())
 
         response1 = client.recv(BUFFER_SIZE).decode().strip()
-        data1 = json.loads(response1)
-        assert "status" in data1  # Health endpoint returns status
+        raw_data1 = json.loads(response1)
+        assert "result" in raw_data1
+        assert "status" in raw_data1["result"]  # Health endpoint returns status
 
         # Send second request on same connection
-        msg2 = json.dumps({"name": "health", "arguments": {}}) + "\n"
+        msg2 = make_request("health", {})
         client.send(msg2.encode())
 
         response2 = client.recv(BUFFER_SIZE).decode().strip()
-        data2 = json.loads(response2)
-        assert "status" in data2
+        raw_data2 = json.loads(response2)
+        assert "result" in raw_data2
+        assert "status" in raw_data2["result"]
 
     def test_whitespace_around_json_accepted(self, client: socket.socket) -> None:
         """Test that JSON with leading/trailing whitespace is accepted."""
-        msg = "  " + json.dumps({"name": "health", "arguments": {}}) + "  \n"
+        global _test_request_id
+        _test_request_id += 1
+        msg = (
+            "  "
+            + json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "health",
+                    "params": {},
+                    "id": _test_request_id,
+                }
+            )
+            + "  \n"
+        )
         client.send(msg.encode())
         response = client.recv(BUFFER_SIZE).decode().strip()
-        data = json.loads(response)
+        raw_data = json.loads(response)
 
         # Should be processed successfully (whitespace trimmed at line 134)
-        assert "status" in data or "error" in data
+        # Result should contain health status or error
+        if "result" in raw_data:
+            assert "status" in raw_data["result"]
+        else:
+            assert "error" in raw_data

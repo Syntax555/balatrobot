@@ -47,8 +47,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="string_field",
+            "BAD_REQUEST",
+            "string_field",
         )
 
     def test_valid_integer_type(self, client: socket.socket) -> None:
@@ -75,8 +75,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="integer_field",
+            "BAD_REQUEST",
+            "integer_field",
         )
 
     def test_invalid_integer_type_string(self, client: socket.socket) -> None:
@@ -91,8 +91,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="integer_field",
+            "BAD_REQUEST",
+            "integer_field",
         )
 
     def test_valid_array_type(self, client: socket.socket) -> None:
@@ -119,8 +119,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="array_field",
+            "BAD_REQUEST",
+            "array_field",
         )
 
     def test_invalid_array_type_string(self, client: socket.socket) -> None:
@@ -135,8 +135,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="array_field",
+            "BAD_REQUEST",
+            "array_field",
         )
 
     def test_valid_boolean_type_true(self, client: socket.socket) -> None:
@@ -175,8 +175,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="boolean_field",
+            "BAD_REQUEST",
+            "boolean_field",
         )
 
     def test_invalid_boolean_type_number(self, client: socket.socket) -> None:
@@ -191,8 +191,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="boolean_field",
+            "BAD_REQUEST",
+            "boolean_field",
         )
 
     def test_valid_table_type(self, client: socket.socket) -> None:
@@ -231,8 +231,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="table_field",
+            "BAD_REQUEST",
+            "table_field",
         )
 
     def test_invalid_table_type_string(self, client: socket.socket) -> None:
@@ -247,8 +247,8 @@ class TestTypeValidation:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="table_field",
+            "BAD_REQUEST",
+            "table_field",
         )
 
 
@@ -278,8 +278,8 @@ class TestRequiredFields:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="required_field",
+            "BAD_REQUEST",
+            "required_field",
         )
 
     def test_optional_field_missing(self, client: socket.socket) -> None:
@@ -327,8 +327,8 @@ class TestArrayItemTypes:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="array_of_integers",
+            "BAD_REQUEST",
+            "array_of_integers",
         )
 
     def test_array_of_integers_invalid_string(self, client: socket.socket) -> None:
@@ -343,8 +343,8 @@ class TestArrayItemTypes:
         )
         assert_error_response(
             response,
-            expected_error_code="BAD_REQUEST",
-            expected_message_contains="array_of_integers",
+            "BAD_REQUEST",
+            "array_of_integers",
         )
 
 
@@ -371,7 +371,7 @@ class TestFailFastBehavior:
         # The specific error depends on Lua table iteration order
         assert_error_response(response)
         # Verify it's one of the expected error codes
-        assert response["error_code"] in [
+        assert response["error"]["data"]["name"] in [
             "BAD_REQUEST",
             "BAD_REQUEST",
         ]
