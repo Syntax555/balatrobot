@@ -6,6 +6,7 @@
 local socket = require("socket")
 local json = require("json")
 
+---@type Server
 BB_SERVER = {
   host = BB_SETTINGS.host,
   port = BB_SETTINGS.port,
@@ -63,7 +64,7 @@ function BB_SERVER.accept()
 end
 
 --- Max payload: 256 bytes. Non-blocking, returns empty array if no data.
----@return Request[]
+---@return Request.Server[]
 function BB_SERVER.receive()
   if not BB_SERVER.client_socket then
     return {}
@@ -118,7 +119,7 @@ function BB_SERVER.receive()
   return { parsed }
 end
 
----@param response EndpointResponse
+---@param response Response.Endpoint
 ---@return boolean success
 function BB_SERVER.send_response(response)
   if not BB_SERVER.client_socket then

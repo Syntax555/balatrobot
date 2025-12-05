@@ -4,7 +4,7 @@
 -- Select Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Select.Params
+---@class Request.Endpoint.Select.Params
 
 -- ==========================================================================
 -- Select Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.BLIND_SELECT },
 
-  ---@param _ Endpoint.Select.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Select.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init select()", "BB.ENDPOINTS")
     -- Get current blind and its UI element

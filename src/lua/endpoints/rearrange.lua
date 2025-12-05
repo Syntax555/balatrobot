@@ -4,7 +4,7 @@
 -- Rearrange Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Rearrange.Params
+---@class Request.Endpoint.Rearrange.Params
 ---@field hand integer[]? 0-based indices representing new order of cards in hand
 ---@field jokers integer[]? 0-based indices representing new order of jokers
 ---@field consumables integer[]? 0-based indices representing new order of consumables
@@ -43,8 +43,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Rearrange.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Rearrange.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     -- Validate exactly one parameter is provided
     local param_count = (args.hand and 1 or 0) + (args.jokers and 1 or 0) + (args.consumables and 1 or 0)

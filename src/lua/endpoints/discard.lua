@@ -4,7 +4,7 @@
 -- Discard Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Discard.Params
+---@class Request.Endpoint.Discard.Params
 ---@field cards integer[] 0-based indices of cards to discard
 
 -- ==========================================================================
@@ -29,8 +29,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND },
 
-  ---@param args Endpoint.Discard.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Discard.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init discard()", "BB.ENDPOINTS")
     if #args.cards == 0 then

@@ -4,7 +4,7 @@
 -- Skip Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Skip.Params
+---@class Request.Endpoint.Skip.Params
 
 -- ==========================================================================
 -- Skip Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.BLIND_SELECT },
 
-  ---@param _ Endpoint.Skip.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Skip.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init skip()", "BB.ENDPOINTS")
 

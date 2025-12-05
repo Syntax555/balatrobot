@@ -4,7 +4,7 @@
 -- CashOut Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.CashOut.Params
+---@class Request.Endpoint.CashOut.Params
 
 -- ==========================================================================
 -- CashOut Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.ROUND_EVAL },
 
-  ---@param _ Endpoint.CashOut.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.CashOut.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init cash_out()", "BB.ENDPOINTS")
     G.FUNCS.cash_out({ config = {} })

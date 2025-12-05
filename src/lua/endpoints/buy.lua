@@ -4,7 +4,7 @@
 -- Buy Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Buy.Params
+---@class Request.Endpoint.Buy.Params
 ---@field card integer? 0-based index of card to buy
 ---@field voucher integer? 0-based index of voucher to buy
 ---@field pack integer? 0-based index of pack to buy
@@ -40,8 +40,8 @@ return {
 
   requires_state = { G.STATES.SHOP },
 
-  ---@param args Endpoint.Buy.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Buy.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init buy()", "BB.ENDPOINTS")
     local gamestate = BB_GAMESTATE.get_gamestate()

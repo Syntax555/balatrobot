@@ -4,7 +4,7 @@
 -- NextRound Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.NextRound.Params
+---@class Request.Endpoint.NextRound.Params
 
 -- ==========================================================================
 -- NextRound Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.SHOP },
 
-  ---@param _ Endpoint.NextRound.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.NextRound.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init next_round()", "BB.ENDPOINTS")
     G.FUNCS.toggle_shop({})

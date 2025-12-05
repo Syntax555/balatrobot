@@ -4,7 +4,7 @@
 -- Use Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Use.Params
+---@class Request.Endpoint.Use.Params
 ---@field consumable integer 0-based index of consumable to use
 ---@field cards integer[]? 0-based indices of cards to target
 
@@ -35,8 +35,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Use.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Use.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init use()", "BB.ENDPOINTS")
 

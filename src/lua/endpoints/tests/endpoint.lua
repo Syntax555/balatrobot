@@ -4,7 +4,7 @@
 -- Test Endpoint Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Test.Endpoint.Params
+---@class Request.Endpoint.Test.Endpoint.Params
 ---@field required_string string A required string field
 ---@field optional_string? string Optional string field
 ---@field required_integer integer Required integer field
@@ -57,8 +57,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Test.Endpoint.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Test.Endpoint.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     send_response({
       success = true,

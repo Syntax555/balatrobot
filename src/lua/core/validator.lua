@@ -30,7 +30,7 @@ end
 
 ---@param field_name string
 ---@param value any
----@param field_schema SchemaField
+---@param field_schema Endpoint.Schema
 ---@return boolean success
 ---@return string? error_message
 ---@return string? error_code
@@ -68,7 +68,7 @@ local function validate_field(field_name, value, field_schema)
 end
 
 ---@param args table
----@param schema table<string, SchemaField>
+---@param schema table<string, Endpoint.Schema>
 ---@return boolean success
 ---@return string? error_message
 ---@return string? error_code

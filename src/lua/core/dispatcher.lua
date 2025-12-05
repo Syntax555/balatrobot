@@ -24,6 +24,7 @@ local function get_state_name(state_value)
   return STATE_NAME_CACHE[state_value] or tostring(state_value)
 end
 
+---@type Dispatcher
 BB_DISPATCHER = {
   endpoints = {},
   Server = nil,
@@ -126,7 +127,7 @@ function BB_DISPATCHER.send_error(message, error_code)
   })
 end
 
----@param request Request
+---@param request Request.Server
 function BB_DISPATCHER.dispatch(request)
   -- TIER 1: Protocol Validation (jsonrpc version checked in server.receive())
   if not request.method or type(request.method) ~= "string" then

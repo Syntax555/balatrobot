@@ -4,7 +4,7 @@
 -- Sell Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Sell.Params
+---@class Request.Endpoint.Sell.Params
 ---@field joker integer? 0-based index of joker to sell
 ---@field consumable integer? 0-based index of consumable to sell
 
@@ -34,8 +34,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Sell.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Sell.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init sell()", "BB.ENDPOINTS")
 

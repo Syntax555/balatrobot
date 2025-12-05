@@ -4,7 +4,7 @@
 -- Test State Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Test.State.Params
+---@class Request.Endpoint.Test.State.Params
 
 -- ==========================================================================
 -- TestState Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.SPLASH, G.STATES.MENU },
 
-  ---@param _ Endpoint.Test.State.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Test.State.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     send_response({
       success = true,

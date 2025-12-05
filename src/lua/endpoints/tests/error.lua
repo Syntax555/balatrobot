@@ -4,7 +4,7 @@
 -- Test Error Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Test.Error.Params
+---@class Request.Endpoint.Test.Error.Params
 ---@field error_type "throw_error"|"success" Whether to throw an error or succeed
 
 -- ==========================================================================
@@ -29,8 +29,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Test.Error.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Test.Error.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     if args.error_type == "throw_error" then
       error("Intentional test error from endpoint execution")

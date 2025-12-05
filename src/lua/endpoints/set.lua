@@ -4,7 +4,7 @@
 -- Set Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Set.Params
+---@class Request.Endpoint.Set.Params
 ---@field money integer? New money amount
 ---@field chips integer? New chips amount
 ---@field ante integer? New ante number
@@ -64,8 +64,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Set.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Set.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init set()", "BB.ENDPOINTS")
 

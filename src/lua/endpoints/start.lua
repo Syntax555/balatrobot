@@ -4,7 +4,7 @@
 -- Start Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Start.Params
+---@class Request.Endpoint.Start.Params
 ---@field deck Deck deck enum value (e.g., "RED", "BLUE", "YELLOW")
 ---@field stake Stake stake enum value (e.g., "WHITE", "RED", "GREEN", "BLACK", "BLUE", "PURPLE", "ORANGE", "GOLD")
 ---@field seed string? optional seed for the run
@@ -73,8 +73,8 @@ return {
 
   requires_state = { G.STATES.MENU },
 
-  ---@param args Endpoint.Start.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Start.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init start()", "BB.ENDPOINTS")
 

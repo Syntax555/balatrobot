@@ -4,7 +4,7 @@
 -- Health Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Health.Params
+---@class Request.Endpoint.Health.Params
 
 -- ==========================================================================
 -- Health Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = nil,
 
-  ---@param _ Endpoint.Health.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Health.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init health()", "BB.ENDPOINTS")
     sendDebugMessage("Return health()", "BB.ENDPOINTS")

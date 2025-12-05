@@ -4,7 +4,7 @@
 -- Reroll Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Reroll.Params
+---@class Request.Endpoint.Reroll.Params
 
 -- ==========================================================================
 -- Reroll Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = { G.STATES.SHOP },
 
-  ---@param _ Endpoint.Reroll.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Reroll.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     -- Check affordability
     local reroll_cost = G.GAME.current_round and G.GAME.current_round.reroll_cost or 0

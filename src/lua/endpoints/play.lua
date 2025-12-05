@@ -4,7 +4,7 @@
 -- Play Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Play.Params
+---@class Request.Endpoint.Play.Params
 ---@field cards integer[] 0-based indices of cards to play
 
 -- ==========================================================================
@@ -29,8 +29,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND },
 
-  ---@param args Endpoint.Play.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Play.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init play()", "BB.ENDPOINTS")
     if #args.cards == 0 then

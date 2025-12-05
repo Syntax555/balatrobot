@@ -4,7 +4,7 @@
 -- Save Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Save.Params
+---@class Request.Endpoint.Save.Params
 ---@field path string File path for the save file
 
 -- ==========================================================================
@@ -49,8 +49,8 @@ return {
     G.STATES.NEW_ROUND,
   },
 
-  ---@param args Endpoint.Save.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Save.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     local path = args.path
 

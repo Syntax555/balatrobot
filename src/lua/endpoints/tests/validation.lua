@@ -4,7 +4,7 @@
 -- Test Validation Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Test.Validation.Params
+---@class Request.Endpoint.Test.Validation.Params
 ---@field required_field string Required string field for basic validation testing
 ---@field string_field? string Optional string field for type validation
 ---@field integer_field? integer Optional integer field for type validation
@@ -71,8 +71,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Test.Validation.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Test.Validation.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     send_response({
       success = true,

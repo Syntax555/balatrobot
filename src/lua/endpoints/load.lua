@@ -4,7 +4,7 @@
 -- Load Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Load.Params
+---@class Request.Endpoint.Load.Params
 ---@field path string File path to the save file
 
 -- ==========================================================================
@@ -34,8 +34,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Load.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Load.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     local path = args.path
 

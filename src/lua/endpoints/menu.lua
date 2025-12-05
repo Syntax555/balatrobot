@@ -4,7 +4,7 @@
 -- Menu Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Menu.Params
+---@class Request.Endpoint.Menu.Params
 
 -- ==========================================================================
 -- Menu Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = nil,
 
-  ---@param _ Endpoint.Menu.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Menu.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init menu()", "BB.ENDPOINTS")
     G.FUNCS.go_to_menu({})

@@ -4,7 +4,7 @@
 -- Gamestate Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Gamestate.Params
+---@class Request.Endpoint.Gamestate.Params
 
 -- ==========================================================================
 -- Gamestate Endpoint
@@ -21,8 +21,8 @@ return {
 
   requires_state = nil,
 
-  ---@param _ Endpoint.Gamestate.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param _ Request.Endpoint.Gamestate.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init gamestate()", "BB.ENDPOINTS")
     local state_data = BB_GAMESTATE.get_gamestate()

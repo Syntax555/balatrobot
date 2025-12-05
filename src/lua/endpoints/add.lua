@@ -4,7 +4,7 @@
 -- Add Endpoint Params
 -- ==========================================================================
 
----@class Endpoint.Add.Params
+---@class Request.Endpoint.Add.Params
 ---@field key Card.Key The card key to add (j_* for jokers, c_* for consumables, v_* for vouchers, SUIT_RANK for playing cards)
 ---@field seal Card.Modifier.Seal? The card seal to apply (only for playing cards)
 ---@field edition Card.Modifier.Edition? The card edition to apply (jokers, playing cards and NEGATIVE consumables)
@@ -161,8 +161,8 @@ return {
 
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP, G.STATES.ROUND_EVAL },
 
-  ---@param args Endpoint.Add.Params
-  ---@param send_response fun(response: EndpointResponse)
+  ---@param args Request.Endpoint.Add.Params
+  ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
     sendDebugMessage("Init add()", "BB.ENDPOINTS")
 
