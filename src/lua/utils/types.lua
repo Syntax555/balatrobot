@@ -2,6 +2,10 @@
 
 -- ==========================================================================
 -- GameState Types
+--
+-- The GameState represents the current game state of the game. It's a nested
+-- table that contains all the information about the game state, including
+-- the current round, hand, and discards.
 -- ==========================================================================
 
 ---@class GameState
@@ -90,132 +94,146 @@
 ---@field buy integer Buy price of the card (if in shop)
 
 -- ==========================================================================
--- Schema Types
--- ==========================================================================
-
----@class SchemaField
----@field type "string"|"integer"|"array"|"boolean"|"table"
----@field required boolean?
----@field items "integer"?
----@field description string
-
----@class Validator
----@field validate fun(args: table, schema: table<string, SchemaField>): boolean, string?, string?
-
--- ==========================================================================
--- Endpoint Type
+-- Endpoint Types
+--
+-- The endpoints are registered at initialization. The dispatcher will redirect
+-- requests to the correct endpoint based on the Request.Endpoint.Method (and
+-- Request.Endpoint.Test.Method). The validator check that the game is in the
+-- correct state and check that the provided Request.Endpoint.Params follow the
+-- endpoint schema. Finally, the endpoint execute function is called with the
+-- Request.Endpoint.Params (or Request.Endpoint.Test.Params).
 -- ==========================================================================
 
 ---@class Endpoint
 ---@field name string The endpoint name
 ---@field description string Brief description of the endpoint
----@field schema table<string, SchemaField> Schema definition for arguments validation
+---@field schema table<string, Endpoint.Schema> Schema definition for arguments validation
 ---@field requires_state integer[]? Optional list of required game states
----@field execute fun(args: Request.Params, send_response: fun(response: EndpointResponse)) Execute function
+---@field execute fun(args: Request.Endpoint.Params | Request.Endpoint.Test.Params, send_response: fun(response: Response.Endpoint)) Execute function
+
+---@class Endpoint.Schema
+---@field type "string"|"integer"|"array"|"boolean"|"table"
+---@field required boolean?
+---@field items "integer"?
+---@field description string
 
 -- ==========================================================================
--- Core Infrastructure Types
+-- Server Request Type
+--
+-- The Request.Server is the JSON-RPC 2.0 request received by the server and
+-- used by the dispatcher to call the right endpoint with the correct
+-- arguments.
 -- ==========================================================================
 
----@class Dispatcher
----@field endpoints table<string, Endpoint>
----@field Server Server?
-
----@class Server
----@field host string
----@field port integer
----@field server_socket TCPSocketServer?
----@field client_socket TCPSocketClient?
----@field current_request_id integer|string|nil
-
--- ==========================================================================
--- Request Types (JSON-RPC 2.0)
--- ==========================================================================
-
----@class Request
+---@class Request.Server
 ---@field jsonrpc "2.0"
----@field method Request.Method Request method name. This corresponse to the endpoint name
----@field params Request.Params Params to use for the requests
+---@field method Request.Endpoint.Method | Request.Endpoint.Test.Method Request method name.
+---@field params Request.Endpoint.Params | Request.Endpoint.Test.Params Params to use for the requests
 ---@field id integer|string|nil Request ID
 
----@alias Request.Method
----| "echo" | "endpoint" | "error" | "state" | "validation" #  Test Endpoints
----| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health" | "load"
----| "menu" | "next_round" | "play" | "rearrange" | "reroll" | "save" | "select"
----| "sell" | "set" | "skip" | "start" | "use"
-
----@alias Request.Params
----| Endpoint.Add.Params
----| Endpoint.Buy.Params
----| Endpoint.CashOut.Params
----| Endpoint.Discard.Params
----| Endpoint.Gamestate.Params
----| Endpoint.Health.Params
----| Endpoint.Load.Params
----| Endpoint.Menu.Params
----| Endpoint.NextRound.Params
----| Endpoint.Play.Params
----| Endpoint.Rearrange.Params
----| Endpoint.Reroll.Params
----| Endpoint.Save.Params
----| Endpoint.Select.Params
----| Endpoint.Sell.Params
----| Endpoint.Set.Params
----| Endpoint.Skip.Params
----| Endpoint.Use.Params
----| Endpoint.Test.Echo.Params
----| Endpoint.Test.Endpoint.Params
----| Endpoint.Test.Error.Params
----| Endpoint.Test.State.Params
----| Endpoint.Test.Validation.Params
-
 -- ==========================================================================
--- Response Types
+-- Endpoint Request Types
+--
+-- The Request.Endpoint.Method (and Request.Endpoint.Test.Method) specifies
+-- the endpoint name. The Request.Endpoint.Params (and Request.Endpoint.Test.Params)
+-- contains the arguments to use in the endpoint execute function.
 -- ==========================================================================
 
----@class PathResponse
+---@alias Request.Endpoint.Method
+---| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health"
+---| "load" | "menu" | "next_round" | "play" | "rearrange" | "reroll"
+---| "save" | "select" | "sell" | "set" | "skip" | "start" | "use"
+
+---@alias Request.Endpoint.Test.Method
+---| "echo" | "endpoint" | "error" | "state" | "validation"
+
+---@alias Request.Endpoint.Params
+---| Request.Endpoint.Add.Params
+---| Request.Endpoint.Buy.Params
+---| Request.Endpoint.CashOut.Params
+---| Request.Endpoint.Discard.Params
+---| Request.Endpoint.Gamestate.Params
+---| Request.Endpoint.Health.Params
+---| Request.Endpoint.Load.Params
+---| Request.Endpoint.Menu.Params
+---| Request.Endpoint.NextRound.Params
+---| Request.Endpoint.Play.Params
+---| Request.Endpoint.Rearrange.Params
+---| Request.Endpoint.Reroll.Params
+---| Request.Endpoint.Save.Params
+---| Request.Endpoint.Select.Params
+---| Request.Endpoint.Sell.Params
+---| Request.Endpoint.Set.Params
+---| Request.Endpoint.Skip.Params
+---| Request.Endpoint.Start.Params
+---| Request.Endpoint.Use.Params
+
+---@alias Request.Endpoint.Test.Params
+---| Request.Endpoint.Test.Echo.Params
+---| Request.Endpoint.Test.Endpoint.Params
+---| Request.Endpoint.Test.Error.Params
+---| Request.Endpoint.Test.State.Params
+---| Request.Endpoint.Test.Validation.Params
+
+-- ==========================================================================
+-- Endpoint Response Types
+--
+-- The execute function terminates with the excecution of the callback function
+-- `send_response`. The `send_respnose` function takes as input a
+-- Response.Endpoint (which is not JSON-RPC 2.0 compliant).
+-- ==========================================================================
+
+---@class Response.Endpoint.Path
 ---@field success boolean Whether the request was successful
 ---@field path string Path to the file
 
----@class HealthResponse
+---@class Response.Endpoint.Health
 ---@field status "ok"
 
----@alias GameStateResponse
+---@alias Response.Endpoint.GameState
 ---| GameState # Return the current game state of the game
 
----@class ErrorResponse
----@field message string Human-readable error message
----@field name ErrorName Error name (BAD_REQUEST, INVALID_STATE, etc.)
-
----@class TestResponse
+---@class Response.Endpoint.Test
 ---@field success boolean Whether the request was successful
 ---@field received_args table? Arguments received by the endpoint (for test endpoints)
 ---@field state_validated boolean? Whether the state was validated (for test endpoints)
 
----@alias EndpointResponse
----| HealthResponse
----| PathResponse
----| GameStateResponse
----| ErrorResponse
----| TestResponse
+---@class Response.Endpoint.Error
+---@field message string Human-readable error message
+---@field name ErrorName Error name (BAD_REQUEST, INVALID_STATE, etc.)
 
----@class ResponseSuccess
+---@alias Response.Endpoint
+---| Response.Endpoint.Health
+---| Response.Endpoint.Path
+---| Response.Endpoint.GameState
+---| Response.Endpoint.Test
+---| Response.Endpoint.Error
+
+-- ==========================================================================
+-- Server Response Types
+--
+-- The `send_response` transforms the Response.Endpoint into a JSON-RPC 2.0
+-- compliant response returning to the client a Response.Server
+-- ==========================================================================
+
+---@class Response.Server.Success
 ---@field jsonrpc "2.0"
----@field result HealthResponse | PathResponse | GameStateResponse Response payload
+---@field result Response.Endpoint.Health | Response.Endpoint.Path | Response.Endpoint.GameState | Response.Endpoint.Test Response payload
 ---@field id integer|string|nil Request ID
 
----@class ResponseError
+---@class Response.Server.Error
 ---@field jsonrpc "2.0"
----@field error ResponseError.Error Response error
+---@field error Response.Server.Error.Error Response error
 ---@field id integer|string|nil Request ID
 
----@class ResponseError.Error
+---@class Response.Server.Error.Error
 ---@field code ErrorCode Numeric error code following JSON-RPC 2.0 convention
 ---@field message string Human-readable error message
----@field data ResponseError.Error.Data
+---@field data table<'name', ErrorName> Semantic error code
 
----@class ResponseError.Error.Data
----@field name ErrorName Semantic error code
+---@alias Response.Server
+---| Response.Server.Success
+---| Response.Server.Error
 
 -- ==========================================================================
 -- Error Types
@@ -237,22 +255,32 @@
 ---@alias ErrorCodes table<ErrorName, ErrorCode>
 
 -- ==========================================================================
--- Settings Types
+-- Core Infrastructure Types
 -- ==========================================================================
 
 ---@class Settings
----@field host string
----@field port integer
----@field headless boolean
----@field fast boolean
----@field render_on_api boolean
----@field audio boolean
----@field debug boolean
----@field no_shaders boolean
-
--- ==========================================================================
--- Debug Types
--- ==========================================================================
+---@field host string Hostname for the TCP server (default: "127.0.0.1")
+---@field port integer Port number for the TCP server (default: 12346)
+---@field headless boolean Whether to run in headless mode (minimizes window, disables rendering)
+---@field fast boolean Whether to run in fast mode (unlimited FPS, 10x game speed, 60 FPS animations)
+---@field render_on_api boolean Whether to render frames only on API calls (mutually exclusive with headless)
+---@field audio boolean Whether to play audio (enables sound thread and sets volume levels)
+---@field debug boolean Whether debug mode is enabled (requires DebugPlus mod)
+---@field no_shaders boolean Whether to disable all shaders for better performance (causes visual glitches)
 
 ---@class Debug
----@field log table?
+---@field log table? DebugPlus logger instance with debug/info/error methods (nil if DebugPlus not available)
+
+---@class Server
+---@field host string Hostname for the TCP server (copied from Settings)
+---@field port integer Port number for the TCP server (copied from Settings)
+---@field server_socket TCPSocketServer? TCP server socket listening for connections (nil if not initialized)
+---@field client_socket TCPSocketClient? TCP client socket for the connected client (nil if no client connected)
+---@field current_request_id integer|string|nil Current JSON-RPC request ID being processed (nil if no active request)
+
+---@class Dispatcher
+---@field endpoints table<string, Endpoint> Map of endpoint names to Endpoint definitions (registered at initialization)
+---@field Server Server? Reference to the Server module for sending responses (set during initialization)
+
+---@class Validator
+---@field validate fun(args: table, schema: table<string, Endpoint.Schema>): boolean, string?, string? Validates endpoint arguments against schema (returns success, error_message, error_code)
