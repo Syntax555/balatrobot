@@ -1,10 +1,18 @@
 -- src/lua/endpoints/reroll.lua
+
+-- ==========================================================================
+-- Reroll Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Reroll.Params
+
+-- ==========================================================================
 -- Reroll Endpoint
---
--- Reroll to update the cards in the shop area
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "reroll",
 
   description = "Reroll to update the cards in the shop area",
@@ -13,16 +21,16 @@ return {
 
   requires_state = { G.STATES.SHOP },
 
-  ---@param _ table The arguments (none required)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.Reroll.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
     -- Check affordability
     local reroll_cost = G.GAME.current_round and G.GAME.current_round.reroll_cost or 0
 
     if G.GAME.dollars < reroll_cost then
       send_response({
-        error = "Not enough dollars to reroll. Current: " .. G.GAME.dollars .. ", Required: " .. reroll_cost,
-        error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+        message = "Not enough dollars to reroll. Current: " .. G.GAME.dollars .. ", Required: " .. reroll_cost,
+        name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return
     end

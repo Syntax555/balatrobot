@@ -1,7 +1,8 @@
 -- src/lua/endpoints/add.lua
--- Add Endpoint
---
--- Add a new card to the game using SMODS.add_card
+
+-- ==========================================================================
+-- Add Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Add.Params
 ---@field key Card.Key The card key to add (j_* for jokers, c_* for consumables, v_* for vouchers, SUIT_RANK for playing cards)
@@ -11,6 +12,10 @@
 ---@field eternal boolean? If true, the card will be eternal (jokers only)
 ---@field perishable integer? The card will be perishable for this many rounds (jokers only, must be >= 1)
 ---@field rental boolean? If true, the card will be rental (jokers only)
+
+-- ==========================================================================
+-- Add Endpoint Utils
+-- ==========================================================================
 
 -- Suit conversion table for playing cards
 local SUIT_MAP = {
@@ -105,10 +110,17 @@ local function parse_playing_card_key(key)
   return rank, suit
 end
 
+-- ==========================================================================
+-- Add Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "add",
+
   description = "Add a new card to the game (joker, consumable, voucher, or playing card)",
+
   schema = {
     key = {
       type = "string",
@@ -146,10 +158,11 @@ return {
       description = "If true, the card will be rental (costs $1 per round) - only valid for jokers",
     },
   },
+
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP, G.STATES.ROUND_EVAL },
 
-  ---@param args Endpoint.Add.Params The arguments for the endpoint
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Add.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init add()", "BB.ENDPOINTS")
 
@@ -158,8 +171,8 @@ return {
 
     if not card_type then
       send_response({
-        error = "Invalid card key format. Expected: joker (j_*), consumable (c_*), voucher (v_*), or playing card (SUIT_RANK)",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Invalid card key format. Expected: joker (j_*), consumable (c_*), voucher (v_*), or playing card (SUIT_RANK)",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -167,8 +180,8 @@ return {
     -- Special validation for playing cards - can only be added in SELECTING_HAND state
     if card_type == "playing_card" and G.STATE ~= G.STATES.SELECTING_HAND then
       send_response({
-        error = "Playing cards can only be added in SELECTING_HAND state",
-        error_code = BB_ERROR_NAMES.INVALID_STATE,
+        message = "Playing cards can only be added in SELECTING_HAND state",
+        name = BB_ERROR_NAMES.INVALID_STATE,
       })
       return
     end
@@ -176,8 +189,8 @@ return {
     -- Special validation for vouchers - can only be added in SHOP state
     if card_type == "voucher" and G.STATE ~= G.STATES.SHOP then
       send_response({
-        error = "Vouchers can only be added in SHOP state",
-        error_code = BB_ERROR_NAMES.INVALID_STATE,
+        message = "Vouchers can only be added in SHOP state",
+        name = BB_ERROR_NAMES.INVALID_STATE,
       })
       return
     end
@@ -185,8 +198,8 @@ return {
     -- Validate seal parameter is only for playing cards
     if args.seal and card_type ~= "playing_card" then
       send_response({
-        error = "Seal can only be applied to playing cards",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Seal can only be applied to playing cards",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -197,8 +210,8 @@ return {
       seal_value = SEAL_MAP[args.seal]
       if not seal_value then
         send_response({
-          error = "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Invalid seal value. Expected: RED, BLUE, GOLD, or PURPLE",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -207,8 +220,8 @@ return {
     -- Validate edition parameter is only for jokers, playing cards, or consumables
     if args.edition and card_type == "voucher" then
       send_response({
-        error = "Edition cannot be applied to vouchers",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Edition cannot be applied to vouchers",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -216,8 +229,8 @@ return {
     -- Special validation: consumables can only have NEGATIVE edition
     if args.edition and card_type == "consumable" and args.edition ~= "NEGATIVE" then
       send_response({
-        error = "Consumables can only have NEGATIVE edition",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Consumables can only have NEGATIVE edition",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -228,8 +241,8 @@ return {
       edition_value = EDITION_MAP[args.edition]
       if not edition_value then
         send_response({
-          error = "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Invalid edition value. Expected: HOLO, FOIL, POLYCHROME, or NEGATIVE",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -238,8 +251,8 @@ return {
     -- Validate enhancement parameter is only for playing cards
     if args.enhancement and card_type ~= "playing_card" then
       send_response({
-        error = "Enhancement can only be applied to playing cards",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Enhancement can only be applied to playing cards",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -250,8 +263,8 @@ return {
       enhancement_value = ENHANCEMENT_MAP[args.enhancement]
       if not enhancement_value then
         send_response({
-          error = "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Invalid enhancement value. Expected: BONUS, MULT, WILD, GLASS, STEEL, STONE, GOLD, or LUCKY",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -260,8 +273,8 @@ return {
     -- Validate eternal parameter is only for jokers
     if args.eternal and card_type ~= "joker" then
       send_response({
-        error = "Eternal can only be applied to jokers",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Eternal can only be applied to jokers",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -269,8 +282,8 @@ return {
     -- Validate perishable parameter is only for jokers
     if args.perishable and card_type ~= "joker" then
       send_response({
-        error = "Perishable can only be applied to jokers",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Perishable can only be applied to jokers",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -279,8 +292,8 @@ return {
     if args.perishable then
       if type(args.perishable) ~= "number" or args.perishable ~= math.floor(args.perishable) or args.perishable < 1 then
         send_response({
-          error = "Perishable must be a positive integer (>= 1)",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Perishable must be a positive integer (>= 1)",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -289,8 +302,8 @@ return {
     -- Validate rental parameter is only for jokers
     if args.rental and card_type ~= "joker" then
       send_response({
-        error = "Rental can only be applied to jokers",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Rental can only be applied to jokers",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -370,8 +383,8 @@ return {
 
     if not success then
       send_response({
-        error = "Failed to add card: " .. args.key,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Failed to add card: " .. args.key,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end

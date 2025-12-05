@@ -1,15 +1,24 @@
--- Use Endpoint
---
--- Use a consumable card (Tarot, Planet, or Spectral) with optional target cards
+-- src/lua/endpoints/use.lua
+
+-- ==========================================================================
+-- Use Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Use.Params
 ---@field consumable integer 0-based index of consumable to use
 ---@field cards integer[]? 0-based indices of cards to target
 
+-- ==========================================================================
+-- Use Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "use",
+
   description = "Use a consumable card with optional target cards",
+
   schema = {
     consumable = {
       type = "integer",
@@ -23,18 +32,19 @@ return {
       items = "integer",
     },
   },
+
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Use.Params The arguments
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Use.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init use()", "BB.ENDPOINTS")
 
     -- Step 1: Consumable Index Validation
     if args.consumable < 0 or args.consumable >= #G.consumeables.cards then
       send_response({
-        error = "Consumable index out of range: " .. args.consumable,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Consumable index out of range: " .. args.consumable,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -47,10 +57,10 @@ return {
     -- Step 3: State Validation for Card-Selecting Consumables
     if requires_cards and G.STATE ~= G.STATES.SELECTING_HAND then
       send_response({
-        error = "Consumable '"
+        message = "Consumable '"
           .. consumable_card.ability.name
           .. "' requires card selection and can only be used in SELECTING_HAND state",
-        error_code = BB_ERROR_NAMES.INVALID_STATE,
+        name = BB_ERROR_NAMES.INVALID_STATE,
       })
       return
     end
@@ -59,8 +69,8 @@ return {
     if requires_cards then
       if not args.cards or #args.cards == 0 then
         send_response({
-          error = "Consumable '" .. consumable_card.ability.name .. "' requires card selection",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Consumable '" .. consumable_card.ability.name .. "' requires card selection",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -69,8 +79,8 @@ return {
       for _, card_idx in ipairs(args.cards) do
         if card_idx < 0 or card_idx >= #G.hand.cards then
           send_response({
-            error = "Card index out of range: " .. card_idx,
-            error_code = BB_ERROR_NAMES.BAD_REQUEST,
+            message = "Card index out of range: " .. card_idx,
+            name = BB_ERROR_NAMES.BAD_REQUEST,
           })
           return
         end
@@ -86,14 +96,14 @@ return {
       -- Check if consumable requires exact number of cards
       if min_cards == max_cards and card_count ~= min_cards then
         send_response({
-          error = string.format(
+          message = string.format(
             "Consumable '%s' requires exactly %d card%s (provided: %d)",
             consumable_card.ability.name,
             min_cards,
             min_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -101,28 +111,28 @@ return {
       -- For consumables with range, check min and max separately
       if card_count < min_cards then
         send_response({
-          error = string.format(
+          message = string.format(
             "Consumable '%s' requires at least %d card%s (provided: %d)",
             consumable_card.ability.name,
             min_cards,
             min_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
 
       if card_count > max_cards then
         send_response({
-          error = string.format(
+          message = string.format(
             "Consumable '%s' requires at most %d card%s (provided: %d)",
             consumable_card.ability.name,
             max_cards,
             max_cards == 1 and "" or "s",
             card_count
           ),
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -150,8 +160,8 @@ return {
     -- Step 7: Game-Level Validation (e.g. try to use Familiar Spectral when G.hand is not available)
     if not consumable_card:can_use_consumeable() then
       send_response({
-        error = "Consumable '" .. consumable_card.ability.name .. "' cannot be used at this time",
-        error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+        message = "Consumable '" .. consumable_card.ability.name .. "' cannot be used at this time",
+        name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return
     end
@@ -159,8 +169,8 @@ return {
     -- Step 8: Space Check (not tested)
     if consumable_card:check_use() then
       send_response({
-        error = "Cannot use consumable '" .. consumable_card.ability.name .. "': insufficient space",
-        error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+        message = "Cannot use consumable '" .. consumable_card.ability.name .. "': insufficient space",
+        name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return
     end
@@ -199,7 +209,7 @@ return {
         local no_stop_use = not (G.GAME.STOP_USE and G.GAME.STOP_USE > 0)
 
         if card_removed and state_restored and controller_unlocked and no_stop_use then
-          sendDebugMessage("use() completed successfully", "BB.ENDPOINTS")
+          sendDebugMessage("Return use()", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
           return true
         end

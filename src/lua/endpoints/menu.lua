@@ -1,10 +1,18 @@
 -- src/lua/endpoints/menu.lua
+
+-- ==========================================================================
+-- Menu Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Menu.Params
+
+-- ==========================================================================
 -- Menu Endpoint
---
--- Returns to the main menu from any game state
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "menu",
 
   description = "Return to the main menu from any game state",
@@ -13,8 +21,8 @@ return {
 
   requires_state = nil,
 
-  ---@param _ table The arguments (empty for menu)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.Menu.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
     sendDebugMessage("Init menu()", "BB.ENDPOINTS")
     G.FUNCS.go_to_menu({})

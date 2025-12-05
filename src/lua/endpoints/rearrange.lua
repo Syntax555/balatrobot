@@ -1,18 +1,25 @@
 -- src/lua/endpoints/rearrange.lua
--- Rearrange Endpoint
---
--- Rearrange cards in hand, jokers, or consumables
+
+-- ==========================================================================
+-- Rearrange Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Rearrange.Params
 ---@field hand integer[]? 0-based indices representing new order of cards in hand
 ---@field jokers integer[]? 0-based indices representing new order of jokers
 ---@field consumables integer[]? 0-based indices representing new order of consumables
--- Exactly one parameter must be provided
+
+-- ==========================================================================
+-- Rearrange Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "rearrange",
+
   description = "Rearrange cards in hand, jokers, or consumables",
+
   schema = {
     hand = {
       type = "array",
@@ -33,23 +40,24 @@ return {
       description = "0-based indices representing new order of consumables",
     },
   },
+
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Rearrange.Params The arguments (hand, jokers, or consumables)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Rearrange.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     -- Validate exactly one parameter is provided
     local param_count = (args.hand and 1 or 0) + (args.jokers and 1 or 0) + (args.consumables and 1 or 0)
     if param_count == 0 then
       send_response({
-        error = "Must provide exactly one of: hand, jokers, or consumables",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Must provide exactly one of: hand, jokers, or consumables",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     elseif param_count > 1 then
       send_response({
-        error = "Can only rearrange one type at a time",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Can only rearrange one type at a time",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -61,8 +69,8 @@ return {
       -- Cards can only be rearranged during SELECTING_HAND
       if G.STATE ~= G.STATES.SELECTING_HAND then
         send_response({
-          error = "Can only rearrange hand during hand selection",
-          error_code = BB_ERROR_NAMES.INVALID_STATE,
+          message = "Can only rearrange hand during hand selection",
+          name = BB_ERROR_NAMES.INVALID_STATE,
         })
         return
       end
@@ -70,8 +78,8 @@ return {
       -- Validate G.hand exists (not tested)
       if not G.hand or not G.hand.cards then
         send_response({
-          error = "No hand available to rearrange",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "No hand available to rearrange",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -84,8 +92,8 @@ return {
       -- Validate G.jokers exists (not tested)
       if not G.jokers or not G.jokers.cards then
         send_response({
-          error = "No jokers available to rearrange",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "No jokers available to rearrange",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -98,8 +106,8 @@ return {
       -- Validate G.consumeables exists (not tested)
       if not G.consumeables or not G.consumeables.cards then
         send_response({
-          error = "No consumables available to rearrange",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "No consumables available to rearrange",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -116,8 +124,8 @@ return {
     -- Check length matches
     if #indices ~= #source_array then
       send_response({
-        error = "Must provide exactly " .. #source_array .. " indices for " .. type_name,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Must provide exactly " .. #source_array .. " indices for " .. type_name,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -128,8 +136,8 @@ return {
       -- Check range [0, N-1]
       if idx < 0 or idx >= #source_array then
         send_response({
-          error = "Index out of range for " .. type_name .. ": " .. idx,
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Index out of range for " .. type_name .. ": " .. idx,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -137,8 +145,8 @@ return {
       -- Check for duplicates
       if seen[idx] then
         send_response({
-          error = "Duplicate index in " .. type_name .. ": " .. idx,
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Duplicate index in " .. type_name .. ": " .. idx,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -193,7 +201,7 @@ return {
         end
 
         if done then
-          sendDebugMessage("rearrange() completed", "BB.ENDPOINTS")
+          sendDebugMessage("Return rearrange()", "BB.ENDPOINTS")
           local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end

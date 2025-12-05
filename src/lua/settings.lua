@@ -28,27 +28,18 @@ BalatroBot configure settings in Balatro using the following environment variabl
 
 ---@diagnostic disable: duplicate-set-field
 
----@class BB_SETTINGS
+---@type Settings
 BB_SETTINGS = {
-  ---@type string
   host = os.getenv("BALATROBOT_HOST") or "127.0.0.1",
-  ---@type number
   port = tonumber(os.getenv("BALATROBOT_PORT")) or 12346,
-  ---@type boolean
   headless = os.getenv("BALATROBOT_HEADLESS") == "1" or false,
-  ---@type boolean
   fast = os.getenv("BALATROBOT_FAST") == "1" or false,
-  ---@type boolean
   render_on_api = os.getenv("BALATROBOT_RENDER_ON_API") == "1" or false,
-  ---@type boolean
   audio = os.getenv("BALATROBOT_AUDIO") == "1" or false,
-  ---@type boolean
   debug = os.getenv("BALATROBOT_DEBUG") == "1" or false,
-  ---@type boolean
   no_shaders = os.getenv("BALATROBOT_NO_SHADERS") == "1" or false,
 }
 
--- Global flag to trigger rendering (used by render_on_api)
 ---@type boolean?
 BB_RENDER = nil
 

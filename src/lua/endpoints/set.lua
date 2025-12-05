@@ -1,4 +1,8 @@
--- Set a in-game value
+-- src/lua/endpoints/set.lua
+
+-- ==========================================================================
+-- Set Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Set.Params
 ---@field money integer? New money amount
@@ -9,10 +13,17 @@
 ---@field discards integer? New number of discards left number
 ---@field shop boolean? Re-stock shop with new items
 
+-- ==========================================================================
+-- Set Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "set",
+
   description = "Set a in-game value",
+
   schema = {
     money = {
       type = "integer",
@@ -50,18 +61,19 @@ return {
       description = "Re-stock shop with new items",
     },
   },
+
   requires_state = nil,
 
-  ---@param args Endpoint.Set.Params The arguments
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Set.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init set()", "BB.ENDPOINTS")
 
     -- Validate we're in a run
     if G.STAGE and G.STAGE ~= G.STAGES.RUN then
       send_response({
-        error = "Can only set during an active run",
-        error_code = BB_ERROR_NAMES.INVALID_STATE,
+        message = "Can only set during an active run",
+        name = BB_ERROR_NAMES.INVALID_STATE,
       })
       return
     end
@@ -77,8 +89,8 @@ return {
       and args.shop == nil
     then
       send_response({
-        error = "Must provide at least one field to set",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Must provide at least one field to set",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -87,8 +99,8 @@ return {
     if args.money then
       if args.money < 0 then
         send_response({
-          error = "Money must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Money must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -100,8 +112,8 @@ return {
     if args.chips then
       if args.chips < 0 then
         send_response({
-          error = "Chips must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Chips must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -113,8 +125,8 @@ return {
     if args.ante then
       if args.ante < 0 then
         send_response({
-          error = "Ante must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Ante must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -126,8 +138,8 @@ return {
     if args.round then
       if args.round < 0 then
         send_response({
-          error = "Round must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Round must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -139,8 +151,8 @@ return {
     if args.hands then
       if args.hands < 0 then
         send_response({
-          error = "Hands must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Hands must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -152,8 +164,8 @@ return {
     if args.discards then
       if args.discards < 0 then
         send_response({
-          error = "Discards must be a positive integer",
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Discards must be a positive integer",
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -164,8 +176,8 @@ return {
     if args.shop then
       if G.STATE ~= G.STATES.SHOP then
         send_response({
-          error = "Can re-stock shop only in SHOP state",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "Can re-stock shop only in SHOP state",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end

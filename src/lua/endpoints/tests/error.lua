@@ -1,13 +1,19 @@
 -- src/lua/endpoints/tests/error.lua
--- Test Endpoint that Throws Errors
---
--- Used for testing TIER 4: Execution Error Handling
 
----@class TestEndpoint.Error.Params
+-- ==========================================================================
+-- Test Error Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Test.Error.Params
 ---@field error_type "throw_error"|"success" Whether to throw an error or succeed
+
+-- ==========================================================================
+-- Test Error Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "test_error_endpoint",
 
   description = "Test endpoint that throws runtime errors",
@@ -23,8 +29,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args TestEndpoint.Error.Params The arguments
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Test.Error.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     if args.error_type == "throw_error" then
       error("Intentional test error from endpoint execution")

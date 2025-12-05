@@ -90,6 +90,19 @@
 ---@field buy integer Buy price of the card (if in shop)
 
 -- ==========================================================================
+-- Schema Types
+-- ==========================================================================
+
+---@class SchemaField
+---@field type "string"|"integer"|"array"|"boolean"|"table"
+---@field required boolean?
+---@field items "integer"?
+---@field description string
+
+---@class Validator
+---@field validate fun(args: table, schema: table<string, SchemaField>): boolean, string?, string?
+
+-- ==========================================================================
 -- Endpoint Type
 -- ==========================================================================
 
@@ -98,7 +111,22 @@
 ---@field description string Brief description of the endpoint
 ---@field schema table<string, SchemaField> Schema definition for arguments validation
 ---@field requires_state integer[]? Optional list of required game states
----@field execute fun(args: Request.Params, send_response: fun(response: table)) Execute function
+---@field execute fun(args: Request.Params, send_response: fun(response: EndpointResponse)) Execute function
+
+-- ==========================================================================
+-- Core Infrastructure Types
+-- ==========================================================================
+
+---@class Dispatcher
+---@field endpoints table<string, Endpoint>
+---@field Server Server?
+
+---@class Server
+---@field host string
+---@field port integer
+---@field server_socket TCPSocketServer?
+---@field client_socket TCPSocketClient?
+---@field current_request_id integer|string|nil
 
 -- ==========================================================================
 -- Request Types (JSON-RPC 2.0)
@@ -119,23 +147,30 @@
 ---@alias Request.Params
 ---| Endpoint.Add.Params
 ---| Endpoint.Buy.Params
+---| Endpoint.CashOut.Params
 ---| Endpoint.Discard.Params
+---| Endpoint.Gamestate.Params
+---| Endpoint.Health.Params
 ---| Endpoint.Load.Params
+---| Endpoint.Menu.Params
+---| Endpoint.NextRound.Params
 ---| Endpoint.Play.Params
 ---| Endpoint.Rearrange.Params
+---| Endpoint.Reroll.Params
 ---| Endpoint.Save.Params
+---| Endpoint.Select.Params
 ---| Endpoint.Sell.Params
 ---| Endpoint.Set.Params
----| Endpoint.Run.Params
+---| Endpoint.Skip.Params
 ---| Endpoint.Use.Params
----| TestEndpoint.Echo.Params
----| TestEndpoint.Endpoint.Params
----| TestEndpoint.Error.Params
----| TestEndpoint.State.Params
----| TestEndpoint.Validation.Params
+---| Endpoint.Test.Echo.Params
+---| Endpoint.Test.Endpoint.Params
+---| Endpoint.Test.Error.Params
+---| Endpoint.Test.State.Params
+---| Endpoint.Test.Validation.Params
 
 -- ==========================================================================
--- Response Types (JSON-RPC 2.0)
+-- Response Types
 -- ==========================================================================
 
 ---@class PathResponse
@@ -143,9 +178,26 @@
 ---@field path string Path to the file
 
 ---@class HealthResponse
----@field success boolean Whether the request was successful
+---@field status "ok"
 
----@alias GameStateResponse GameState
+---@alias GameStateResponse
+---| GameState # Return the current game state of the game
+
+---@class ErrorResponse
+---@field message string Human-readable error message
+---@field name ErrorName Error name (BAD_REQUEST, INVALID_STATE, etc.)
+
+---@class TestResponse
+---@field success boolean Whether the request was successful
+---@field received_args table? Arguments received by the endpoint (for test endpoints)
+---@field state_validated boolean? Whether the state was validated (for test endpoints)
+
+---@alias EndpointResponse
+---| HealthResponse
+---| PathResponse
+---| GameStateResponse
+---| ErrorResponse
+---| TestResponse
 
 ---@class ResponseSuccess
 ---@field jsonrpc "2.0"
@@ -164,3 +216,43 @@
 
 ---@class ResponseError.Error.Data
 ---@field name ErrorName Semantic error code
+
+-- ==========================================================================
+-- Error Types
+-- ==========================================================================
+
+---@alias ErrorName
+---| "BAD_REQUEST" Client sent invalid data (protocol/parameter errors)
+---| "INVALID_STATE" Action not allowed in current game state
+---| "NOT_ALLOWED" Game rules prevent this action
+---| "INTERNAL_ERROR" Server-side failure (runtime/execution errors)
+
+---@alias ErrorCode
+---| -32000 # INTERNAL_ERROR
+---| -32001 # BAD_REQUEST
+---| -32002 # INVALID_STATE
+---| -32003 # NOT_ALLOWED
+
+---@alias ErrorNames table<ErrorName, ErrorName>
+---@alias ErrorCodes table<ErrorName, ErrorCode>
+
+-- ==========================================================================
+-- Settings Types
+-- ==========================================================================
+
+---@class Settings
+---@field host string
+---@field port integer
+---@field headless boolean
+---@field fast boolean
+---@field render_on_api boolean
+---@field audio boolean
+---@field debug boolean
+---@field no_shaders boolean
+
+-- ==========================================================================
+-- Debug Types
+-- ==========================================================================
+
+---@class Debug
+---@field log table?

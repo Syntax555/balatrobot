@@ -1,10 +1,18 @@
 -- src/lua/endpoints/next_round.lua
--- Next Round Endpoint
---
--- Leave the shop and advance to blind selection
+
+-- ==========================================================================
+-- NextRound Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.NextRound.Params
+
+-- ==========================================================================
+-- NextRound Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "next_round",
 
   description = "Leave the shop and advance to blind selection",
@@ -13,8 +21,8 @@ return {
 
   requires_state = { G.STATES.SHOP },
 
-  ---@param _ table The arguments (none required)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.NextRound.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
     sendDebugMessage("Init next_round()", "BB.ENDPOINTS")
     G.FUNCS.toggle_shop({})

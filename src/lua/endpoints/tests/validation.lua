@@ -1,12 +1,10 @@
--- tests/lua/endpoints/test_validation.lua
--- Comprehensive Validation Test Endpoint
---
--- Endpoint with schema for testing simplified validator capabilities:
--- - Type validation (string, integer, boolean, array, table)
--- - Required field validation
--- - Array item type validation (integer arrays only)
+-- src/lua/endpoints/tests/validation.lua
 
----@class TestEndpoint.Validation.Params
+-- ==========================================================================
+-- Test Validation Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Test.Validation.Params
 ---@field required_field string Required string field for basic validation testing
 ---@field string_field? string Optional string field for type validation
 ---@field integer_field? integer Optional integer field for type validation
@@ -15,60 +13,67 @@
 ---@field table_field? table Optional table field for type validation
 ---@field array_of_integers? integer[] Optional array that must contain only integers
 
+-- ==========================================================================
+-- Test Validation Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "test_validation",
 
   description = "Comprehensive validation test endpoint for validator module testing",
 
   schema = {
-    -- Required field (only required field in the schema)
     required_field = {
       type = "string",
       required = true,
       description = "Required string field for basic validation testing",
     },
 
-    -- Type validation fields
     string_field = {
       type = "string",
+      required = false,
       description = "Optional string field for type validation",
     },
 
     integer_field = {
       type = "integer",
+      required = false,
       description = "Optional integer field for type validation",
     },
 
     boolean_field = {
       type = "boolean",
+      required = false,
       description = "Optional boolean field for type validation",
     },
 
     array_field = {
       type = "array",
+      required = false,
       description = "Optional array field for type validation",
     },
 
     table_field = {
       type = "table",
+      required = false,
       description = "Optional table field for type validation",
     },
 
-    -- Array item type validation
     array_of_integers = {
       type = "array",
+      required = false,
       items = "integer",
       description = "Optional array that must contain only integers",
     },
   },
 
-  requires_state = nil, -- Can be called from any state
+  requires_state = nil,
 
-  ---@param args TestEndpoint.Validation.Params The validated arguments
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Test.Validation.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
-    -- Simply return success with the received arguments
     send_response({
       success = true,
       received_args = args,

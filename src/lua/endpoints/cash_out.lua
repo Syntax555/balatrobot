@@ -1,10 +1,18 @@
 -- src/lua/endpoints/cash_out.lua
--- Cash Out Endpoint
---
--- Cash out and collect round rewards
+
+-- ==========================================================================
+-- CashOut Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.CashOut.Params
+
+-- ==========================================================================
+-- CashOut Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "cash_out",
 
   description = "Cash out and collect round rewards",
@@ -13,8 +21,8 @@ return {
 
   requires_state = { G.STATES.ROUND_EVAL },
 
-  ---@param _ table The arguments (none required)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.CashOut.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
     sendDebugMessage("Init cash_out()", "BB.ENDPOINTS")
     G.FUNCS.cash_out({ config = {} })

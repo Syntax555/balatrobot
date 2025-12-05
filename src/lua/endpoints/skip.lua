@@ -1,17 +1,28 @@
 -- src/lua/endpoints/skip.lua
+
+-- ==========================================================================
+-- Skip Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Skip.Params
+
+-- ==========================================================================
 -- Skip Endpoint
---
--- Skip the current blind (Small or Big only, not Boss)
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "skip",
+
   description = "Skip the current blind (Small or Big only, not Boss)",
+
   schema = {},
+
   requires_state = { G.STATES.BLIND_SELECT },
 
-  ---@param _ table The arguments (none required)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.Skip.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
     sendDebugMessage("Init skip()", "BB.ENDPOINTS")
 
@@ -25,8 +36,8 @@ return {
     if blind.type == "BOSS" then
       sendDebugMessage("skip() cannot skip Boss blind: " .. current_blind, "BB.ENDPOINTS")
       send_response({
-        error = "Cannot skip Boss blind",
-        error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+        message = "Cannot skip Boss blind",
+        name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return
     end

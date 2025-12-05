@@ -1,9 +1,18 @@
 -- src/lua/endpoints/start.lua
--- Start Endpoint
---
--- Starts a new game run with specified deck and stake
 
--- Mapping tables for enum values
+-- ==========================================================================
+-- Start Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Start.Params
+---@field deck Deck deck enum value (e.g., "RED", "BLUE", "YELLOW")
+---@field stake Stake stake enum value (e.g., "WHITE", "RED", "GREEN", "BLACK", "BLUE", "PURPLE", "ORANGE", "GOLD")
+---@field seed string? optional seed for the run
+
+-- ==========================================================================
+-- Start Endpoint Utils
+-- ==========================================================================
+
 local DECK_ENUM_TO_NAME = {
   RED = "Red Deck",
   BLUE = "Blue Deck",
@@ -33,13 +42,13 @@ local STAKE_ENUM_TO_NUMBER = {
   GOLD = 8,
 }
 
----@class Endpoint.Run.Params
----@field deck Deck deck enum value (e.g., "RED", "BLUE", "YELLOW")
----@field stake Stake stake enum value (e.g., "WHITE", "RED", "GREEN", "BLACK", "BLUE", "PURPLE", "ORANGE", "GOLD")
----@field seed string? optional seed for the run
+-- ==========================================================================
+-- Start Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "start",
 
   description = "Start a new game run with specified deck and stake",
@@ -64,8 +73,8 @@ return {
 
   requires_state = { G.STATES.MENU },
 
-  ---@param args Endpoint.Run.Params The arguments (deck, stake, seed?)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Start.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init start()", "BB.ENDPOINTS")
 
@@ -74,9 +83,9 @@ return {
     if not stake_number then
       sendDebugMessage("start() called with invalid stake enum: " .. tostring(args.stake), "BB.ENDPOINTS")
       send_response({
-        error = "Invalid stake enum. Must be one of: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD. Got: "
+        message = "Invalid stake enum. Must be one of: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD. Got: "
           .. tostring(args.stake),
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -86,9 +95,9 @@ return {
     if not deck_name then
       sendDebugMessage("start() called with invalid deck enum: " .. tostring(args.deck), "BB.ENDPOINTS")
       send_response({
-        error = "Invalid deck enum. Must be one of: RED, BLUE, YELLOW, GREEN, BLACK, MAGIC, NEBULA, GHOST, ABANDONED, CHECKERED, ZODIAC, PAINTED, ANAGLYPH, PLASMA, ERRATIC. Got: "
+        message = "Invalid deck enum. Must be one of: RED, BLUE, YELLOW, GREEN, BLACK, MAGIC, NEBULA, GHOST, ABANDONED, CHECKERED, ZODIAC, PAINTED, ANAGLYPH, PLASMA, ERRATIC. Got: "
           .. tostring(args.deck),
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -114,8 +123,8 @@ return {
     if not deck_found then
       sendDebugMessage("start() deck not found in game data: " .. deck_name, "BB.ENDPOINTS")
       send_response({
-        error = "Deck not found in game data: " .. deck_name,
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Deck not found in game data: " .. deck_name,
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end

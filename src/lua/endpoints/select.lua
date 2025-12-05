@@ -1,13 +1,30 @@
+-- src/lua/endpoints/select.lua
+
+-- ==========================================================================
+-- Select Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Select.Params
+
+-- ==========================================================================
+-- Select Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "select",
+
   description = "Select the current blind",
+
   schema = {},
+
   requires_state = { G.STATES.BLIND_SELECT },
 
-  ---@param _ table The arguments (none required)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.Select.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
+    sendDebugMessage("Init select()", "BB.ENDPOINTS")
     -- Get current blind and its UI element
     local current_blind = G.GAME.blind_on_deck
     assert(current_blind ~= nil, "select() called with no blind on deck")
@@ -26,7 +43,7 @@ return {
       func = function()
         local done = G.STATE == G.STATES.SELECTING_HAND and G.hand ~= nil
         if done then
-          sendDebugMessage("select() completed", "BB.ENDPOINTS")
+          sendDebugMessage("Return select()", "BB.ENDPOINTS")
           local state_data = BB_GAMESTATE.get_gamestate()
           send_response(state_data)
         end

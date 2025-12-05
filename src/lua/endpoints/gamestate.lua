@@ -1,26 +1,32 @@
 -- src/lua/endpoints/gamestate.lua
+
+-- ==========================================================================
+-- Gamestate Endpoint Params
+-- ==========================================================================
+
+---@class Endpoint.Gamestate.Params
+
+-- ==========================================================================
 -- Gamestate Endpoint
---
--- Returns the current game state extracted via the gamestate utility
--- Provides a simplified view of the game optimized for bot decision-making
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "gamestate",
 
   description = "Get current game state",
 
-  schema = {}, -- No arguments required
+  schema = {},
 
-  requires_state = nil, -- Can be called from any state
+  requires_state = nil,
 
-  ---@param _ table The arguments (empty for gamestate)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param _ Endpoint.Gamestate.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(_, send_response)
-    -- Get current game state
+    sendDebugMessage("Init gamestate()", "BB.ENDPOINTS")
     local state_data = BB_GAMESTATE.get_gamestate()
-
-    -- Return the game state
+    sendDebugMessage("Return gamestate()", "BB.ENDPOINTS")
     send_response(state_data)
   end,
 }

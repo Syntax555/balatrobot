@@ -1,18 +1,24 @@
 -- src/lua/endpoints/sell.lua
--- Sell Endpoint
---
--- Sell a joker or consumable from player inventory
+
+-- ==========================================================================
+-- Sell Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Sell.Params
 ---@field joker integer? 0-based index of joker to sell
 ---@field consumable integer? 0-based index of consumable to sell
--- One (and only one) parameter is required
--- Must be in SHOP or SELECTING_HAND state
+
+-- ==========================================================================
+-- Sell Endpoint
+-- ==========================================================================
 
 ---@type Endpoint
 return {
+
   name = "sell",
+
   description = "Sell a joker or consumable from player inventory",
+
   schema = {
     joker = {
       type = "integer",
@@ -25,10 +31,11 @@ return {
       description = "0-based index of consumable to sell",
     },
   },
+
   requires_state = { G.STATES.SELECTING_HAND, G.STATES.SHOP },
 
-  ---@param args Endpoint.Sell.Params The arguments (joker or consumable)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Sell.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init sell()", "BB.ENDPOINTS")
 
@@ -36,14 +43,14 @@ return {
     local param_count = (args.joker and 1 or 0) + (args.consumable and 1 or 0)
     if param_count == 0 then
       send_response({
-        error = "Must provide exactly one of: joker or consumable",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Must provide exactly one of: joker or consumable",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     elseif param_count > 1 then
       send_response({
-        error = "Can only sell one item at a time",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Can only sell one item at a time",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -55,8 +62,8 @@ return {
       -- Validate G.jokers exists and has cards
       if not G.jokers or not G.jokers.config or G.jokers.config.card_count == 0 then
         send_response({
-          error = "No jokers available to sell",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "No jokers available to sell",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -67,8 +74,8 @@ return {
       -- Validate G.consumeables exists and has cards
       if not G.consumeables or not G.consumeables.config or G.consumeables.config.card_count == 0 then
         send_response({
-          error = "No consumables available to sell",
-          error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+          message = "No consumables available to sell",
+          name = BB_ERROR_NAMES.NOT_ALLOWED,
         })
         return
       end
@@ -80,8 +87,8 @@ return {
     -- Validate card exists at index
     if not source_array[pos] then
       send_response({
-        error = "Index out of range for " .. sell_type .. ": " .. (pos - 1),
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Index out of range for " .. sell_type .. ": " .. (pos - 1),
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -137,7 +144,7 @@ return {
 
         -- All conditions must be met
         if count_decreased and money_increased and card_gone and state_stable and valid_state then
-          sendDebugMessage("Sell completed successfully", "BB.ENDPOINTS")
+          sendDebugMessage("Return sell()", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
           return true
         end

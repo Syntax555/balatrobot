@@ -1,15 +1,25 @@
 -- src/lua/endpoints/save.lua
--- Save Game State Endpoint
---
--- Saves the current game run state to a file using nativefs
 
-local nativefs = require("nativefs")
+-- ==========================================================================
+-- Save Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Save.Params
 ---@field path string File path for the save file
 
+-- ==========================================================================
+-- Save Endpoint Utils
+-- ==========================================================================
+
+local nativefs = require("nativefs")
+
+-- ==========================================================================
+-- Save Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "save",
 
   description = "Save the current run state to a file",
@@ -22,35 +32,33 @@ return {
     },
   },
 
-  -- All states that occur during an active run (G.STAGES.RUN)
-  -- Excludes: MENU, SPLASH, SANDBOX, TUTORIAL, DEMO_CTA
   requires_state = {
-    G.STATES.SELECTING_HAND, -- 1
-    G.STATES.HAND_PLAYED, -- 2
-    G.STATES.DRAW_TO_HAND, -- 3
-    G.STATES.GAME_OVER, -- 4
-    G.STATES.SHOP, -- 5
-    G.STATES.PLAY_TAROT, -- 6
-    G.STATES.BLIND_SELECT, -- 7
-    G.STATES.ROUND_EVAL, -- 8
-    G.STATES.TAROT_PACK, -- 9
-    G.STATES.PLANET_PACK, -- 10
-    G.STATES.SPECTRAL_PACK, -- 15
-    G.STATES.STANDARD_PACK, -- 17
-    G.STATES.BUFFOON_PACK, -- 18
-    G.STATES.NEW_ROUND, -- 19
+    G.STATES.SELECTING_HAND,
+    G.STATES.HAND_PLAYED,
+    G.STATES.DRAW_TO_HAND,
+    G.STATES.GAME_OVER,
+    G.STATES.SHOP,
+    G.STATES.PLAY_TAROT,
+    G.STATES.BLIND_SELECT,
+    G.STATES.ROUND_EVAL,
+    G.STATES.TAROT_PACK,
+    G.STATES.PLANET_PACK,
+    G.STATES.SPECTRAL_PACK,
+    G.STATES.STANDARD_PACK,
+    G.STATES.BUFFOON_PACK,
+    G.STATES.NEW_ROUND,
   },
 
-  ---@param args Endpoint.Save.Params The arguments with 'path' field
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Save.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     local path = args.path
 
     -- Validate we're in a run
     if not G.STAGE or G.STAGE ~= G.STAGES.RUN then
       send_response({
-        error = "Can only save during an active run",
-        error_code = BB_ERROR_NAMES.INVALID_STATE,
+        message = "Can only save during an active run",
+        name = BB_ERROR_NAMES.INVALID_STATE,
       })
       return
     end
@@ -69,8 +77,8 @@ return {
 
     if not compressed_data then
       send_response({
-        error = "Failed to save game state",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Failed to save game state",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end
@@ -78,8 +86,8 @@ return {
     local write_success = nativefs.write(path, compressed_data)
     if not write_success then
       send_response({
-        error = "Failed to write save file to '" .. path .. "'",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Failed to write save file to '" .. path .. "'",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end

@@ -109,9 +109,8 @@ BB_API = setmetatable({}, {
   end,
 })
 
+---@type Debug
 BB_DEBUG = {
-  -- Logger instance (set by setup if DebugPlus is available)
-  ---@type table?
   log = nil,
 }
 --- Initializes DebugPlus integration if available

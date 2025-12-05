@@ -1,222 +1,188 @@
--- src/lua/core/server.lua
--- TCP Server for BalatroBot API
---
--- Simplified single-client server (assumes only one client connects)
---
--- Responsibilities:
--- - Create and bind TCP socket (non-blocking) on port 12346
--- - Accept client connections (overwrites previous client)
--- - Receive JSON-only requests (newline-delimited)
--- - Pass requests to Dispatcher
--- - Send responses back to client
+--[[
+  TCP Server - Single-client, non-blocking server on port 12346.
+  JSON-RPC 2.0 protocol with newline-delimited messages.
+]]
 
 local socket = require("socket")
 local json = require("json")
 
 BB_SERVER = {
-
-  -- Configuration
-  ---@type string
   host = BB_SETTINGS.host,
-  ---@type integer
   port = BB_SETTINGS.port,
-
-  -- Sockets
-  ---@type TCPSocketServer?
   server_socket = nil,
-  ---@type TCPSocketClient?
   client_socket = nil,
+  current_request_id = nil,
 }
 
---- Initialize the TCP server
---- Creates and binds a non-blocking TCP socket on the configured port
---- @return boolean success
+---@return boolean success
 function BB_SERVER.init()
-  -- Create TCP socket
   local server, err = socket.tcp()
   if not server then
     sendErrorMessage("Failed to create socket: " .. tostring(err), "BB.SERVER")
     return false
   end
-
-  -- Bind to port
   local success, bind_err = server:bind(BB_SERVER.host, BB_SERVER.port)
   if not success then
     sendErrorMessage("Failed to bind to port " .. BB_SERVER.port .. ": " .. tostring(bind_err), "BB.SERVER")
     return false
   end
-
-  -- Start listening (backlog of 1 for single client model)
   local listen_success, listen_err = server:listen(1)
   if not listen_success then
     sendErrorMessage("Failed to listen: " .. tostring(listen_err), "BB.SERVER")
     return false
   end
-
-  -- Set non-blocking mode
   server:settimeout(0)
-
   BB_SERVER.server_socket = server
-
   sendDebugMessage("Listening on " .. BB_SERVER.host .. ":" .. BB_SERVER.port, "BB.SERVER")
   return true
 end
 
---- Accept a new client connection
---- Simply accepts any incoming connection (overwrites previous client if any)
---- @return boolean accepted
+---@return boolean accepted
 function BB_SERVER.accept()
   if not BB_SERVER.server_socket then
     return false
   end
-
-  -- Accept new client (will overwrite any existing client)
   local client, err = BB_SERVER.server_socket:accept()
   if err then
     if err ~= "timeout" then
       sendErrorMessage("Failed to accept client: " .. tostring(err), "BB.SERVER")
-      return false
     end
     return false
   end
-  if client and not err then
-    -- Close previous client socket if exists (single-client model)
+  if client then
     if BB_SERVER.client_socket then
       BB_SERVER.client_socket:close()
       BB_SERVER.client_socket = nil
     end
-
-    client:settimeout(0) -- Non-blocking
+    client:settimeout(0)
     BB_SERVER.client_socket = client
     sendDebugMessage("Client connected", "BB.SERVER")
     return true
   end
-
   return false
 end
 
---- Receive and parse a single JSON request from client
---- Ultra-simple protocol: JSON + '\n' (nothing else allowed)
---- Max payload: 256 bytes
---- Non-blocking: returns empty array if no complete request available
---- @return table[] requests Array with at most one parsed JSON request object
+--- Max payload: 256 bytes. Non-blocking, returns empty array if no data.
+---@return Request[]
 function BB_SERVER.receive()
   if not BB_SERVER.client_socket then
     return {}
   end
-
-  -- Read one line (non-blocking)
   BB_SERVER.client_socket:settimeout(0)
   local line, err = BB_SERVER.client_socket:receive("*l")
-
   if not line then
-    -- If connection closed, clean up the socket reference
     if err == "closed" then
       BB_SERVER.client_socket:close()
       BB_SERVER.client_socket = nil
     end
-    return {} -- No data available or connection closed
-  end
-
-  -- Check message size (line doesn't include the \n, so +1 for newline)
-  if #line + 1 > 256 then
-    BB_SERVER.send_error("Request too large: maximum 256 bytes including newline", "BAD_REQUEST")
     return {}
   end
-
-  -- Ignore empty lines
+  if #line + 1 > 256 then
+    BB_SERVER.current_request_id = nil
+    BB_SERVER.send_response({
+      message = "Request too large: maximum 256 bytes including newline",
+      name = BB_ERROR_NAMES.BAD_REQUEST,
+    })
+    return {}
+  end
   if line == "" then
     return {}
   end
-
-  -- Check that JSON starts with '{' (must be object, not array/primitive)
   local trimmed = line:match("^%s*(.-)%s*$")
   if not trimmed:match("^{") then
-    BB_SERVER.send_error("Invalid JSON in request: must be object (start with '{')", "BAD_REQUEST")
+    BB_SERVER.current_request_id = nil
+    BB_SERVER.send_response({
+      message = "Invalid JSON in request: must be object (start with '{')",
+      name = BB_ERROR_NAMES.BAD_REQUEST,
+    })
     return {}
   end
-
-  -- Parse JSON
   local success, parsed = pcall(json.decode, line)
-  if success and type(parsed) == "table" then
-    return { parsed }
-  else
-    BB_SERVER.send_error("Invalid JSON in request", "BAD_REQUEST")
+  if not success or type(parsed) ~= "table" then
+    BB_SERVER.current_request_id = nil
+    BB_SERVER.send_response({
+      message = "Invalid JSON in request",
+      name = BB_ERROR_NAMES.BAD_REQUEST,
+    })
     return {}
   end
+  if parsed.jsonrpc ~= "2.0" then
+    BB_SERVER.current_request_id = parsed.id
+    BB_SERVER.send_response({
+      message = "Invalid JSON-RPC version: expected '2.0'",
+      name = BB_ERROR_NAMES.BAD_REQUEST,
+    })
+    return {}
+  end
+  BB_SERVER.current_request_id = parsed.id
+  return { parsed }
 end
 
---- Send a response to the client
--- @param response table Response object to encode as JSON
--- @return boolean success
+---@param response EndpointResponse
+---@return boolean success
 function BB_SERVER.send_response(response)
   if not BB_SERVER.client_socket then
     return false
   end
-
-  -- Encode to JSON
-  local success, json_str = pcall(json.encode, response)
+  local wrapped
+  if response.message then
+    local error_name = response.name or BB_ERROR_NAMES.INTERNAL_ERROR
+    local error_code = BB_ERROR_CODES[error_name] or BB_ERROR_CODES.INTERNAL_ERROR
+    wrapped = {
+      jsonrpc = "2.0",
+      error = {
+        code = error_code,
+        message = response.message,
+        data = { name = error_name },
+      },
+      id = BB_SERVER.current_request_id,
+    }
+  else
+    wrapped = {
+      jsonrpc = "2.0",
+      result = response,
+      id = BB_SERVER.current_request_id,
+    }
+  end
+  local success, json_str = pcall(json.encode, wrapped)
   if not success then
     sendDebugMessage("Failed to encode response: " .. tostring(json_str), "BB.SERVER")
     return false
   end
-
-  -- Send with newline delimiter
-  local data = json_str .. "\n"
-  local _, err = BB_SERVER.client_socket:send(data)
-
+  local _, err = BB_SERVER.client_socket:send(json_str .. "\n")
   if err then
     sendDebugMessage("Failed to send response: " .. err, "BB.SERVER")
     return false
   end
-
   return true
 end
 
---- Send an error response to the client
--- @param message string Error message
--- @param error_code string Error code (e.g., "PROTO_INVALID_JSON")
-function BB_SERVER.send_error(message, error_code)
-  BB_SERVER.send_response({
-    error = message,
-    error_code = error_code,
-  })
-end
-
---- Update loop - called from game's update cycle
--- Handles accepting connections, receiving requests, and dispatching
--- @param dispatcher table? Dispatcher module for routing requests (optional for now)
+---@param dispatcher Dispatcher?
 function BB_SERVER.update(dispatcher)
   if not BB_SERVER.server_socket then
     return
   end
-
-  -- Accept new connections (single client only)
   BB_SERVER.accept()
-
-  -- Receive and process requests
   if BB_SERVER.client_socket then
     local requests = BB_SERVER.receive()
-
     for _, request in ipairs(requests) do
       if dispatcher and dispatcher.dispatch then
-        -- Pass to Dispatcher when available
         dispatcher.dispatch(request, BB_SERVER.client_socket)
       else
-        -- Placeholder: send error that dispatcher not ready
-        BB_SERVER.send_error("Server not fully initialized (dispatcher not ready)", "INVALID_STATE")
+        BB_SERVER.send_response({
+          message = "Server not fully initialized (dispatcher not ready)",
+          name = BB_ERROR_NAMES.INVALID_STATE,
+        })
       end
     end
   end
 end
 
---- Cleanup and close server
 function BB_SERVER.close()
   if BB_SERVER.client_socket then
     BB_SERVER.client_socket:close()
     BB_SERVER.client_socket = nil
   end
-
   if BB_SERVER.server_socket then
     BB_SERVER.server_socket:close()
     BB_SERVER.server_socket = nil

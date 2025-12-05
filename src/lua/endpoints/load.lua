@@ -1,15 +1,25 @@
 -- src/lua/endpoints/load.lua
--- Load Game State Endpoint
---
--- Loads a saved game run state from a file using nativefs
 
-local nativefs = require("nativefs")
+-- ==========================================================================
+-- Load Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Load.Params
 ---@field path string File path to the save file
 
+-- ==========================================================================
+-- Load Endpoint Utils
+-- ==========================================================================
+
+local nativefs = require("nativefs")
+
+-- ==========================================================================
+-- Load Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "load",
 
   description = "Load a saved run state from a file",
@@ -24,8 +34,8 @@ return {
 
   requires_state = nil,
 
-  ---@param args Endpoint.Load.Params The arguments with 'path' field
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Load.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     local path = args.path
 
@@ -33,8 +43,8 @@ return {
     local file_info = nativefs.getInfo(path)
     if not file_info or file_info.type ~= "file" then
       send_response({
-        error = "File not found: '" .. path .. "'",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "File not found: '" .. path .. "'",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end
@@ -44,8 +54,8 @@ return {
     ---@cast compressed_data string
     if not compressed_data then
       send_response({
-        error = "Failed to read save file",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Failed to read save file",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end
@@ -58,8 +68,8 @@ return {
     local write_success = nativefs.write(temp_path, compressed_data)
     if not write_success then
       send_response({
-        error = "Failed to prepare save file for loading",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Failed to prepare save file for loading",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       return
     end
@@ -70,8 +80,8 @@ return {
 
     if G.SAVED_GAME == nil then
       send_response({
-        error = "Invalid save file format",
-        error_code = BB_ERROR_NAMES.INTERNAL_ERROR,
+        message = "Invalid save file format",
+        name = BB_ERROR_NAMES.INTERNAL_ERROR,
       })
       love.filesystem.remove(temp_filename)
       return
@@ -127,8 +137,6 @@ return {
         if G.STATE == G.STATES.SHOP then
           done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
         end
-
-        --- TODO: add other states here ...
 
         if done then
           send_response({

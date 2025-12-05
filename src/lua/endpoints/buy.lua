@@ -1,17 +1,25 @@
 -- src/lua/endpoints/buy.lua
--- Buy Endpoint
---
--- Buy a card from the shop
+
+-- ==========================================================================
+-- Buy Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Buy.Params
 ---@field card integer? 0-based index of card to buy
 ---@field voucher integer? 0-based index of voucher to buy
 ---@field pack integer? 0-based index of pack to buy
 
+-- ==========================================================================
+-- Buy Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "buy",
+
   description = "Buy a card from the shop",
+
   schema = {
     card = {
       type = "integer",
@@ -29,10 +37,11 @@ return {
       description = "0-based index of pack to buy",
     },
   },
+
   requires_state = { G.STATES.SHOP },
 
-  ---@param args Endpoint.Buy.Params The arguments for the endpoint
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Buy.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
     sendDebugMessage("Init buy()", "BB.ENDPOINTS")
     local gamestate = BB_GAMESTATE.get_gamestate()
@@ -63,8 +72,8 @@ return {
     -- Validate that only one of card, voucher, or pack is provided
     if not area then
       send_response({
-        error = "Invalid arguments. You must provide one of: card, voucher, pack",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Invalid arguments. You must provide one of: card, voucher, pack",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -72,8 +81,8 @@ return {
     -- Validate that only one of card, voucher, or pack is provided
     if set > 1 then
       send_response({
-        error = "Invalid arguments. Cannot provide more than one of: card, voucher, or pack",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Invalid arguments. Cannot provide more than one of: card, voucher, or pack",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -89,8 +98,8 @@ return {
         msg = "No boosters/standard/buffoon packs to open"
       end
       send_response({
-        error = msg,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = msg,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -98,8 +107,8 @@ return {
     -- Validate card index is in range
     if not area.cards[pos] then
       send_response({
-        error = "Card index out of range. Index: " .. args.card .. ", Available cards: " .. area.count,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Card index out of range. Index: " .. args.card .. ", Available cards: " .. area.count,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -110,8 +119,8 @@ return {
     -- Check if the card can be afforded
     if card.cost.buy > G.GAME.dollars then
       send_response({
-        error = "Card is not affordable. Cost: " .. card.cost.buy .. ", Current money: " .. gamestate.money,
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Card is not affordable. Cost: " .. card.cost.buy .. ", Current money: " .. gamestate.money,
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -120,11 +129,11 @@ return {
     if card.set == "JOKER" then
       if gamestate.jokers.count >= gamestate.jokers.limit then
         send_response({
-          error = "Cannot purchase joker card, joker slots are full. Current: "
+          message = "Cannot purchase joker card, joker slots are full. Current: "
             .. gamestate.jokers.count
             .. ", Limit: "
             .. gamestate.jokers.limit,
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -134,11 +143,11 @@ return {
     if card.set == "PLANET" or card.set == "SPECTRAL" or card.set == "TAROT" then
       if gamestate.consumables.count >= gamestate.consumables.limit then
         send_response({
-          error = "Cannot purchase consumable card, consumable slots are full. Current: "
+          message = "Cannot purchase consumable card, consumable slots are full. Current: "
             .. gamestate.consumables.count
             .. ", Limit: "
             .. gamestate.consumables.limit,
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
@@ -172,8 +181,8 @@ return {
     end
     if not btn then
       send_response({
-        error = "No buy button found for card",
-        error_code = BB_ERROR_NAMES.NOT_ALLOWED,
+        message = "No buy button found for card",
+        name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return
     end

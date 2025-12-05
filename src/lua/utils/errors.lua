@@ -1,21 +1,7 @@
--- src/lua/utils/errors.lua
--- Error definitions for BalatroBot API
-
----@alias ErrorName
----| "BAD_REQUEST" Client sent invalid data (protocol/parameter errors)
----| "INVALID_STATE" Action not allowed in current game state
----| "NOT_ALLOWED" Game rules prevent this action
----| "INTERNAL_ERROR" Server-side failure (runtime/execution errors)
-
----@alias ErrorNames table<ErrorName, ErrorName>
-
----@alias ErrorCode
----| -32000 # INTERNAL_ERROR
----| -32001 # BAD_REQUEST
----| -32002 # INVALID_STATE
----| -32003 # NOT_ALLOWED
-
----@alias ErrorCodes table<ErrorName, ErrorCode>
+--[[
+  Error definitions for BalatroBot API.
+  Type aliases defined in types.lua.
+]]
 
 ---@type ErrorNames
 BB_ERROR_NAMES = {

@@ -1,15 +1,23 @@
 -- src/lua/endpoints/play.lua
--- Play Endpoint
---
--- Play a card from the hand
+
+-- ==========================================================================
+-- Play Endpoint Params
+-- ==========================================================================
 
 ---@class Endpoint.Play.Params
 ---@field cards integer[] 0-based indices of cards to play
 
+-- ==========================================================================
+-- Play Endpoint
+-- ==========================================================================
+
 ---@type Endpoint
 return {
+
   name = "play",
+
   description = "Play a card from the hand",
+
   schema = {
     cards = {
       type = "array",
@@ -18,23 +26,25 @@ return {
       description = "0-based indices of cards to play",
     },
   },
+
   requires_state = { G.STATES.SELECTING_HAND },
 
-  ---@param args Endpoint.Play.Params The arguments (cards)
-  ---@param send_response fun(response: table) Callback to send response
+  ---@param args Endpoint.Play.Params
+  ---@param send_response fun(response: EndpointResponse)
   execute = function(args, send_response)
+    sendDebugMessage("Init play()", "BB.ENDPOINTS")
     if #args.cards == 0 then
       send_response({
-        error = "Must provide at least one card to play",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "Must provide at least one card to play",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
 
     if #args.cards > G.hand.config.highlighted_limit then
       send_response({
-        error = "You can only play " .. G.hand.config.highlighted_limit .. " cards",
-        error_code = BB_ERROR_NAMES.BAD_REQUEST,
+        message = "You can only play " .. G.hand.config.highlighted_limit .. " cards",
+        name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
     end
@@ -42,8 +52,8 @@ return {
     for _, card_index in ipairs(args.cards) do
       if not G.hand.cards[card_index + 1] then
         send_response({
-          error = "Invalid card index: " .. card_index,
-          error_code = BB_ERROR_NAMES.BAD_REQUEST,
+          message = "Invalid card index: " .. card_index,
+          name = BB_ERROR_NAMES.BAD_REQUEST,
         })
         return
       end
