@@ -17,6 +17,9 @@ HOST: str = "127.0.0.1"  # Default host for Balatro server
 PORT: int = 12346  # Default port for Balatro server
 BUFFER_SIZE: int = 65536  # 64KB buffer for TCP messages
 
+# JSON-RPC 2.0 request ID counter
+_request_id_counter: int = 0
+
 
 @pytest.fixture(scope="session")
 def host() -> str:
@@ -55,50 +58,75 @@ def port() -> int:
 
 def api(
     client: socket.socket,
-    name: str,
-    arguments: dict = {},
+    method: str,
+    params: dict = {},
     timeout: int = 5,
 ) -> dict[str, Any]:
-    """Send an API call to the Balatro game and get the response.
+    """Send a JSON-RPC 2.0 API call to the Balatro game and get the response.
 
     Args:
         client: The TCP socket connected to the game.
-        name: The name of the API function to call.
-        arguments: Dictionary of arguments to pass to the API function (default: {}).
+        method: The name of the API method to call.
+        params: Dictionary of parameters to pass to the API method (default: {}).
+        timeout: Socket timeout in seconds (default: 5).
 
     Returns:
-        The game state response as a dictionary.
+        The raw JSON-RPC 2.0 response with either 'result' or 'error' field.
     """
-    payload = {"name": name, "arguments": arguments}
+    global _request_id_counter
+    _request_id_counter += 1
+
+    payload = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params,
+        "id": _request_id_counter,
+    }
     client.send(json.dumps(payload).encode() + b"\n")
     client.settimeout(timeout)
     response = client.recv(BUFFER_SIZE)
-    gamestate = json.loads(response.decode().strip())
-    return gamestate
+    parsed = json.loads(response.decode().strip())
+    return parsed
 
 
-def send_request(sock: socket.socket, name: str, arguments: dict[str, Any]) -> None:
-    """Send a JSON request to the server.
+def send_request(
+    sock: socket.socket,
+    method: str,
+    params: dict[str, Any],
+    request_id: int | str | None = None,
+) -> None:
+    """Send a JSON-RPC 2.0 request to the server.
 
     Args:
         sock: The TCP socket connected to the game.
-        name: The name of the endpoint to call.
-        arguments: Dictionary of arguments to pass to the endpoint.
+        method: The name of the method to call.
+        params: Dictionary of parameters to pass to the method.
+        request_id: Optional request ID (auto-increments if not provided).
     """
-    request = {"name": name, "arguments": arguments}
+    global _request_id_counter
+    if request_id is None:
+        _request_id_counter += 1
+        request_id = _request_id_counter
+
+    request = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params,
+        "id": request_id,
+    }
     message = json.dumps(request) + "\n"
     sock.sendall(message.encode())
 
 
 def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict[str, Any]:
-    """Receive and parse JSON response from server.
+    """Receive and parse JSON-RPC 2.0 response from server.
 
     Args:
         sock: The TCP socket connected to the game.
         timeout: Socket timeout in seconds (default: 3.0).
 
     Returns:
-        The parsed JSON response as a dictionary.
+        The raw JSON-RPC 2.0 response with either 'result' or 'error' field.
     """
     sock.settimeout(timeout)
     response = sock.recv(BUFFER_SIZE)
@@ -111,7 +139,8 @@ def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict[str, Any
     else:
         first_message = decoded.strip()
 
-    return json.loads(first_message)
+    parsed = json.loads(first_message)
+    return parsed
 
 
 def get_fixture_path(endpoint: str, fixture_name: str) -> Path:
@@ -138,73 +167,6 @@ def create_temp_save_path() -> Path:
     return temp_dir / f"balatrobot_test_{uuid.uuid4().hex[:8]}.jkr"
 
 
-# ============================================================================
-# Assertion Helpers
-# ============================================================================
-
-
-def assert_success_response(response: dict[str, Any]) -> None:
-    """Validate success response structure.
-
-    Args:
-        response: The response dictionary to validate.
-
-    Raises:
-        AssertionError: If the response is not a valid success response.
-    """
-    assert "success" in response, "Success response must have 'success' field"
-    assert response["success"] is True, "'success' field must be True"
-    assert "error" not in response, "Success response should not have 'error' field"
-    assert "error_code" not in response, (
-        "Success response should not have 'error_code' field"
-    )
-
-
-def assert_error_response(
-    response: dict[str, Any],
-    expected_error_code: str | None = None,
-    expected_message_contains: str | None = None,
-) -> None:
-    """Validate error response structure and content.
-
-    Args:
-        response: The response dictionary to validate.
-        expected_error_code: The expected error code (optional).
-        expected_message_contains: Substring expected in error message (optional).
-
-    Raises:
-        AssertionError: If the response is not a valid error response or doesn't match expectations.
-    """
-    assert "error" in response, "Error response must have 'error' field"
-    assert "error_code" in response, "Error response must have 'error_code' field"
-
-    assert isinstance(response["error"], str), "'error' must be a string"
-    assert isinstance(response["error_code"], str), "'error_code' must be a string"
-
-    if expected_error_code:
-        assert response["error_code"] == expected_error_code, (
-            f"Expected error_code '{expected_error_code}', got '{response['error_code']}'"
-        )
-
-    if expected_message_contains:
-        assert expected_message_contains.lower() in response["error"].lower(), (
-            f"Expected error message to contain '{expected_message_contains}', got '{response['error']}'"
-        )
-
-
-def assert_health_response(response: dict[str, Any]) -> None:
-    """Validate health response structure.
-
-    Args:
-        response: The response dictionary to validate.
-
-    Raises:
-        AssertionError: If the response is not a valid health response.
-    """
-    assert "status" in response, "Health response must have 'status' field"
-    assert response["status"] == "ok", "Health response 'status' must be 'ok'"
-
-
 def load_fixture(
     client: socket.socket,
     endpoint: str,
@@ -220,24 +182,6 @@ def load_fixture(
 
     If the fixture file doesn't exist or cache=False, it will be automatically
     generated using the setup steps defined in fixtures.json.
-
-    Args:
-        client: The TCP socket connected to the game.
-        endpoint: The endpoint directory name (e.g., "buy", "discard").
-        fixture_name: Name of the fixture file (e.g., "state-SHOP.jkr").
-        cache: If True, use existing fixture file. If False, regenerate (default: True).
-
-    Returns:
-        The current gamestate after loading the fixture.
-
-    Raises:
-        AssertionError: If the load operation or generation fails.
-        KeyError: If fixture definition not found in fixtures.json.
-
-    Example:
-        gamestate = load_fixture(client, "buy", "state-SHOP.jkr")
-        response = api(client, "buy", {"card": 0})
-        assert response["success"]
     """
     fixture_path = get_fixture_path(endpoint, fixture_name)
 
@@ -264,16 +208,195 @@ def load_fixture(
 
             # Check for errors during generation
             if "error" in response:
+                error_msg = response["error"]["message"]
                 raise AssertionError(
-                    f"Fixture generation failed at step {step_endpoint}: {response['error']}"
+                    f"Fixture generation failed at step {step_endpoint}: {error_msg}"
                 )
 
         # Save the fixture
         fixture_path.parent.mkdir(parents=True, exist_ok=True)
         save_response = api(client, "save", {"path": str(fixture_path)})
-        assert_success_response(save_response)
+        assert_path_response(save_response)
 
     # Load the fixture
     load_response = api(client, "load", {"path": str(fixture_path)})
-    assert_success_response(load_response)
-    return api(client, "gamestate", {})
+    assert_path_response(load_response)
+    gamestate_response = api(client, "gamestate", {})
+    return gamestate_response["result"]
+
+
+# ============================================================================
+# Assertion Helpers
+# ============================================================================
+
+
+def assert_health_response(response: dict[str, Any]) -> None:
+    """Assert response is a Response.Endpoint.Health.
+
+    Used by: health endpoint.
+
+    Args:
+        response: The raw JSON-RPC 2.0 response.
+
+    Raises:
+        AssertionError: If response is not a valid HealthResponse.
+    """
+    assert "result" in response, f"Expected 'result' in response, got: {response}"
+    assert "error" not in response, f"Unexpected error: {response.get('error')}"
+    result = response["result"]
+    assert "status" in result, f"HealthResponse missing 'status': {result}"
+    assert result["status"] == "ok", f"HealthResponse status not 'ok': {result}"
+
+
+def assert_path_response(
+    response: dict[str, Any],
+    expected_path: str | None = None,
+) -> str:
+    """Assert response is a Response.Endpoint.Path and return the path.
+
+    Used by: save, load endpoints.
+
+    Args:
+        response: The raw JSON-RPC 2.0 response.
+        expected_path: Optional expected path to verify.
+
+    Returns:
+        The path from the response.
+
+    Raises:
+        AssertionError: If response is not a valid PathResponse.
+    """
+    assert "result" in response, f"Expected 'result' in response, got: {response}"
+    assert "error" not in response, f"Unexpected error: {response.get('error')}"
+    result = response["result"]
+    assert "success" in result, f"PathResponse missing 'success': {result}"
+    assert result["success"] is True, f"PathResponse success is not True: {result}"
+    assert "path" in result, f"PathResponse missing 'path': {result}"
+    assert isinstance(result["path"], str), f"PathResponse 'path' not a string: {result}"
+
+    if expected_path is not None:
+        assert result["path"] == expected_path, (
+            f"Expected path '{expected_path}', got '{result['path']}'"
+        )
+
+    return result["path"]
+
+
+def assert_gamestate_response(
+    response: dict[str, Any],
+    **expected_fields: Any,
+) -> dict[str, Any]:
+    """Assert response is a Response.Endpoint.GameState and return the gamestate.
+
+    Used by: gamestate, menu, start, set, buy, sell, play, discard, select, etc.
+
+    Args:
+        response: The raw JSON-RPC 2.0 response.
+        **expected_fields: Optional field values to verify (e.g., state="SHOP", money=100).
+
+    Returns:
+        The gamestate from the response.
+
+    Raises:
+        AssertionError: If response is not a valid GameStateResponse.
+    """
+    assert "result" in response, f"Expected 'result' in response, got: {response}"
+    assert "error" not in response, f"Unexpected error: {response.get('error')}"
+    result = response["result"]
+
+    # Verify required GameState field
+    assert "state" in result, f"GameStateResponse missing 'state': {result}"
+    assert isinstance(result["state"], str), f"GameStateResponse 'state' not a string: {result}"
+
+    # Verify any expected fields
+    for field, expected_value in expected_fields.items():
+        assert field in result, f"GameStateResponse missing '{field}': {result}"
+        assert result[field] == expected_value, (
+            f"GameStateResponse '{field}': expected {expected_value!r}, got {result[field]!r}"
+        )
+
+    return result
+
+
+def assert_test_response(
+    response: dict[str, Any],
+    expected_received_args: dict[str, Any] | None = None,
+    expected_state_validated: bool | None = None,
+) -> dict[str, Any]:
+    """Assert response is a Response.Endpoint.Test and return the result.
+
+    Used by: test_validation, test_endpoint, test_state, test_echo endpoints.
+
+    Args:
+        response: The raw JSON-RPC 2.0 response.
+        expected_received_args: Optional expected received_args to verify.
+        expected_state_validated: Optional expected state_validated to verify.
+
+    Returns:
+        The test result from the response.
+
+    Raises:
+        AssertionError: If response is not a valid TestResponse.
+    """
+    assert "result" in response, f"Expected 'result' in response, got: {response}"
+    assert "error" not in response, f"Unexpected error: {response.get('error')}"
+    result = response["result"]
+    assert "success" in result, f"TestResponse missing 'success': {result}"
+    assert result["success"] is True, f"TestResponse success is not True: {result}"
+
+    if expected_received_args is not None:
+        assert "received_args" in result, f"TestResponse missing 'received_args': {result}"
+        assert result["received_args"] == expected_received_args, (
+            f"TestResponse received_args: expected {expected_received_args}, got {result['received_args']}"
+        )
+
+    if expected_state_validated is not None:
+        assert "state_validated" in result, f"TestResponse missing 'state_validated': {result}"
+        assert result["state_validated"] == expected_state_validated, (
+            f"TestResponse state_validated: expected {expected_state_validated}, got {result['state_validated']}"
+        )
+
+    return result
+
+
+def assert_error_response(
+    response: dict[str, Any],
+    expected_error_name: str | None = None,
+    expected_message_contains: str | None = None,
+) -> dict[str, Any]:
+    """Assert response is a Response.Server.Error and return the error data.
+
+    Args:
+        response: The raw JSON-RPC 2.0 response.
+        expected_error_name: Optional expected error name (BAD_REQUEST, INVALID_STATE, etc.).
+        expected_message_contains: Optional substring to check in error message (case-insensitive).
+
+    Returns:
+        The error data dict with 'name' field.
+
+    Raises:
+        AssertionError: If response is not a valid ErrorResponse.
+    """
+    assert "error" in response, f"Expected 'error' in response, got: {response}"
+    assert "result" not in response, f"Unexpected 'result' in error response: {response}"
+
+    error = response["error"]
+    assert "message" in error, f"ErrorResponse missing 'message': {error}"
+    assert "data" in error, f"ErrorResponse missing 'data': {error}"
+    assert "name" in error["data"], f"ErrorResponse data missing 'name': {error}"
+    assert isinstance(error["message"], str), f"ErrorResponse 'message' not a string: {error}"
+    assert isinstance(error["data"]["name"], str), f"ErrorResponse 'name' not a string: {error}"
+
+    if expected_error_name is not None:
+        actual_name = error["data"]["name"]
+        assert actual_name == expected_error_name, (
+            f"Expected error name '{expected_error_name}', got '{actual_name}'"
+        )
+
+    if expected_message_contains is not None:
+        actual_message = error["message"]
+        assert expected_message_contains.lower() in actual_message.lower(), (
+            f"Expected message to contain '{expected_message_contains}', got '{actual_message}'"
+        )
+
+    return error["data"]
