@@ -9,13 +9,13 @@ from tests.lua.conftest import api, assert_error_response, load_fixture
 def verify_cash_out_response(response: dict[str, Any]) -> None:
     """Verify that cash_out response has expected fields."""
     # Verify state field - should transition to SHOP after cashing out
-    assert "state" in response
-    assert isinstance(response["state"], str)
-    assert response["state"] == "SHOP"
+    assert "state" in response["result"]
+    assert isinstance(response["result"]["state"], str)
+    assert response["result"]["state"] == "SHOP"
 
     # Verify shop field exists
-    assert "shop" in response
-    assert isinstance(response["shop"], dict)
+    assert "shop" in response["result"]
+    assert isinstance(response["result"]["shop"], dict)
 
 
 class TestCashOutEndpoint:
@@ -27,7 +27,7 @@ class TestCashOutEndpoint:
         assert gamestate["state"] == "ROUND_EVAL"
         response = api(client, "cash_out", {})
         verify_cash_out_response(response)
-        assert response["state"] == "SHOP"
+        assert response["result"]["state"] == "SHOP"
 
 
 class TestCashOutEndpointStateRequirements:

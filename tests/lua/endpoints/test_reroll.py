@@ -12,7 +12,8 @@ class TestRerollEndpoint:
         """Test rerolling shop from SHOP state."""
         gamestate = load_fixture(client, "reroll", "state-SHOP")
         assert gamestate["state"] == "SHOP"
-        after = api(client, "reroll", {})
+        response = api(client, "reroll", {})
+        after = response["result"]
         assert gamestate["state"] == "SHOP"
         assert after["state"] == "SHOP"
         assert gamestate["shop"] != after["shop"]

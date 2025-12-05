@@ -22,7 +22,7 @@ class TestRearrangeEndpoint:
             "rearrange",
             {"hand": permutation},
         )
-        ids = [card["id"] for card in response["hand"]["cards"]]
+        ids = [card["id"] for card in response["result"]["hand"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_jokers(self, client: socket.socket) -> None:
@@ -39,7 +39,7 @@ class TestRearrangeEndpoint:
             "rearrange",
             {"jokers": permutation},
         )
-        ids = [card["id"] for card in response["jokers"]["cards"]]
+        ids = [card["id"] for card in response["result"]["jokers"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_consumables(self, client: socket.socket) -> None:
@@ -56,7 +56,7 @@ class TestRearrangeEndpoint:
             "rearrange",
             {"consumables": permutation},
         )
-        ids = [card["id"] for card in response["consumables"]["cards"]]
+        ids = [card["id"] for card in response["result"]["consumables"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
 

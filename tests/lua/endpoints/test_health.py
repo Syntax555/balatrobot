@@ -12,8 +12,9 @@ from tests.lua.conftest import api, load_fixture
 
 
 def assert_health_response(response: dict[str, Any]) -> None:
-    assert "status" in response
-    assert response["status"] == "ok"
+    assert "result" in response
+    assert "status" in response["result"]
+    assert response["result"]["status"] == "ok"
 
 
 class TestHealthEndpoint:
@@ -22,7 +23,7 @@ class TestHealthEndpoint:
     def test_health_from_MENU(self, client: socket.socket) -> None:
         """Test that health check returns status ok."""
         response = api(client, "menu", {})
-        assert response["state"] == "MENU"
+        assert response["result"]["state"] == "MENU"
         assert_health_response(api(client, "health", {}))
 
     def test_health_from_BLIND_SELECT(self, client: socket.socket) -> None:

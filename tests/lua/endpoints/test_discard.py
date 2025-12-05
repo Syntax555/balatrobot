@@ -56,9 +56,9 @@ class TestDiscardEndpoint:
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "discard", {"cards": [0]})
-        assert response["state"] == "SELECTING_HAND"
+        assert response["result"]["state"] == "SELECTING_HAND"
         assert (
-            response["round"]["discards_left"]
+            response["result"]["round"]["discards_left"]
             == gamestate["round"]["discards_left"] - 1
         )
 
@@ -67,9 +67,9 @@ class TestDiscardEndpoint:
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "discard", {"cards": [1, 2, 3]})
-        assert response["state"] == "SELECTING_HAND"
+        assert response["result"]["state"] == "SELECTING_HAND"
         assert (
-            response["round"]["discards_left"]
+            response["result"]["round"]["discards_left"]
             == gamestate["round"]["discards_left"] - 1
         )
 

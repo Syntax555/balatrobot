@@ -22,7 +22,7 @@ class TestLoadEndpoint:
         fixture_path = get_fixture_path("load", "state-BLIND_SELECT")
         response = api(client, "load", {"path": str(fixture_path)})
         assert_success_response(response)
-        assert response["path"] == str(fixture_path)
+        assert response["result"]["path"] == str(fixture_path)
 
     def test_load_save_roundtrip(self, client: socket.socket, tmp_path: Path) -> None:
         """Test that a loaded fixture can be saved and loaded again."""

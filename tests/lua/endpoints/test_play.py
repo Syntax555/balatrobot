@@ -43,9 +43,9 @@ class TestPlayEndpoint:
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "play", {"cards": [0, 3, 4, 5, 6]})
-        assert response["state"] == "SELECTING_HAND"
-        assert response["hands"]["Flush"]["played_this_round"] == 1
-        assert response["round"]["chips"] == 260
+        assert response["result"]["state"] == "SELECTING_HAND"
+        assert response["result"]["hands"]["Flush"]["played_this_round"] == 1
+        assert response["result"]["round"]["chips"] == 260
 
     def test_play_valid_cards_and_round_won(self, client: socket.socket) -> None:
         """Test play endpoint from BLIND_SELECT state."""
@@ -55,7 +55,7 @@ class TestPlayEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["round"]["chips"] == 200
         response = api(client, "play", {"cards": [0, 3, 4, 5, 6]})
-        assert response["state"] == "ROUND_EVAL"
+        assert response["result"]["state"] == "ROUND_EVAL"
 
     def test_play_valid_cards_and_game_won(self, client: socket.socket) -> None:
         """Test play endpoint from BLIND_SELECT state."""
@@ -69,7 +69,7 @@ class TestPlayEndpoint:
         assert gamestate["blinds"]["boss"]["status"] == "CURRENT"
         assert gamestate["round"]["chips"] == 1000000
         response = api(client, "play", {"cards": [0, 3, 4, 5, 6]})
-        assert response["won"] is True
+        assert response["result"]["won"] is True
 
     def test_play_valid_cards_and_game_over(self, client: socket.socket) -> None:
         """Test play endpoint from BLIND_SELECT state."""
@@ -79,7 +79,7 @@ class TestPlayEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["round"]["hands_left"] == 1
         response = api(client, "play", {"cards": [0]}, timeout=5)
-        assert response["state"] == "GAME_OVER"
+        assert response["result"]["state"] == "GAME_OVER"
 
 
 class TestPlayEndpointValidation:

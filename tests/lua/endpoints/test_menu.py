@@ -9,9 +9,9 @@ from tests.lua.conftest import api, load_fixture
 def verify_base_menu_response(response: dict[str, Any]) -> None:
     """Verify that menu response has all base fields."""
     # Verify state field
-    assert "state" in response
-    assert isinstance(response["state"], str)
-    assert len(response["state"]) > 0
+    assert "state" in response["result"]
+    assert isinstance(response["result"]["state"], str)
+    assert len(response["result"]["state"]) > 0
 
 
 class TestMenuEndpoint:

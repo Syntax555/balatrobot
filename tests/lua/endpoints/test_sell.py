@@ -94,8 +94,9 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["jokers"]["count"] == 1
         response = api(client, "sell", {"joker": 0})
-        assert response["jokers"]["count"] == 0
-        assert gamestate["money"] < response["money"]
+        after = response["result"]
+        assert after["jokers"]["count"] == 0
+        assert gamestate["money"] < after["money"]
 
     def test_sell_consumable_in_SELECTING_HAND(self, client: socket.socket) -> None:
         """Test selling a consumable in SELECTING_HAND state."""
@@ -105,8 +106,9 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["consumables"]["count"] == 1
         response = api(client, "sell", {"consumable": 0})
-        assert response["consumables"]["count"] == 0
-        assert gamestate["money"] < response["money"]
+        after = response["result"]
+        assert after["consumables"]["count"] == 0
+        assert gamestate["money"] < after["money"]
 
     def test_sell_joker_in_SHOP(self, client: socket.socket) -> None:
         """Test selling a joker in SHOP state."""
@@ -116,8 +118,9 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 1
         response = api(client, "sell", {"joker": 0})
-        assert response["jokers"]["count"] == 0
-        assert gamestate["money"] < response["money"]
+        after = response["result"]
+        assert after["jokers"]["count"] == 0
+        assert gamestate["money"] < after["money"]
 
     def test_sell_consumable_in_SHOP(self, client: socket.socket) -> None:
         """Test selling a consumable in SHOP state."""
@@ -127,8 +130,9 @@ class TestSellEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["consumables"]["count"] == 1
         response = api(client, "sell", {"consumable": 0})
-        assert response["consumables"]["count"] == 0
-        assert gamestate["money"] < response["money"]
+        after = response["result"]
+        assert after["consumables"]["count"] == 0
+        assert gamestate["money"] < after["money"]
 
 
 class TestSellEndpointValidation:

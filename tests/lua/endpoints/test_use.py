@@ -19,7 +19,7 @@ class TestUseEndpoint:
         assert gamestate["money"] == 12
         assert gamestate["consumables"]["cards"][0]["key"] == "c_hermit"
         response = api(client, "use", {"consumable": 0})
-        assert response["money"] == 12 * 2
+        assert response["result"]["money"] == 12 * 2
 
     def test_use_hermit_in_selecting_hand(self, client: socket.socket) -> None:
         """Test using The Hermit in SELECTING_HAND state."""
@@ -32,7 +32,7 @@ class TestUseEndpoint:
         assert gamestate["money"] == 12
         assert gamestate["consumables"]["cards"][0]["key"] == "c_hermit"
         response = api(client, "use", {"consumable": 0})
-        assert response["money"] == 12 * 2
+        assert response["result"]["money"] == 12 * 2
 
     def test_use_temperance_no_cards(self, client: socket.socket) -> None:
         """Test using Temperance (no card selection)."""
@@ -45,7 +45,7 @@ class TestUseEndpoint:
         assert gamestate["jokers"]["count"] == 0  # no jokers => no money increase
         assert gamestate["consumables"]["cards"][0]["key"] == "c_temperance"
         response = api(client, "use", {"consumable": 0})
-        assert response["money"] == gamestate["money"]
+        assert response["result"]["money"] == gamestate["money"]
 
     def test_use_planet_no_cards(self, client: socket.socket) -> None:
         """Test using a Planet card (no card selection)."""
@@ -57,7 +57,7 @@ class TestUseEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hands"]["High Card"]["level"] == 1
         response = api(client, "use", {"consumable": 0})
-        assert response["hands"]["High Card"]["level"] == 2
+        assert response["result"]["hands"]["High Card"]["level"] == 2
 
     def test_use_magician_with_one_card(self, client: socket.socket) -> None:
         """Test using The Magician with 1 card (min=1, max=2)."""
@@ -68,7 +68,9 @@ class TestUseEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 1, "cards": [0]})
-        assert response["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
+        assert (
+            response["result"]["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
+        )
 
     def test_use_magician_with_two_cards(self, client: socket.socket) -> None:
         """Test using The Magician with 2 cards."""
@@ -79,8 +81,12 @@ class TestUseEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 1, "cards": [7, 5]})
-        assert response["hand"]["cards"][5]["modifier"]["enhancement"] == "LUCKY"
-        assert response["hand"]["cards"][7]["modifier"]["enhancement"] == "LUCKY"
+        assert (
+            response["result"]["hand"]["cards"][5]["modifier"]["enhancement"] == "LUCKY"
+        )
+        assert (
+            response["result"]["hand"]["cards"][7]["modifier"]["enhancement"] == "LUCKY"
+        )
 
     def test_use_familiar_all_hand(self, client: socket.socket) -> None:
         """Test using Familiar (destroys cards, #G.hand.cards > 1)."""
@@ -91,10 +97,10 @@ class TestUseEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 0})
-        assert response["hand"]["count"] == gamestate["hand"]["count"] - 1 + 3
-        assert response["hand"]["cards"][7]["set"] == "ENHANCED"
-        assert response["hand"]["cards"][8]["set"] == "ENHANCED"
-        assert response["hand"]["cards"][9]["set"] == "ENHANCED"
+        assert response["result"]["hand"]["count"] == gamestate["hand"]["count"] - 1 + 3
+        assert response["result"]["hand"]["cards"][7]["set"] == "ENHANCED"
+        assert response["result"]["hand"]["cards"][8]["set"] == "ENHANCED"
+        assert response["result"]["hand"]["cards"][9]["set"] == "ENHANCED"
 
 
 class TestUseEndpointValidation:

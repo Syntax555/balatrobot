@@ -23,7 +23,7 @@ class TestSaveEndpoint:
         temp_file = tmp_path / "save"
         response = api(client, "save", {"path": str(temp_file)})
         assert_success_response(response)
-        assert response["path"] == str(temp_file)
+        assert response["result"]["path"] == str(temp_file)
         assert temp_file.exists()
         assert temp_file.stat().st_size > 0
 

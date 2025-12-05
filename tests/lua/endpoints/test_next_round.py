@@ -9,13 +9,13 @@ from tests.lua.conftest import api, assert_error_response, load_fixture
 def verify_next_round_response(response: dict[str, Any]) -> None:
     """Verify that next_round response has expected fields."""
     # Verify state field - should transition to BLIND_SELECT
-    assert "state" in response
-    assert isinstance(response["state"], str)
-    assert response["state"] == "BLIND_SELECT"
+    assert "state" in response["result"]
+    assert isinstance(response["result"]["state"], str)
+    assert response["result"]["state"] == "BLIND_SELECT"
 
     # Verify blinds field exists (we're at blind selection)
-    assert "blinds" in response
-    assert isinstance(response["blinds"], dict)
+    assert "blinds" in response["result"]
+    assert isinstance(response["result"]["blinds"], dict)
 
 
 class TestNextRoundEndpoint:

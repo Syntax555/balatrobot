@@ -45,7 +45,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"money": 100})
-        assert response["money"] == 100
+        assert response["result"]["money"] == 100
 
     def test_set_negative_chips(self, client: socket.socket) -> None:
         """Test that set fails when chips is negative."""
@@ -63,7 +63,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"chips": 100})
-        assert response["round"]["chips"] == 100
+        assert response["result"]["round"]["chips"] == 100
 
     def test_set_negative_ante(self, client: socket.socket) -> None:
         """Test that set fails when ante is negative."""
@@ -81,7 +81,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"ante": 8})
-        assert response["ante_num"] == 8
+        assert response["result"]["ante_num"] == 8
 
     def test_set_negative_round(self, client: socket.socket) -> None:
         """Test that set fails when round is negative."""
@@ -99,7 +99,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"round": 5})
-        assert response["round_num"] == 5
+        assert response["result"]["round_num"] == 5
 
     def test_set_negative_hands(self, client: socket.socket) -> None:
         """Test that set fails when hands is negative."""
@@ -117,7 +117,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"hands": 10})
-        assert response["round"]["hands_left"] == 10
+        assert response["result"]["round"]["hands_left"] == 10
 
     def test_set_negative_discards(self, client: socket.socket) -> None:
         """Test that set fails when discards is negative."""
@@ -135,7 +135,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"discards": 10})
-        assert response["round"]["discards_left"] == 10
+        assert response["result"]["round"]["discards_left"] == 10
 
     def test_set_shop_from_selecting_hand(self, client: socket.socket) -> None:
         """Test that set fails when shop is called from SELECTING_HAND state."""
@@ -153,7 +153,8 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SHOP")
         assert gamestate["state"] == "SHOP"
         before = gamestate
-        after = api(client, "set", {"shop": True})
+        response = api(client, "set", {"shop": True})
+        after = response["result"]
         assert len(after["shop"]["cards"]) > 0
         assert len(before["shop"]["cards"]) > 0
         assert after["shop"] != before["shop"]
@@ -165,7 +166,8 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SHOP")
         assert gamestate["state"] == "SHOP"
         before = gamestate
-        after = api(client, "set", {"shop": True, "round": 5, "money": 100})
+        response = api(client, "set", {"shop": True, "round": 5, "money": 100})
+        after = response["result"]
         assert after["shop"] != before["shop"]
         assert after["packs"] != before["packs"]
         assert after["vouchers"] != before["vouchers"]  # here only the id is changed

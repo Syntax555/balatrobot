@@ -20,8 +20,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["jokers"]["count"] == 0
         response = api(client, "add", {"key": "j_joker"})
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
 
     def test_add_consumable_tarot(self, client: socket.socket) -> None:
         """Test adding a tarot consumable with valid key."""
@@ -33,8 +33,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["consumables"]["count"] == 0
         response = api(client, "add", {"key": "c_fool"})
-        assert response["consumables"]["count"] == 1
-        assert response["consumables"]["cards"][0]["key"] == "c_fool"
+        assert response["result"]["consumables"]["count"] == 1
+        assert response["result"]["consumables"]["cards"][0]["key"] == "c_fool"
 
     def test_add_consumable_planet(self, client: socket.socket) -> None:
         """Test adding a planet consumable with valid key."""
@@ -46,8 +46,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["consumables"]["count"] == 0
         response = api(client, "add", {"key": "c_mercury"})
-        assert response["consumables"]["count"] == 1
-        assert response["consumables"]["cards"][0]["key"] == "c_mercury"
+        assert response["result"]["consumables"]["count"] == 1
+        assert response["result"]["consumables"]["cards"][0]["key"] == "c_mercury"
 
     def test_add_consumable_spectral(self, client: socket.socket) -> None:
         """Test adding a spectral consumable with valid key."""
@@ -59,8 +59,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["consumables"]["count"] == 0
         response = api(client, "add", {"key": "c_familiar"})
-        assert response["consumables"]["count"] == 1
-        assert response["consumables"]["cards"][0]["key"] == "c_familiar"
+        assert response["result"]["consumables"]["count"] == 1
+        assert response["result"]["consumables"]["cards"][0]["key"] == "c_familiar"
 
     def test_add_voucher(self, client: socket.socket) -> None:
         """Test adding a voucher with valid key in SHOP state."""
@@ -72,8 +72,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["vouchers"]["count"] == 0
         response = api(client, "add", {"key": "v_overstock_norm"})
-        assert response["vouchers"]["count"] == 1
-        assert response["vouchers"]["cards"][0]["key"] == "v_overstock_norm"
+        assert response["result"]["vouchers"]["count"] == 1
+        assert response["result"]["vouchers"]["cards"][0]["key"] == "v_overstock_norm"
 
     def test_add_playing_card(self, client: socket.socket) -> None:
         """Test adding a playing card with valid key."""
@@ -85,8 +85,8 @@ class TestAddEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hand"]["count"] == 8
         response = api(client, "add", {"key": "H_A"})
-        assert response["hand"]["count"] == 9
-        assert response["hand"]["cards"][8]["key"] == "H_A"
+        assert response["result"]["hand"]["count"] == 9
+        assert response["result"]["hand"]["cards"][8]["key"] == "H_A"
 
     def test_add_no_key_provided(self, client: socket.socket) -> None:
         """Test add endpoint with no key parameter."""
@@ -205,9 +205,9 @@ class TestAddEndpointSeal:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hand"]["count"] == 8
         response = api(client, "add", {"key": "H_A", "seal": seal})
-        assert response["hand"]["count"] == 9
-        assert response["hand"]["cards"][8]["key"] == "H_A"
-        assert response["hand"]["cards"][8]["modifier"]["seal"] == seal
+        assert response["result"]["hand"]["count"] == 9
+        assert response["result"]["hand"]["cards"][8]["key"] == "H_A"
+        assert response["result"]["hand"]["cards"][8]["modifier"]["seal"] == seal
 
     def test_add_playing_card_invalid_seal(self, client: socket.socket) -> None:
         """Test adding a playing card with invalid seal value."""
@@ -258,9 +258,11 @@ class TestAddEndpointEdition:
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 0
         response = api(client, "add", {"key": "j_joker", "edition": edition})
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["edition"] == edition
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert (
+            response["result"]["jokers"]["cards"][0]["modifier"]["edition"] == edition
+        )
 
     @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME", "NEGATIVE"])
     def test_add_playing_card_with_edition(
@@ -275,9 +277,9 @@ class TestAddEndpointEdition:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hand"]["count"] == 8
         response = api(client, "add", {"key": "H_A", "edition": edition})
-        assert response["hand"]["count"] == 9
-        assert response["hand"]["cards"][8]["key"] == "H_A"
-        assert response["hand"]["cards"][8]["modifier"]["edition"] == edition
+        assert response["result"]["hand"]["count"] == 9
+        assert response["result"]["hand"]["cards"][8]["key"] == "H_A"
+        assert response["result"]["hand"]["cards"][8]["modifier"]["edition"] == edition
 
     def test_add_consumable_with_negative_edition(self, client: socket.socket) -> None:
         """Test adding a consumable with NEGATIVE edition (only valid edition for consumables)."""
@@ -289,9 +291,12 @@ class TestAddEndpointEdition:
         assert gamestate["state"] == "SHOP"
         assert gamestate["consumables"]["count"] == 0
         response = api(client, "add", {"key": "c_fool", "edition": "NEGATIVE"})
-        assert response["consumables"]["count"] == 1
-        assert response["consumables"]["cards"][0]["key"] == "c_fool"
-        assert response["consumables"]["cards"][0]["modifier"]["edition"] == "NEGATIVE"
+        assert response["result"]["consumables"]["count"] == 1
+        assert response["result"]["consumables"]["cards"][0]["key"] == "c_fool"
+        assert (
+            response["result"]["consumables"]["cards"][0]["modifier"]["edition"]
+            == "NEGATIVE"
+        )
 
     @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME"])
     def test_add_consumable_with_non_negative_edition_fails(
@@ -362,9 +367,12 @@ class TestAddEndpointEnhancement:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hand"]["count"] == 8
         response = api(client, "add", {"key": "H_A", "enhancement": enhancement})
-        assert response["hand"]["count"] == 9
-        assert response["hand"]["cards"][8]["key"] == "H_A"
-        assert response["hand"]["cards"][8]["modifier"]["enhancement"] == enhancement
+        assert response["result"]["hand"]["count"] == 9
+        assert response["result"]["hand"]["cards"][8]["key"] == "H_A"
+        assert (
+            response["result"]["hand"]["cards"][8]["modifier"]["enhancement"]
+            == enhancement
+        )
 
     def test_add_playing_card_invalid_enhancement(self, client: socket.socket) -> None:
         """Test adding a playing card with invalid enhancement value."""
@@ -415,9 +423,9 @@ class TestAddEndpointStickers:
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 0
         response = api(client, "add", {"key": "j_joker", "eternal": True})
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["eternal"] is True
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
     def test_add_non_joker_with_eternal_fails(
@@ -465,9 +473,11 @@ class TestAddEndpointStickers:
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 0
         response = api(client, "add", {"key": "j_joker", "perishable": rounds})
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["perishable"] == rounds
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert (
+            response["result"]["jokers"]["cards"][0]["modifier"]["perishable"] == rounds
+        )
 
     def test_add_joker_with_eternal_and_perishable(self, client: socket.socket) -> None:
         """Test adding a joker with both eternal and perishable stickers."""
@@ -481,10 +491,10 @@ class TestAddEndpointStickers:
         response = api(
             client, "add", {"key": "j_joker", "eternal": True, "perishable": 5}
         )
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
-        assert response["jokers"]["cards"][0]["modifier"]["perishable"] == 5
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["eternal"] is True
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["perishable"] == 5
 
     @pytest.mark.parametrize("invalid_value", [0, -1])
     def test_add_joker_with_perishable_invalid_integer_fails(
@@ -570,9 +580,9 @@ class TestAddEndpointStickers:
         assert gamestate["state"] == "SHOP"
         assert gamestate["jokers"]["count"] == 0
         response = api(client, "add", {"key": "j_joker", "rental": True})
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["rental"] is True
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["rental"] is True
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
     def test_add_non_joker_with_rental_fails(
@@ -604,10 +614,10 @@ class TestAddEndpointStickers:
         response = api(
             client, "add", {"key": "j_joker", "rental": True, "eternal": True}
         )
-        assert response["jokers"]["count"] == 1
-        assert response["jokers"]["cards"][0]["key"] == "j_joker"
-        assert response["jokers"]["cards"][0]["modifier"]["rental"] is True
-        assert response["jokers"]["cards"][0]["modifier"]["eternal"] is True
+        assert response["result"]["jokers"]["count"] == 1
+        assert response["result"]["jokers"]["cards"][0]["key"] == "j_joker"
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["rental"] is True
+        assert response["result"]["jokers"]["cards"][0]["modifier"]["eternal"] is True
 
     def test_add_playing_card_with_rental_fails(self, client: socket.socket) -> None:
         """Test that rental cannot be applied to playing cards."""

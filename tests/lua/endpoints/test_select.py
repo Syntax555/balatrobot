@@ -9,16 +9,16 @@ from tests.lua.conftest import api, assert_error_response, load_fixture
 def verify_select_response(response: dict[str, Any]) -> None:
     """Verify that select response has expected fields."""
     # Verify state field - should transition to SELECTING_HAND after selecting blind
-    assert "state" in response
-    assert isinstance(response["state"], str)
-    assert response["state"] == "SELECTING_HAND"
+    assert "state" in response["result"]
+    assert isinstance(response["result"]["state"], str)
+    assert response["result"]["state"] == "SELECTING_HAND"
 
     # Verify hand field exists
-    assert "hand" in response
-    assert isinstance(response["hand"], dict)
+    assert "hand" in response["result"]
+    assert isinstance(response["result"]["hand"], dict)
 
     # Verify we transitioned to SELECTING_HAND state
-    assert response["state"] == "SELECTING_HAND"
+    assert response["result"]["state"] == "SELECTING_HAND"
 
 
 class TestSelectEndpoint:
@@ -61,7 +61,7 @@ class TestSelectEndpointStateRequirements:
     def test_select_from_MENU(self, client: socket.socket):
         """Test that select fails when not in BLIND_SELECT state."""
         response = api(client, "menu", {})
-        assert response["state"] == "MENU"
+        assert response["result"]["state"] == "MENU"
         assert_error_response(
             api(client, "select", {}),
             "INVALID_STATE",
