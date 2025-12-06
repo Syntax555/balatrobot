@@ -1859,5 +1859,21 @@
         }
       }
     ]
+  },
+  "screenshot": {
+    "state-BLIND_SELECT": [
+      {
+        "endpoint": "menu",
+        "arguments": {}
+      },
+      {
+        "endpoint": "start",
+        "arguments": {
+          "deck": "RED",
+          "stake": "WHITE",
+          "seed": "TEST123"
+        }
+      }
+    ]
   }
 }
