@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestRerollEndpoint:
@@ -10,13 +15,11 @@ class TestRerollEndpoint:
 
     def test_reroll_from_shop(self, client: socket.socket) -> None:
         """Test rerolling shop from SHOP state."""
-        gamestate = load_fixture(client, "reroll", "state-SHOP")
-        assert gamestate["state"] == "SHOP"
+        before = load_fixture(client, "reroll", "state-SHOP")
+        assert before["state"] == "SHOP"
         response = api(client, "reroll", {})
-        after = response["result"]
-        assert gamestate["state"] == "SHOP"
-        assert after["state"] == "SHOP"
-        assert gamestate["shop"] != after["shop"]
+        after = assert_gamestate_response(response, state="SHOP")
+        assert before["shop"] != after["shop"]
 
     def test_reroll_insufficient_funds(self, client: socket.socket) -> None:
         """Test reroll endpoint when player has insufficient funds."""

@@ -4,7 +4,12 @@ import socket
 
 import pytest
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestBuyEndpoint:
@@ -128,7 +133,8 @@ class TestBuyEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["shop"]["cards"][0]["set"] == "JOKER"
         response = api(client, "buy", {"card": 0})
-        assert response["result"]["jokers"]["cards"][0]["set"] == "JOKER"
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["jokers"]["cards"][0]["set"] == "JOKER"
 
     def test_buy_consumable_success(self, client: socket.socket) -> None:
         """Test buying a consumable card (Planet/Tarot/Spectral) from shop."""
@@ -136,7 +142,8 @@ class TestBuyEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["shop"]["cards"][1]["set"] == "PLANET"
         response = api(client, "buy", {"card": 1})
-        assert response["result"]["consumables"]["cards"][0]["set"] == "PLANET"
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["consumables"]["cards"][0]["set"] == "PLANET"
 
     def test_buy_voucher_success(self, client: socket.socket) -> None:
         """Test buying a voucher from shop."""
@@ -146,8 +153,9 @@ class TestBuyEndpoint:
         assert gamestate["state"] == "SHOP"
         assert gamestate["vouchers"]["cards"][0]["set"] == "VOUCHER"
         response = api(client, "buy", {"voucher": 0})
-        assert response["result"]["used_vouchers"] is not None
-        assert len(response["result"]["used_vouchers"]) > 0
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["used_vouchers"] is not None
+        assert len(gamestate["used_vouchers"]) > 0
 
     def test_buy_packs_success(self, client: socket.socket) -> None:
         """Test buying a pack from shop."""
@@ -160,8 +168,9 @@ class TestBuyEndpoint:
         assert gamestate["packs"]["cards"][0]["label"] == "Buffoon Pack"
         assert gamestate["packs"]["cards"][1]["label"] == "Standard Pack"
         response = api(client, "buy", {"pack": 0})
-        assert response["result"]["pack"] is not None
-        assert len(response["result"]["pack"]["cards"]) > 0
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["pack"] is not None
+        assert len(gamestate["pack"]["cards"]) > 0
 
 
 class TestBuyEndpointValidation:

@@ -1,21 +1,13 @@
 """Tests for src/lua/endpoints/cash_out.lua"""
 
 import socket
-from typing import Any
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
-
-
-def verify_cash_out_response(response: dict[str, Any]) -> None:
-    """Verify that cash_out response has expected fields."""
-    # Verify state field - should transition to SHOP after cashing out
-    assert "state" in response["result"]
-    assert isinstance(response["result"]["state"], str)
-    assert response["result"]["state"] == "SHOP"
-
-    # Verify shop field exists
-    assert "shop" in response["result"]
-    assert isinstance(response["result"]["shop"], dict)
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestCashOutEndpoint:
@@ -26,8 +18,7 @@ class TestCashOutEndpoint:
         gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
         assert gamestate["state"] == "ROUND_EVAL"
         response = api(client, "cash_out", {})
-        verify_cash_out_response(response)
-        assert response["result"]["state"] == "SHOP"
+        assert_gamestate_response(response, state="SHOP")
 
 
 class TestCashOutEndpointStateRequirements:

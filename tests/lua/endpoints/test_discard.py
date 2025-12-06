@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestDiscardEndpoint:
@@ -53,25 +58,19 @@ class TestDiscardEndpoint:
 
     def test_discard_valid_single_card(self, client: socket.socket) -> None:
         """Test discard endpoint with valid single card."""
-        gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
-        assert gamestate["state"] == "SELECTING_HAND"
+        before = load_fixture(client, "discard", "state-SELECTING_HAND")
+        assert before["state"] == "SELECTING_HAND"
         response = api(client, "discard", {"cards": [0]})
-        assert response["result"]["state"] == "SELECTING_HAND"
-        assert (
-            response["result"]["round"]["discards_left"]
-            == gamestate["round"]["discards_left"] - 1
-        )
+        after = assert_gamestate_response(response, state="SELECTING_HAND")
+        assert after["round"]["discards_left"] == before["round"]["discards_left"] - 1
 
     def test_discard_valid_multiple_cards(self, client: socket.socket) -> None:
         """Test discard endpoint with valid multiple cards."""
-        gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
-        assert gamestate["state"] == "SELECTING_HAND"
+        before = load_fixture(client, "discard", "state-SELECTING_HAND")
+        assert before["state"] == "SELECTING_HAND"
         response = api(client, "discard", {"cards": [1, 2, 3]})
-        assert response["result"]["state"] == "SELECTING_HAND"
-        assert (
-            response["result"]["round"]["discards_left"]
-            == gamestate["round"]["discards_left"] - 1
-        )
+        after = assert_gamestate_response(response, state="SELECTING_HAND")
+        assert after["round"]["discards_left"] == before["round"]["discards_left"] - 1
 
 
 class TestDiscardEndpointValidation:

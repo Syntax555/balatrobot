@@ -1,24 +1,13 @@
 """Tests for src/lua/endpoints/select.lua"""
 
 import socket
-from typing import Any
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
-
-
-def verify_select_response(response: dict[str, Any]) -> None:
-    """Verify that select response has expected fields."""
-    # Verify state field - should transition to SELECTING_HAND after selecting blind
-    assert "state" in response["result"]
-    assert isinstance(response["result"]["state"], str)
-    assert response["result"]["state"] == "SELECTING_HAND"
-
-    # Verify hand field exists
-    assert "hand" in response["result"]
-    assert isinstance(response["result"]["hand"], dict)
-
-    # Verify we transitioned to SELECTING_HAND state
-    assert response["result"]["state"] == "SELECTING_HAND"
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestSelectEndpoint:
@@ -32,7 +21,7 @@ class TestSelectEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         assert gamestate["blinds"]["small"]["status"] == "SELECT"
         response = api(client, "select", {})
-        verify_select_response(response)
+        assert_gamestate_response(response, state="SELECTING_HAND")
 
     def test_select_big_blind(self, client: socket.socket) -> None:
         """Test selecting Big blind in BLIND_SELECT state."""
@@ -42,7 +31,7 @@ class TestSelectEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         assert gamestate["blinds"]["big"]["status"] == "SELECT"
         response = api(client, "select", {})
-        verify_select_response(response)
+        assert_gamestate_response(response, state="SELECTING_HAND")
 
     def test_select_boss_blind(self, client: socket.socket) -> None:
         """Test selecting Boss blind in BLIND_SELECT state."""
@@ -52,7 +41,7 @@ class TestSelectEndpoint:
         assert gamestate["state"] == "BLIND_SELECT"
         assert gamestate["blinds"]["boss"]["status"] == "SELECT"
         response = api(client, "select", {})
-        verify_select_response(response)
+        assert_gamestate_response(response, state="SELECTING_HAND")
 
 
 class TestSelectEndpointStateRequirements:
@@ -61,7 +50,7 @@ class TestSelectEndpointStateRequirements:
     def test_select_from_MENU(self, client: socket.socket):
         """Test that select fails when not in BLIND_SELECT state."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         assert_error_response(
             api(client, "select", {}),
             "INVALID_STATE",

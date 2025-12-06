@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestSetEndpoint:
@@ -45,7 +50,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"money": 100})
-        assert response["result"]["money"] == 100
+        assert_gamestate_response(response, money=100)
 
     def test_set_negative_chips(self, client: socket.socket) -> None:
         """Test that set fails when chips is negative."""
@@ -63,7 +68,8 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"chips": 100})
-        assert response["result"]["round"]["chips"] == 100
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["round"]["chips"] == 100
 
     def test_set_negative_ante(self, client: socket.socket) -> None:
         """Test that set fails when ante is negative."""
@@ -81,7 +87,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"ante": 8})
-        assert response["result"]["ante_num"] == 8
+        assert_gamestate_response(response, ante_num=8)
 
     def test_set_negative_round(self, client: socket.socket) -> None:
         """Test that set fails when round is negative."""
@@ -99,7 +105,7 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"round": 5})
-        assert response["result"]["round_num"] == 5
+        assert_gamestate_response(response, round_num=5)
 
     def test_set_negative_hands(self, client: socket.socket) -> None:
         """Test that set fails when hands is negative."""
@@ -117,7 +123,8 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"hands": 10})
-        assert response["result"]["round"]["hands_left"] == 10
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["round"]["hands_left"] == 10
 
     def test_set_negative_discards(self, client: socket.socket) -> None:
         """Test that set fails when discards is negative."""
@@ -135,7 +142,8 @@ class TestSetEndpoint:
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"discards": 10})
-        assert response["result"]["round"]["discards_left"] == 10
+        gamestate = assert_gamestate_response(response)
+        assert gamestate["round"]["discards_left"] == 10
 
     def test_set_shop_from_selecting_hand(self, client: socket.socket) -> None:
         """Test that set fails when shop is called from SELECTING_HAND state."""
@@ -150,11 +158,10 @@ class TestSetEndpoint:
 
     def test_set_shop_from_SHOP(self, client: socket.socket) -> None:
         """Test that set fails when shop is called from SHOP state."""
-        gamestate = load_fixture(client, "set", "state-SHOP")
-        assert gamestate["state"] == "SHOP"
-        before = gamestate
+        before = load_fixture(client, "set", "state-SHOP")
+        assert before["state"] == "SHOP"
         response = api(client, "set", {"shop": True})
-        after = response["result"]
+        after = assert_gamestate_response(response)
         assert len(after["shop"]["cards"]) > 0
         assert len(before["shop"]["cards"]) > 0
         assert after["shop"] != before["shop"]
@@ -163,16 +170,13 @@ class TestSetEndpoint:
 
     def test_set_shop_set_round_set_money(self, client: socket.socket) -> None:
         """Test that set fails when shop is called from SHOP state."""
-        gamestate = load_fixture(client, "set", "state-SHOP")
-        assert gamestate["state"] == "SHOP"
-        before = gamestate
+        before = load_fixture(client, "set", "state-SHOP")
+        assert before["state"] == "SHOP"
         response = api(client, "set", {"shop": True, "round": 5, "money": 100})
-        after = response["result"]
+        after = assert_gamestate_response(response, round_num=5, money=100)
         assert after["shop"] != before["shop"]
         assert after["packs"] != before["packs"]
         assert after["vouchers"] != before["vouchers"]  # here only the id is changed
-        assert after["round_num"] == 5
-        assert after["money"] == 100
 
 
 class TestSetEndpointValidation:

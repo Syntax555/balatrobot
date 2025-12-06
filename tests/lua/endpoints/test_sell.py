@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestSellEndpoint:
@@ -86,53 +91,53 @@ class TestSellEndpoint:
 
     def test_sell_joker_in_SELECTING_HAND(self, client: socket.socket) -> None:
         """Test selling a joker in SELECTING_HAND state."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client,
             "sell",
             "state-SELECTING_HAND--jokers.count-1--consumables.count-1",
         )
-        assert gamestate["state"] == "SELECTING_HAND"
-        assert gamestate["jokers"]["count"] == 1
+        assert before["state"] == "SELECTING_HAND"
+        assert before["jokers"]["count"] == 1
         response = api(client, "sell", {"joker": 0})
-        after = response["result"]
+        after = assert_gamestate_response(response)
         assert after["jokers"]["count"] == 0
-        assert gamestate["money"] < after["money"]
+        assert before["money"] < after["money"]
 
     def test_sell_consumable_in_SELECTING_HAND(self, client: socket.socket) -> None:
         """Test selling a consumable in SELECTING_HAND state."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client, "sell", "state-SELECTING_HAND--jokers.count-1--consumables.count-1"
         )
-        assert gamestate["state"] == "SELECTING_HAND"
-        assert gamestate["consumables"]["count"] == 1
+        assert before["state"] == "SELECTING_HAND"
+        assert before["consumables"]["count"] == 1
         response = api(client, "sell", {"consumable": 0})
-        after = response["result"]
+        after = assert_gamestate_response(response)
         assert after["consumables"]["count"] == 0
-        assert gamestate["money"] < after["money"]
+        assert before["money"] < after["money"]
 
     def test_sell_joker_in_SHOP(self, client: socket.socket) -> None:
         """Test selling a joker in SHOP state."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
         )
-        assert gamestate["state"] == "SHOP"
-        assert gamestate["jokers"]["count"] == 1
+        assert before["state"] == "SHOP"
+        assert before["jokers"]["count"] == 1
         response = api(client, "sell", {"joker": 0})
-        after = response["result"]
+        after = assert_gamestate_response(response)
         assert after["jokers"]["count"] == 0
-        assert gamestate["money"] < after["money"]
+        assert before["money"] < after["money"]
 
     def test_sell_consumable_in_SHOP(self, client: socket.socket) -> None:
         """Test selling a consumable in SHOP state."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
         )
-        assert gamestate["state"] == "SHOP"
-        assert gamestate["consumables"]["count"] == 1
+        assert before["state"] == "SHOP"
+        assert before["consumables"]["count"] == 1
         response = api(client, "sell", {"consumable": 0})
-        after = response["result"]
+        after = assert_gamestate_response(response)
         assert after["consumables"]["count"] == 0
-        assert gamestate["money"] < after["money"]
+        assert before["money"] < after["money"]
 
 
 class TestSellEndpointValidation:

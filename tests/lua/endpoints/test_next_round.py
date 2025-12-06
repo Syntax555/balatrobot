@@ -1,21 +1,13 @@
 """Tests for src/lua/endpoints/next_round.lua"""
 
 import socket
-from typing import Any
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
-
-
-def verify_next_round_response(response: dict[str, Any]) -> None:
-    """Verify that next_round response has expected fields."""
-    # Verify state field - should transition to BLIND_SELECT
-    assert "state" in response["result"]
-    assert isinstance(response["result"]["state"], str)
-    assert response["result"]["state"] == "BLIND_SELECT"
-
-    # Verify blinds field exists (we're at blind selection)
-    assert "blinds" in response["result"]
-    assert isinstance(response["result"]["blinds"], dict)
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestNextRoundEndpoint:
@@ -26,7 +18,7 @@ class TestNextRoundEndpoint:
         gamestate = load_fixture(client, "next_round", "state-SHOP")
         assert gamestate["state"] == "SHOP"
         response = api(client, "next_round", {})
-        verify_next_round_response(response)
+        assert_gamestate_response(response, state="BLIND_SELECT")
 
 
 class TestNextRoundEndpointStateRequirements:

@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestRearrangeEndpoint:
@@ -10,53 +15,54 @@ class TestRearrangeEndpoint:
 
     def test_rearrange_hand(self, client: socket.socket) -> None:
         """Test rearranging hand in selecting hand state."""
-        gamestate = load_fixture(
-            client, "rearrange", "state-SELECTING_HAND--hand.count-8"
-        )
-        assert gamestate["state"] == "SELECTING_HAND"
-        assert gamestate["hand"]["count"] == 8
-        prev_ids = [card["id"] for card in gamestate["hand"]["cards"]]
+        before = load_fixture(client, "rearrange", "state-SELECTING_HAND--hand.count-8")
+        assert before["state"] == "SELECTING_HAND"
+        assert before["hand"]["count"] == 8
+        prev_ids = [card["id"] for card in before["hand"]["cards"]]
         permutation = [1, 2, 0, 3, 4, 5, 7, 6]
         response = api(
             client,
             "rearrange",
             {"hand": permutation},
         )
-        ids = [card["id"] for card in response["result"]["hand"]["cards"]]
+        after = assert_gamestate_response(response)
+        ids = [card["id"] for card in after["hand"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_jokers(self, client: socket.socket) -> None:
         """Test rearranging jokers."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
         )
-        assert gamestate["state"] == "SHOP"
-        assert gamestate["jokers"]["count"] == 4
-        prev_ids = [card["id"] for card in gamestate["jokers"]["cards"]]
+        assert before["state"] == "SHOP"
+        assert before["jokers"]["count"] == 4
+        prev_ids = [card["id"] for card in before["jokers"]["cards"]]
         permutation = [2, 0, 1, 3]
         response = api(
             client,
             "rearrange",
             {"jokers": permutation},
         )
-        ids = [card["id"] for card in response["result"]["jokers"]["cards"]]
+        after = assert_gamestate_response(response)
+        ids = [card["id"] for card in after["jokers"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
     def test_rearrange_consumables(self, client: socket.socket) -> None:
         """Test rearranging consumables."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
         )
-        assert gamestate["state"] == "SHOP"
-        assert gamestate["consumables"]["count"] == 2
-        prev_ids = [card["id"] for card in gamestate["consumables"]["cards"]]
+        assert before["state"] == "SHOP"
+        assert before["consumables"]["count"] == 2
+        prev_ids = [card["id"] for card in before["consumables"]["cards"]]
         permutation = [1, 0]
         response = api(
             client,
             "rearrange",
             {"consumables": permutation},
         )
-        ids = [card["id"] for card in response["result"]["consumables"]["cards"]]
+        after = assert_gamestate_response(response)
+        ids = [card["id"] for card in after["consumables"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
 

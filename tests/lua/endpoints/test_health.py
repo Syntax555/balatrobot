@@ -6,9 +6,13 @@
 # - Response structure and fields
 
 import socket
-from typing import Any
 
-from tests.lua.conftest import api, assert_health_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_gamestate_response,
+    assert_health_response,
+    load_fixture,
+)
 
 
 class TestHealthEndpoint:
@@ -17,7 +21,7 @@ class TestHealthEndpoint:
     def test_health_from_MENU(self, client: socket.socket) -> None:
         """Test that health check returns status ok."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         assert_health_response(api(client, "health", {}))
 
     def test_health_from_BLIND_SELECT(self, client: socket.socket) -> None:

@@ -5,7 +5,12 @@ from typing import Any
 
 import pytest
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestStartEndpoint:
@@ -69,10 +74,9 @@ class TestStartEndpoint:
     ):
         """Test start endpoint with various valid parameters."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", arguments)
-        for key, value in expected.items():
-            assert response["result"][key] == value
+        assert_gamestate_response(response, **expected)
 
 
 class TestStartEndpointValidation:
@@ -81,7 +85,7 @@ class TestStartEndpointValidation:
     def test_missing_deck_parameter(self, client: socket.socket):
         """Test that start fails when deck parameter is missing."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"stake": "WHITE"})
         assert_error_response(
             response,
@@ -92,7 +96,7 @@ class TestStartEndpointValidation:
     def test_missing_stake_parameter(self, client: socket.socket):
         """Test that start fails when stake parameter is missing."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"deck": "RED"})
         assert_error_response(
             response,
@@ -103,7 +107,7 @@ class TestStartEndpointValidation:
     def test_invalid_deck_value(self, client: socket.socket):
         """Test that start fails with invalid deck enum."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"deck": "INVALID_DECK", "stake": "WHITE"})
         assert_error_response(
             response,
@@ -114,7 +118,7 @@ class TestStartEndpointValidation:
     def test_invalid_stake_value(self, client: socket.socket):
         """Test that start fails when invalid stake enum is provided."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"deck": "RED", "stake": "INVALID_STAKE"})
         assert_error_response(
             response,
@@ -125,7 +129,7 @@ class TestStartEndpointValidation:
     def test_invalid_deck_type(self, client: socket.socket):
         """Test that start fails when deck is not a string."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"deck": 123, "stake": "WHITE"})
         assert_error_response(
             response,
@@ -136,7 +140,7 @@ class TestStartEndpointValidation:
     def test_invalid_stake_type(self, client: socket.socket):
         """Test that start fails when stake is not a string."""
         response = api(client, "menu", {})
-        assert response["result"]["state"] == "MENU"
+        assert_gamestate_response(response, state="MENU")
         response = api(client, "start", {"deck": "RED", "stake": 1})
         assert_error_response(
             response,

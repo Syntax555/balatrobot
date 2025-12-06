@@ -2,7 +2,12 @@
 
 import socket
 
-from tests.lua.conftest import api, assert_error_response, load_fixture
+from tests.lua.conftest import (
+    api,
+    assert_error_response,
+    assert_gamestate_response,
+    load_fixture,
+)
 
 
 class TestUseEndpoint:
@@ -19,7 +24,7 @@ class TestUseEndpoint:
         assert gamestate["money"] == 12
         assert gamestate["consumables"]["cards"][0]["key"] == "c_hermit"
         response = api(client, "use", {"consumable": 0})
-        assert response["result"]["money"] == 12 * 2
+        assert_gamestate_response(response, money=24)
 
     def test_use_hermit_in_selecting_hand(self, client: socket.socket) -> None:
         """Test using The Hermit in SELECTING_HAND state."""
@@ -32,20 +37,20 @@ class TestUseEndpoint:
         assert gamestate["money"] == 12
         assert gamestate["consumables"]["cards"][0]["key"] == "c_hermit"
         response = api(client, "use", {"consumable": 0})
-        assert response["result"]["money"] == 12 * 2
+        assert_gamestate_response(response, money=24)
 
     def test_use_temperance_no_cards(self, client: socket.socket) -> None:
         """Test using Temperance (no card selection)."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client,
             "use",
             "state-SELECTING_HAND--consumables.cards[0]-key-c_temperance--jokers.count-0",
         )
-        assert gamestate["state"] == "SELECTING_HAND"
-        assert gamestate["jokers"]["count"] == 0  # no jokers => no money increase
-        assert gamestate["consumables"]["cards"][0]["key"] == "c_temperance"
+        assert before["state"] == "SELECTING_HAND"
+        assert before["jokers"]["count"] == 0  # no jokers => no money increase
+        assert before["consumables"]["cards"][0]["key"] == "c_temperance"
         response = api(client, "use", {"consumable": 0})
-        assert response["result"]["money"] == gamestate["money"]
+        assert_gamestate_response(response, money=before["money"])
 
     def test_use_planet_no_cards(self, client: socket.socket) -> None:
         """Test using a Planet card (no card selection)."""
@@ -57,7 +62,8 @@ class TestUseEndpoint:
         assert gamestate["state"] == "SELECTING_HAND"
         assert gamestate["hands"]["High Card"]["level"] == 1
         response = api(client, "use", {"consumable": 0})
-        assert response["result"]["hands"]["High Card"]["level"] == 2
+        after = assert_gamestate_response(response)
+        assert after["hands"]["High Card"]["level"] == 2
 
     def test_use_magician_with_one_card(self, client: socket.socket) -> None:
         """Test using The Magician with 1 card (min=1, max=2)."""
@@ -68,9 +74,8 @@ class TestUseEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 1, "cards": [0]})
-        assert (
-            response["result"]["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
-        )
+        after = assert_gamestate_response(response)
+        assert after["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
 
     def test_use_magician_with_two_cards(self, client: socket.socket) -> None:
         """Test using The Magician with 2 cards."""
@@ -81,26 +86,24 @@ class TestUseEndpoint:
         )
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 1, "cards": [7, 5]})
-        assert (
-            response["result"]["hand"]["cards"][5]["modifier"]["enhancement"] == "LUCKY"
-        )
-        assert (
-            response["result"]["hand"]["cards"][7]["modifier"]["enhancement"] == "LUCKY"
-        )
+        after = assert_gamestate_response(response)
+        assert after["hand"]["cards"][5]["modifier"]["enhancement"] == "LUCKY"
+        assert after["hand"]["cards"][7]["modifier"]["enhancement"] == "LUCKY"
 
     def test_use_familiar_all_hand(self, client: socket.socket) -> None:
         """Test using Familiar (destroys cards, #G.hand.cards > 1)."""
-        gamestate = load_fixture(
+        before = load_fixture(
             client,
             "use",
             "state-SELECTING_HAND--consumables.cards[0]-key-c_familiar",
         )
-        assert gamestate["state"] == "SELECTING_HAND"
+        assert before["state"] == "SELECTING_HAND"
         response = api(client, "use", {"consumable": 0})
-        assert response["result"]["hand"]["count"] == gamestate["hand"]["count"] - 1 + 3
-        assert response["result"]["hand"]["cards"][7]["set"] == "ENHANCED"
-        assert response["result"]["hand"]["cards"][8]["set"] == "ENHANCED"
-        assert response["result"]["hand"]["cards"][9]["set"] == "ENHANCED"
+        after = assert_gamestate_response(response)
+        assert after["hand"]["count"] == before["hand"]["count"] - 1 + 3
+        assert after["hand"]["cards"][7]["set"] == "ENHANCED"
+        assert after["hand"]["cards"][8]["set"] == "ENHANCED"
+        assert after["hand"]["cards"][9]["set"] == "ENHANCED"
 
 
 class TestUseEndpointValidation:
