@@ -272,7 +272,9 @@ def assert_path_response(
     assert "success" in result, f"PathResponse missing 'success': {result}"
     assert result["success"] is True, f"PathResponse success is not True: {result}"
     assert "path" in result, f"PathResponse missing 'path': {result}"
-    assert isinstance(result["path"], str), f"PathResponse 'path' not a string: {result}"
+    assert isinstance(result["path"], str), (
+        f"PathResponse 'path' not a string: {result}"
+    )
 
     if expected_path is not None:
         assert result["path"] == expected_path, (
@@ -306,7 +308,9 @@ def assert_gamestate_response(
 
     # Verify required GameState field
     assert "state" in result, f"GameStateResponse missing 'state': {result}"
-    assert isinstance(result["state"], str), f"GameStateResponse 'state' not a string: {result}"
+    assert isinstance(result["state"], str), (
+        f"GameStateResponse 'state' not a string: {result}"
+    )
 
     # Verify any expected fields
     for field, expected_value in expected_fields.items():
@@ -345,13 +349,17 @@ def assert_test_response(
     assert result["success"] is True, f"TestResponse success is not True: {result}"
 
     if expected_received_args is not None:
-        assert "received_args" in result, f"TestResponse missing 'received_args': {result}"
+        assert "received_args" in result, (
+            f"TestResponse missing 'received_args': {result}"
+        )
         assert result["received_args"] == expected_received_args, (
             f"TestResponse received_args: expected {expected_received_args}, got {result['received_args']}"
         )
 
     if expected_state_validated is not None:
-        assert "state_validated" in result, f"TestResponse missing 'state_validated': {result}"
+        assert "state_validated" in result, (
+            f"TestResponse missing 'state_validated': {result}"
+        )
         assert result["state_validated"] == expected_state_validated, (
             f"TestResponse state_validated: expected {expected_state_validated}, got {result['state_validated']}"
         )
@@ -378,14 +386,20 @@ def assert_error_response(
         AssertionError: If response is not a valid ErrorResponse.
     """
     assert "error" in response, f"Expected 'error' in response, got: {response}"
-    assert "result" not in response, f"Unexpected 'result' in error response: {response}"
+    assert "result" not in response, (
+        f"Unexpected 'result' in error response: {response}"
+    )
 
     error = response["error"]
     assert "message" in error, f"ErrorResponse missing 'message': {error}"
     assert "data" in error, f"ErrorResponse missing 'data': {error}"
     assert "name" in error["data"], f"ErrorResponse data missing 'name': {error}"
-    assert isinstance(error["message"], str), f"ErrorResponse 'message' not a string: {error}"
-    assert isinstance(error["data"]["name"], str), f"ErrorResponse 'name' not a string: {error}"
+    assert isinstance(error["message"], str), (
+        f"ErrorResponse 'message' not a string: {error}"
+    )
+    assert isinstance(error["data"]["name"], str), (
+        f"ErrorResponse 'name' not a string: {error}"
+    )
 
     if expected_error_name is not None:
         actual_name = error["data"]["name"]
