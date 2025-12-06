@@ -140,9 +140,9 @@
 -- ==========================================================================
 
 ---@alias Request.Endpoint.Method
----| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health"
----| "load" | "menu" | "next_round" | "play" | "rearrange" | "reroll"
----| "save" | "select" | "sell" | "set" | "skip" | "start" | "use"
+---| "add" | "buy" | "cash_out" | "discard" | "gamestate" | "health" | "load"
+---| "menu" | "next_round" | "play" | "rearrange" | "reroll" | "save"
+---| "screenshot" | "select" | "sell" | "set" | "skip" | "start" | "use"
 
 ---@alias Request.Endpoint.Test.Method
 ---| "echo" | "endpoint" | "error" | "state" | "validation"
@@ -161,6 +161,7 @@
 ---| Request.Endpoint.Rearrange.Params
 ---| Request.Endpoint.Reroll.Params
 ---| Request.Endpoint.Save.Params
+---| Request.Endpoint.Screenshot.Params
 ---| Request.Endpoint.Select.Params
 ---| Request.Endpoint.Sell.Params
 ---| Request.Endpoint.Set.Params
