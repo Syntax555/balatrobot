@@ -134,6 +134,23 @@ function BB_DISPATCHER.dispatch(request)
     BB_DISPATCHER.send_error("Request missing 'method' field", BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
+
+  -- Handle rpc.discover (OpenRPC Service Discovery)
+  if request.method == "rpc.discover" then
+    if BB_DISPATCHER.Server and BB_DISPATCHER.Server.openrpc_spec then
+      local json = require("json")
+      local success, spec = pcall(json.decode, BB_DISPATCHER.Server.openrpc_spec)
+      if success then
+        BB_DISPATCHER.Server.send_response(spec)
+      else
+        BB_DISPATCHER.send_error("Failed to parse OpenRPC spec", BB_ERROR_NAMES.INTERNAL_ERROR)
+      end
+    else
+      BB_DISPATCHER.send_error("OpenRPC spec not available", BB_ERROR_NAMES.INTERNAL_ERROR)
+    end
+    return
+  end
+
   local params = request.params or {}
   local endpoint = BB_DISPATCHER.endpoints[request.method]
   if not endpoint then
