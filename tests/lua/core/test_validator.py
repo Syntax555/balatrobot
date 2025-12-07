@@ -7,7 +7,7 @@
 # - Array item type validation (integer arrays only)
 # - Error codes and messages
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -23,7 +23,7 @@ from tests.lua.conftest import (
 class TestTypeValidation:
     """Test type validation for all supported types."""
 
-    def test_valid_string_type(self, client: socket.socket) -> None:
+    def test_valid_string_type(self, client: httpx.Client) -> None:
         """Test that valid string type passes validation."""
         response = api(
             client,
@@ -35,7 +35,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_invalid_string_type(self, client: socket.socket) -> None:
+    def test_invalid_string_type(self, client: httpx.Client) -> None:
         """Test that invalid string type fails validation."""
         response = api(
             client,
@@ -51,7 +51,7 @@ class TestTypeValidation:
             "string_field",
         )
 
-    def test_valid_integer_type(self, client: socket.socket) -> None:
+    def test_valid_integer_type(self, client: httpx.Client) -> None:
         """Test that valid integer type passes validation."""
         response = api(
             client,
@@ -63,7 +63,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_invalid_integer_type_float(self, client: socket.socket) -> None:
+    def test_invalid_integer_type_float(self, client: httpx.Client) -> None:
         """Test that float fails integer validation."""
         response = api(
             client,
@@ -79,7 +79,7 @@ class TestTypeValidation:
             "integer_field",
         )
 
-    def test_invalid_integer_type_string(self, client: socket.socket) -> None:
+    def test_invalid_integer_type_string(self, client: httpx.Client) -> None:
         """Test that string fails integer validation."""
         response = api(
             client,
@@ -95,7 +95,7 @@ class TestTypeValidation:
             "integer_field",
         )
 
-    def test_valid_array_type(self, client: socket.socket) -> None:
+    def test_valid_array_type(self, client: httpx.Client) -> None:
         """Test that valid array type passes validation."""
         response = api(
             client,
@@ -107,7 +107,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_invalid_array_type_not_sequential(self, client: socket.socket) -> None:
+    def test_invalid_array_type_not_sequential(self, client: httpx.Client) -> None:
         """Test that non-sequential table fails array validation."""
         response = api(
             client,
@@ -123,7 +123,7 @@ class TestTypeValidation:
             "array_field",
         )
 
-    def test_invalid_array_type_string(self, client: socket.socket) -> None:
+    def test_invalid_array_type_string(self, client: httpx.Client) -> None:
         """Test that string fails array validation."""
         response = api(
             client,
@@ -139,7 +139,7 @@ class TestTypeValidation:
             "array_field",
         )
 
-    def test_valid_boolean_type_true(self, client: socket.socket) -> None:
+    def test_valid_boolean_type_true(self, client: httpx.Client) -> None:
         """Test that boolean true passes validation."""
         response = api(
             client,
@@ -151,7 +151,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_valid_boolean_type_false(self, client: socket.socket) -> None:
+    def test_valid_boolean_type_false(self, client: httpx.Client) -> None:
         """Test that boolean false passes validation."""
         response = api(
             client,
@@ -163,7 +163,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_invalid_boolean_type_string(self, client: socket.socket) -> None:
+    def test_invalid_boolean_type_string(self, client: httpx.Client) -> None:
         """Test that string fails boolean validation."""
         response = api(
             client,
@@ -179,7 +179,7 @@ class TestTypeValidation:
             "boolean_field",
         )
 
-    def test_invalid_boolean_type_number(self, client: socket.socket) -> None:
+    def test_invalid_boolean_type_number(self, client: httpx.Client) -> None:
         """Test that number fails boolean validation."""
         response = api(
             client,
@@ -195,7 +195,7 @@ class TestTypeValidation:
             "boolean_field",
         )
 
-    def test_valid_table_type(self, client: socket.socket) -> None:
+    def test_valid_table_type(self, client: httpx.Client) -> None:
         """Test that valid table (non-array) passes validation."""
         response = api(
             client,
@@ -207,7 +207,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_valid_table_type_empty(self, client: socket.socket) -> None:
+    def test_valid_table_type_empty(self, client: httpx.Client) -> None:
         """Test that empty table passes validation."""
         response = api(
             client,
@@ -219,7 +219,7 @@ class TestTypeValidation:
         )
         assert_test_response(response)
 
-    def test_invalid_table_type_array(self, client: socket.socket) -> None:
+    def test_invalid_table_type_array(self, client: httpx.Client) -> None:
         """Test that array fails table validation (arrays should use 'array' type)."""
         response = api(
             client,
@@ -235,7 +235,7 @@ class TestTypeValidation:
             "table_field",
         )
 
-    def test_invalid_table_type_string(self, client: socket.socket) -> None:
+    def test_invalid_table_type_string(self, client: httpx.Client) -> None:
         """Test that string fails table validation."""
         response = api(
             client,
@@ -260,7 +260,7 @@ class TestTypeValidation:
 class TestRequiredFields:
     """Test required field validation."""
 
-    def test_required_field_present(self, client: socket.socket) -> None:
+    def test_required_field_present(self, client: httpx.Client) -> None:
         """Test that request with required field passes."""
         response = api(
             client,
@@ -269,7 +269,7 @@ class TestRequiredFields:
         )
         assert_test_response(response)
 
-    def test_required_field_missing(self, client: socket.socket) -> None:
+    def test_required_field_missing(self, client: httpx.Client) -> None:
         """Test that request without required field fails."""
         response = api(
             client,
@@ -282,7 +282,7 @@ class TestRequiredFields:
             "required_field",
         )
 
-    def test_optional_field_missing(self, client: socket.socket) -> None:
+    def test_optional_field_missing(self, client: httpx.Client) -> None:
         """Test that missing optional fields are allowed."""
         response = api(
             client,
@@ -303,7 +303,7 @@ class TestRequiredFields:
 class TestArrayItemTypes:
     """Test array item type validation."""
 
-    def test_array_of_integers_valid(self, client: socket.socket) -> None:
+    def test_array_of_integers_valid(self, client: httpx.Client) -> None:
         """Test that array of integers passes."""
         response = api(
             client,
@@ -315,7 +315,7 @@ class TestArrayItemTypes:
         )
         assert_test_response(response)
 
-    def test_array_of_integers_invalid_float(self, client: socket.socket) -> None:
+    def test_array_of_integers_invalid_float(self, client: httpx.Client) -> None:
         """Test that array with float items fails integer validation."""
         response = api(
             client,
@@ -331,7 +331,7 @@ class TestArrayItemTypes:
             "array_of_integers",
         )
 
-    def test_array_of_integers_invalid_string(self, client: socket.socket) -> None:
+    def test_array_of_integers_invalid_string(self, client: httpx.Client) -> None:
         """Test that array with string items fails integer validation."""
         response = api(
             client,
@@ -356,7 +356,7 @@ class TestArrayItemTypes:
 class TestFailFastBehavior:
     """Test that validator fails fast on first error."""
 
-    def test_multiple_errors_returns_first(self, client: socket.socket) -> None:
+    def test_multiple_errors_returns_first(self, client: httpx.Client) -> None:
         """Test that only the first error is returned when multiple errors exist."""
         response = api(
             client,
@@ -386,7 +386,7 @@ class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_empty_arguments_with_only_required_field(
-        self, client: socket.socket
+        self, client: httpx.Client
     ) -> None:
         """Test that arguments with only required field passes."""
         response = api(
@@ -396,7 +396,7 @@ class TestEdgeCases:
         )
         assert_test_response(response)
 
-    def test_all_fields_provided(self, client: socket.socket) -> None:
+    def test_all_fields_provided(self, client: httpx.Client) -> None:
         """Test request with multiple valid fields."""
         response = api(
             client,
@@ -413,7 +413,7 @@ class TestEdgeCases:
         )
         assert_test_response(response)
 
-    def test_empty_array_when_allowed(self, client: socket.socket) -> None:
+    def test_empty_array_when_allowed(self, client: httpx.Client) -> None:
         """Test that empty array passes when no min constraint."""
         response = api(
             client,
@@ -425,7 +425,7 @@ class TestEdgeCases:
         )
         assert_test_response(response)
 
-    def test_empty_string_when_allowed(self, client: socket.socket) -> None:
+    def test_empty_string_when_allowed(self, client: httpx.Client) -> None:
         """Test that empty string passes when no min constraint."""
         response = api(
             client,
