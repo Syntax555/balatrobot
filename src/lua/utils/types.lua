@@ -129,7 +129,7 @@
 ---@field jsonrpc "2.0"
 ---@field method Request.Endpoint.Method | Request.Endpoint.Test.Method Request method name.
 ---@field params Request.Endpoint.Params | Request.Endpoint.Test.Params Params to use for the requests
----@field id integer|string|nil Request ID
+---@field id integer|string Request ID (required)
 
 -- ==========================================================================
 -- Endpoint Request Types
@@ -220,12 +220,12 @@
 ---@class Response.Server.Success
 ---@field jsonrpc "2.0"
 ---@field result Response.Endpoint.Health | Response.Endpoint.Path | Response.Endpoint.GameState | Response.Endpoint.Test Response payload
----@field id integer|string|nil Request ID
+---@field id integer|string Request ID (echoed from request)
 
 ---@class Response.Server.Error
 ---@field jsonrpc "2.0"
 ---@field error Response.Server.Error.Error Response error
----@field id integer|string|nil Request ID
+---@field id integer|string|nil Request ID (null only if request was unparseable)
 
 ---@class Response.Server.Error.Error
 ---@field code ErrorCode Numeric error code following JSON-RPC 2.0 convention
@@ -260,8 +260,8 @@
 -- ==========================================================================
 
 ---@class Settings
----@field host string Hostname for the TCP server (default: "127.0.0.1")
----@field port integer Port number for the TCP server (default: 12346)
+---@field host string Hostname for the HTTP server (default: "127.0.0.1")
+---@field port integer Port number for the HTTP server (default: 12346)
 ---@field headless boolean Whether to run in headless mode (minimizes window, disables rendering)
 ---@field fast boolean Whether to run in fast mode (unlimited FPS, 10x game speed, 60 FPS animations)
 ---@field render_on_api boolean Whether to render frames only on API calls (mutually exclusive with headless)
@@ -273,15 +273,27 @@
 ---@field log table? DebugPlus logger instance with debug/info/error methods (nil if DebugPlus not available)
 
 ---@class Server
----@field host string Hostname for the TCP server (copied from Settings)
----@field port integer Port number for the TCP server (copied from Settings)
----@field server_socket TCPSocketServer? TCP server socket listening for connections (nil if not initialized)
----@field client_socket TCPSocketClient? TCP client socket for the connected client (nil if no client connected)
----@field current_request_id integer|string|nil Current JSON-RPC request ID being processed (nil if no active request)
+---@field host string Hostname for the HTTP server (copied from Settings)
+---@field port integer Port number for the HTTP server (copied from Settings)
+---@field server_socket TCPSocketServer? Underlying TCP socket listening for HTTP connections (nil if not initialized)
+---@field client_socket TCPSocketClient? Underlying TCP socket for the connected HTTP client (nil if no client connected)
+---@field current_request_id integer|string|nil Current JSON-RPC 2.0 request ID being processed (nil if no active request)
+---@field client_state table? HTTP request parsing state for current client (buffer, headers, etc.) (nil if no client connected)
+---@field openrpc_spec string? OpenRPC specification JSON string (loaded at init, nil before init)
+---@field init? fun(): boolean Initialize HTTP server socket and load OpenRPC spec
+---@field accept? fun(): boolean Accept new HTTP client connection
+---@field send_response? fun(response: Response.Endpoint): boolean Send JSON-RPC 2.0 response over HTTP to client
+---@field update? fun(dispatcher: Dispatcher) Main update loop - parse HTTP requests and dispatch JSON-RPC calls each frame
+---@field close? fun() Close HTTP server and all connections
 
 ---@class Dispatcher
 ---@field endpoints table<string, Endpoint> Map of endpoint names to Endpoint definitions (registered at initialization)
 ---@field Server Server? Reference to the Server module for sending responses (set during initialization)
+---@field register? fun(endpoint: Endpoint): boolean, string? Register a new endpoint (returns success, error_message)
+---@field load_endpoints? fun(endpoint_files: string[]): boolean, string? Load and register endpoints from files (returns success, error_message)
+---@field init? fun(server_module: table, endpoint_files: string[]?): boolean Initialize dispatcher with server reference and endpoint files
+---@field send_error? fun(message: string, error_code: string) Send error response using server
+---@field dispatch? fun(parsed: Request.Server) Dispatch JSON-RPC request to appropriate endpoint
 
 ---@class Validator
 ---@field validate fun(args: table, schema: table<string, Endpoint.Schema>): boolean, string?, string? Validates endpoint arguments against schema (returns success, error_message, error_code)
