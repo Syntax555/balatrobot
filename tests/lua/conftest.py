@@ -1,12 +1,12 @@
 """Lua API test-specific configuration and fixtures."""
 
 import json
-import socket
 import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, Generator
 
+import httpx
 import pytest
 
 # ============================================================================
@@ -15,7 +15,8 @@ import pytest
 
 HOST: str = "127.0.0.1"  # Default host for Balatro server
 PORT: int = 12346  # Default port for Balatro server
-BUFFER_SIZE: int = 65536  # 64KB buffer for TCP messages
+CONNECTION_TIMEOUT: float = 60.0  # Connection timeout in seconds
+REQUEST_TIMEOUT: float = 5.0  # Default per-request timeout in seconds
 
 # JSON-RPC 2.0 request ID counter
 _request_id_counter: int = 0
@@ -28,21 +29,21 @@ def host() -> str:
 
 
 @pytest.fixture
-def client(host: str, port: int) -> Generator[socket.socket, None, None]:
-    """Create a TCP socket client connected to Balatro game instance.
+def client(host: str, port: int) -> Generator[httpx.Client, None, None]:
+    """Create an HTTP client connected to Balatro game instance.
 
     Args:
         host: The hostname or IP address of the Balatro game server.
         port: The port number the Balatro game server is listening on.
 
     Yields:
-        A connected TCP socket for communicating with the game.
+        An httpx.Client for communicating with the game.
     """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(60)  # 60 second timeout for operations
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFFER_SIZE)
-        sock.connect((host, port))
-        yield sock
+    with httpx.Client(
+        base_url=f"http://{host}:{port}",
+        timeout=httpx.Timeout(CONNECTION_TIMEOUT, read=REQUEST_TIMEOUT),
+    ) as http_client:
+        yield http_client
 
 
 @pytest.fixture(scope="session")
@@ -57,18 +58,18 @@ def port() -> int:
 
 
 def api(
-    client: socket.socket,
+    client: httpx.Client,
     method: str,
     params: dict = {},
-    timeout: int = 5,
+    timeout: float = REQUEST_TIMEOUT,
 ) -> dict[str, Any]:
     """Send a JSON-RPC 2.0 API call to the Balatro game and get the response.
 
     Args:
-        client: The TCP socket connected to the game.
+        client: The HTTP client connected to the game.
         method: The name of the API method to call.
         params: Dictionary of parameters to pass to the API method (default: {}).
-        timeout: Socket timeout in seconds (default: 5).
+        timeout: Request timeout in seconds (default: 5.0).
 
     Returns:
         The raw JSON-RPC 2.0 response with either 'result' or 'error' field.
@@ -82,26 +83,30 @@ def api(
         "params": params,
         "id": _request_id_counter,
     }
-    client.send(json.dumps(payload).encode() + b"\n")
-    client.settimeout(timeout)
-    response = client.recv(BUFFER_SIZE)
-    parsed = json.loads(response.decode().strip())
-    return parsed
+
+    response = client.post("/", json=payload, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
 
 
 def send_request(
-    sock: socket.socket,
+    client: httpx.Client,
     method: str,
     params: dict[str, Any],
     request_id: int | str | None = None,
-) -> None:
+    timeout: float = REQUEST_TIMEOUT,
+) -> httpx.Response:
     """Send a JSON-RPC 2.0 request to the server.
 
     Args:
-        sock: The TCP socket connected to the game.
+        client: The HTTP client connected to the game.
         method: The name of the method to call.
         params: Dictionary of parameters to pass to the method.
         request_id: Optional request ID (auto-increments if not provided).
+        timeout: Request timeout in seconds (default: 5.0).
+
+    Returns:
+        The HTTP response object.
     """
     global _request_id_counter
     if request_id is None:
@@ -114,33 +119,8 @@ def send_request(
         "params": params,
         "id": request_id,
     }
-    message = json.dumps(request) + "\n"
-    sock.sendall(message.encode())
 
-
-def receive_response(sock: socket.socket, timeout: float = 3.0) -> dict[str, Any]:
-    """Receive and parse JSON-RPC 2.0 response from server.
-
-    Args:
-        sock: The TCP socket connected to the game.
-        timeout: Socket timeout in seconds (default: 3.0).
-
-    Returns:
-        The raw JSON-RPC 2.0 response with either 'result' or 'error' field.
-    """
-    sock.settimeout(timeout)
-    response = sock.recv(BUFFER_SIZE)
-    decoded = response.decode()
-
-    # Parse first complete message
-    first_newline = decoded.find("\n")
-    if first_newline != -1:
-        first_message = decoded[:first_newline]
-    else:
-        first_message = decoded.strip()
-
-    parsed = json.loads(first_message)
-    return parsed
+    return client.post("/", json=request, timeout=timeout)
 
 
 def get_fixture_path(endpoint: str, fixture_name: str) -> Path:
@@ -168,7 +148,7 @@ def create_temp_save_path() -> Path:
 
 
 def load_fixture(
-    client: socket.socket,
+    client: httpx.Client,
     endpoint: str,
     fixture_name: str,
     cache: bool = True,
