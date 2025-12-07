@@ -44,7 +44,7 @@ markers = ["dev: marks tests that are currently developed"]
 [dependency-groups]
 dev = [
   "basedpyright>=1.29.5",
-  "deepdiff>=8.5.0",
+  "httpx>=0.28.1",
   "mdformat-mkdocs>=4.3.0",
   "mdformat-simple-breaks>=0.0.1",
   "mkdocs-llmstxt>=0.3.0",
