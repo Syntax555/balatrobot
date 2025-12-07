@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/cash_out.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestCashOutEndpoint:
     """Test basic cash_out endpoint functionality."""
 
-    def test_cash_out_from_ROUND_EVAL(self, client: socket.socket) -> None:
+    def test_cash_out_from_ROUND_EVAL(self, client: httpx.Client) -> None:
         """Test cashing out from ROUND_EVAL state."""
         gamestate = load_fixture(client, "cash_out", "state-ROUND_EVAL")
         assert gamestate["state"] == "ROUND_EVAL"
@@ -24,7 +24,7 @@ class TestCashOutEndpoint:
 class TestCashOutEndpointStateRequirements:
     """Test cash_out endpoint state requirements."""
 
-    def test_cash_out_from_BLIND_SELECT(self, client: socket.socket):
+    def test_cash_out_from_BLIND_SELECT(self, client: httpx.Client):
         """Test that cash_out fails when not in ROUND_EVAL state."""
         gamestate = load_fixture(client, "cash_out", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

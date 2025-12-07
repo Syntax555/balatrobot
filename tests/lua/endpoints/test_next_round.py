@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/next_round.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestNextRoundEndpoint:
     """Test basic next_round endpoint functionality."""
 
-    def test_next_round_from_shop(self, client: socket.socket) -> None:
+    def test_next_round_from_shop(self, client: httpx.Client) -> None:
         """Test advancing to next round from SHOP state."""
         gamestate = load_fixture(client, "next_round", "state-SHOP")
         assert gamestate["state"] == "SHOP"
@@ -24,7 +24,7 @@ class TestNextRoundEndpoint:
 class TestNextRoundEndpointStateRequirements:
     """Test next_round endpoint state requirements."""
 
-    def test_next_round_from_MENU(self, client: socket.socket):
+    def test_next_round_from_MENU(self, client: httpx.Client):
         """Test that next_round fails when not in SHOP state."""
         gamestate = load_fixture(client, "next_round", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

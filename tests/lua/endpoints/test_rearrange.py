@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/rearrange.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestRearrangeEndpoint:
     """Test basic rearrange endpoint functionality."""
 
-    def test_rearrange_hand(self, client: socket.socket) -> None:
+    def test_rearrange_hand(self, client: httpx.Client) -> None:
         """Test rearranging hand in selecting hand state."""
         before = load_fixture(client, "rearrange", "state-SELECTING_HAND--hand.count-8")
         assert before["state"] == "SELECTING_HAND"
@@ -29,7 +29,7 @@ class TestRearrangeEndpoint:
         ids = [card["id"] for card in after["hand"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
-    def test_rearrange_jokers(self, client: socket.socket) -> None:
+    def test_rearrange_jokers(self, client: httpx.Client) -> None:
         """Test rearranging jokers."""
         before = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
@@ -47,7 +47,7 @@ class TestRearrangeEndpoint:
         ids = [card["id"] for card in after["jokers"]["cards"]]
         assert ids == [prev_ids[i] for i in permutation]
 
-    def test_rearrange_consumables(self, client: socket.socket) -> None:
+    def test_rearrange_consumables(self, client: httpx.Client) -> None:
         """Test rearranging consumables."""
         before = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
@@ -69,7 +69,7 @@ class TestRearrangeEndpoint:
 class TestRearrangeEndpointValidation:
     """Test rearrange endpoint parameter validation."""
 
-    def test_no_parameters_provided(self, client: socket.socket) -> None:
+    def test_no_parameters_provided(self, client: httpx.Client) -> None:
         """Test error when no rearrange type specified."""
         gamestate = load_fixture(
             client, "rearrange", "state-SELECTING_HAND--hand.count-8"
@@ -82,7 +82,7 @@ class TestRearrangeEndpointValidation:
             "Must provide exactly one of: hand, jokers, or consumables",
         )
 
-    def test_multiple_parameters_provided(self, client: socket.socket) -> None:
+    def test_multiple_parameters_provided(self, client: httpx.Client) -> None:
         """Test error when multiple rearrange types specified."""
         gamestate = load_fixture(
             client, "rearrange", "state-SELECTING_HAND--hand.count-8"
@@ -97,7 +97,7 @@ class TestRearrangeEndpointValidation:
             "Can only rearrange one type at a time",
         )
 
-    def test_wrong_array_length_hand(self, client: socket.socket) -> None:
+    def test_wrong_array_length_hand(self, client: httpx.Client) -> None:
         """Test error when hand array wrong length."""
         gamestate = load_fixture(
             client, "rearrange", "state-SELECTING_HAND--hand.count-8"
@@ -115,7 +115,7 @@ class TestRearrangeEndpointValidation:
             "Must provide exactly 8 indices for hand",
         )
 
-    def test_wrong_array_length_jokers(self, client: socket.socket) -> None:
+    def test_wrong_array_length_jokers(self, client: httpx.Client) -> None:
         """Test error when jokers array wrong length."""
         gamestate = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
@@ -133,7 +133,7 @@ class TestRearrangeEndpointValidation:
             "Must provide exactly 4 indices for jokers",
         )
 
-    def test_wrong_array_length_consumables(self, client: socket.socket) -> None:
+    def test_wrong_array_length_consumables(self, client: httpx.Client) -> None:
         """Test error when consumables array wrong length."""
         gamestate = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"
@@ -151,7 +151,7 @@ class TestRearrangeEndpointValidation:
             "Must provide exactly 2 indices for consumables",
         )
 
-    def test_invalid_card_index(self, client: socket.socket) -> None:
+    def test_invalid_card_index(self, client: httpx.Client) -> None:
         """Test error when card index out of range."""
         gamestate = load_fixture(
             client, "rearrange", "state-SELECTING_HAND--hand.count-8"
@@ -169,7 +169,7 @@ class TestRearrangeEndpointValidation:
             "Index out of range for hand: -1",
         )
 
-    def test_duplicate_indices(self, client: socket.socket) -> None:
+    def test_duplicate_indices(self, client: httpx.Client) -> None:
         """Test error when indices contain duplicates."""
         gamestate = load_fixture(
             client, "rearrange", "state-SELECTING_HAND--hand.count-8"
@@ -191,7 +191,7 @@ class TestRearrangeEndpointValidation:
 class TestRearrangeEndpointStateRequirements:
     """Test rearrange endpoint state requirements."""
 
-    def test_rearrange_hand_from_wrong_state(self, client: socket.socket) -> None:
+    def test_rearrange_hand_from_wrong_state(self, client: httpx.Client) -> None:
         """Test that rearranging hand fails from wrong state."""
         gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -201,7 +201,7 @@ class TestRearrangeEndpointStateRequirements:
             "Method 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_rearrange_jokers_from_wrong_state(self, client: socket.socket) -> None:
+    def test_rearrange_jokers_from_wrong_state(self, client: httpx.Client) -> None:
         """Test that rearranging jokers fails from wrong state."""
         gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -211,9 +211,7 @@ class TestRearrangeEndpointStateRequirements:
             "Method 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_rearrange_consumables_from_wrong_state(
-        self, client: socket.socket
-    ) -> None:
+    def test_rearrange_consumables_from_wrong_state(self, client: httpx.Client) -> None:
         """Test that rearranging consumables fails from wrong state."""
         gamestate = load_fixture(client, "rearrange", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -223,7 +221,7 @@ class TestRearrangeEndpointStateRequirements:
             "Method 'rearrange' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_rearrange_hand_from_shop(self, client: socket.socket) -> None:
+    def test_rearrange_hand_from_shop(self, client: httpx.Client) -> None:
         """Test that rearranging hand fails from SHOP."""
         gamestate = load_fixture(
             client, "rearrange", "state-SHOP--jokers.count-4--consumables.count-2"

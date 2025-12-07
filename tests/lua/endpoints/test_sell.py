@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/sell.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestSellEndpoint:
     """Test basic sell endpoint functionality."""
 
-    def test_sell_no_args(self, client: socket.socket) -> None:
+    def test_sell_no_args(self, client: httpx.Client) -> None:
         """Test sell endpoint with no arguments."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -25,7 +25,7 @@ class TestSellEndpoint:
             "Must provide exactly one of: joker or consumable",
         )
 
-    def test_sell_multi_args(self, client: socket.socket) -> None:
+    def test_sell_multi_args(self, client: httpx.Client) -> None:
         """Test sell endpoint with multiple arguments."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -37,7 +37,7 @@ class TestSellEndpoint:
             "Can only sell one item at a time",
         )
 
-    def test_sell_no_jokers(self, client: socket.socket) -> None:
+    def test_sell_no_jokers(self, client: httpx.Client) -> None:
         """Test sell endpoint when player has no jokers."""
         gamestate = load_fixture(
             client, "sell", "state-SELECTING_HAND--jokers.count-0--consumables.count-0"
@@ -50,7 +50,7 @@ class TestSellEndpoint:
             "No jokers available to sell",
         )
 
-    def test_sell_no_consumables(self, client: socket.socket) -> None:
+    def test_sell_no_consumables(self, client: httpx.Client) -> None:
         """Test sell endpoint when player has no consumables."""
         gamestate = load_fixture(
             client, "sell", "state-SELECTING_HAND--jokers.count-0--consumables.count-0"
@@ -63,7 +63,7 @@ class TestSellEndpoint:
             "No consumables available to sell",
         )
 
-    def test_sell_joker_invalid_index(self, client: socket.socket) -> None:
+    def test_sell_joker_invalid_index(self, client: httpx.Client) -> None:
         """Test sell endpoint with invalid joker index."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -76,7 +76,7 @@ class TestSellEndpoint:
             "Index out of range for joker: 1",
         )
 
-    def test_sell_consumable_invalid_index(self, client: socket.socket) -> None:
+    def test_sell_consumable_invalid_index(self, client: httpx.Client) -> None:
         """Test sell endpoint with invalid consumable index."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -89,7 +89,7 @@ class TestSellEndpoint:
             "Index out of range for consumable: 1",
         )
 
-    def test_sell_joker_in_SELECTING_HAND(self, client: socket.socket) -> None:
+    def test_sell_joker_in_SELECTING_HAND(self, client: httpx.Client) -> None:
         """Test selling a joker in SELECTING_HAND state."""
         before = load_fixture(
             client,
@@ -103,7 +103,7 @@ class TestSellEndpoint:
         assert after["jokers"]["count"] == 0
         assert before["money"] < after["money"]
 
-    def test_sell_consumable_in_SELECTING_HAND(self, client: socket.socket) -> None:
+    def test_sell_consumable_in_SELECTING_HAND(self, client: httpx.Client) -> None:
         """Test selling a consumable in SELECTING_HAND state."""
         before = load_fixture(
             client, "sell", "state-SELECTING_HAND--jokers.count-1--consumables.count-1"
@@ -115,7 +115,7 @@ class TestSellEndpoint:
         assert after["consumables"]["count"] == 0
         assert before["money"] < after["money"]
 
-    def test_sell_joker_in_SHOP(self, client: socket.socket) -> None:
+    def test_sell_joker_in_SHOP(self, client: httpx.Client) -> None:
         """Test selling a joker in SHOP state."""
         before = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -127,7 +127,7 @@ class TestSellEndpoint:
         assert after["jokers"]["count"] == 0
         assert before["money"] < after["money"]
 
-    def test_sell_consumable_in_SHOP(self, client: socket.socket) -> None:
+    def test_sell_consumable_in_SHOP(self, client: httpx.Client) -> None:
         """Test selling a consumable in SHOP state."""
         before = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -143,7 +143,7 @@ class TestSellEndpoint:
 class TestSellEndpointValidation:
     """Test sell endpoint parameter validation."""
 
-    def test_invalid_joker_type_string(self, client: socket.socket) -> None:
+    def test_invalid_joker_type_string(self, client: httpx.Client) -> None:
         """Test that sell fails when joker parameter is a string."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -156,7 +156,7 @@ class TestSellEndpointValidation:
             "Field 'joker' must be an integer",
         )
 
-    def test_invalid_consumable_type_string(self, client: socket.socket) -> None:
+    def test_invalid_consumable_type_string(self, client: httpx.Client) -> None:
         """Test that sell fails when consumable parameter is a string."""
         gamestate = load_fixture(
             client, "sell", "state-SHOP--jokers.count-1--consumables.count-1"
@@ -173,7 +173,7 @@ class TestSellEndpointValidation:
 class TestSellEndpointStateRequirements:
     """Test sell endpoint state requirements."""
 
-    def test_sell_from_BLIND_SELECT(self, client: socket.socket) -> None:
+    def test_sell_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that sell fails from BLIND_SELECT state."""
         gamestate = load_fixture(client, "sell", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -183,7 +183,7 @@ class TestSellEndpointStateRequirements:
             "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_sell_from_ROUND_EVAL(self, client: socket.socket) -> None:
+    def test_sell_from_ROUND_EVAL(self, client: httpx.Client) -> None:
         """Test that sell fails from ROUND_EVAL state."""
         gamestate = load_fixture(client, "sell", "state-ROUND_EVAL")
         assert gamestate["state"] == "ROUND_EVAL"

@@ -1,8 +1,8 @@
 """Tests for the start endpoint."""
 
-import socket
 from typing import Any
 
+import httpx
 import pytest
 
 from tests.lua.conftest import (
@@ -68,7 +68,7 @@ class TestStartEndpoint:
     )
     def test_start_from_MENU(
         self,
-        client: socket.socket,
+        client: httpx.Client,
         arguments: dict[str, Any],
         expected: dict[str, Any],
     ):
@@ -82,7 +82,7 @@ class TestStartEndpoint:
 class TestStartEndpointValidation:
     """Test start endpoint parameter validation."""
 
-    def test_missing_deck_parameter(self, client: socket.socket):
+    def test_missing_deck_parameter(self, client: httpx.Client):
         """Test that start fails when deck parameter is missing."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -93,7 +93,7 @@ class TestStartEndpointValidation:
             "Missing required field 'deck'",
         )
 
-    def test_missing_stake_parameter(self, client: socket.socket):
+    def test_missing_stake_parameter(self, client: httpx.Client):
         """Test that start fails when stake parameter is missing."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -104,7 +104,7 @@ class TestStartEndpointValidation:
             "Missing required field 'stake'",
         )
 
-    def test_invalid_deck_value(self, client: socket.socket):
+    def test_invalid_deck_value(self, client: httpx.Client):
         """Test that start fails with invalid deck enum."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -115,7 +115,7 @@ class TestStartEndpointValidation:
             "Invalid deck enum. Must be one of:",
         )
 
-    def test_invalid_stake_value(self, client: socket.socket):
+    def test_invalid_stake_value(self, client: httpx.Client):
         """Test that start fails when invalid stake enum is provided."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -126,7 +126,7 @@ class TestStartEndpointValidation:
             "Invalid stake enum. Must be one of:",
         )
 
-    def test_invalid_deck_type(self, client: socket.socket):
+    def test_invalid_deck_type(self, client: httpx.Client):
         """Test that start fails when deck is not a string."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -137,7 +137,7 @@ class TestStartEndpointValidation:
             "Field 'deck' must be of type string",
         )
 
-    def test_invalid_stake_type(self, client: socket.socket):
+    def test_invalid_stake_type(self, client: httpx.Client):
         """Test that start fails when stake is not a string."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
@@ -152,7 +152,7 @@ class TestStartEndpointValidation:
 class TestStartEndpointStateRequirements:
     """Test start endpoint state requirements."""
 
-    def test_start_from_BLIND_SELECT(self, client: socket.socket):
+    def test_start_from_BLIND_SELECT(self, client: httpx.Client):
         """Test that start fails when not in MENU state."""
         gamestate = load_fixture(client, "start", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

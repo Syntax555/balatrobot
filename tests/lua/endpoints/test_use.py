@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/use.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestUseEndpoint:
     """Test basic use endpoint functionality."""
 
-    def test_use_hermit_no_cards(self, client: socket.socket) -> None:
+    def test_use_hermit_no_cards(self, client: httpx.Client) -> None:
         """Test using The Hermit (no card selection) in SHOP state."""
         gamestate = load_fixture(
             client,
@@ -26,7 +26,7 @@ class TestUseEndpoint:
         response = api(client, "use", {"consumable": 0})
         assert_gamestate_response(response, money=24)
 
-    def test_use_hermit_in_selecting_hand(self, client: socket.socket) -> None:
+    def test_use_hermit_in_selecting_hand(self, client: httpx.Client) -> None:
         """Test using The Hermit in SELECTING_HAND state."""
         gamestate = load_fixture(
             client,
@@ -39,7 +39,7 @@ class TestUseEndpoint:
         response = api(client, "use", {"consumable": 0})
         assert_gamestate_response(response, money=24)
 
-    def test_use_temperance_no_cards(self, client: socket.socket) -> None:
+    def test_use_temperance_no_cards(self, client: httpx.Client) -> None:
         """Test using Temperance (no card selection)."""
         before = load_fixture(
             client,
@@ -52,7 +52,7 @@ class TestUseEndpoint:
         response = api(client, "use", {"consumable": 0})
         assert_gamestate_response(response, money=before["money"])
 
-    def test_use_planet_no_cards(self, client: socket.socket) -> None:
+    def test_use_planet_no_cards(self, client: httpx.Client) -> None:
         """Test using a Planet card (no card selection)."""
         gamestate = load_fixture(
             client,
@@ -65,7 +65,7 @@ class TestUseEndpoint:
         after = assert_gamestate_response(response)
         assert after["hands"]["High Card"]["level"] == 2
 
-    def test_use_magician_with_one_card(self, client: socket.socket) -> None:
+    def test_use_magician_with_one_card(self, client: httpx.Client) -> None:
         """Test using The Magician with 1 card (min=1, max=2)."""
         gamestate = load_fixture(
             client,
@@ -77,7 +77,7 @@ class TestUseEndpoint:
         after = assert_gamestate_response(response)
         assert after["hand"]["cards"][0]["modifier"]["enhancement"] == "LUCKY"
 
-    def test_use_magician_with_two_cards(self, client: socket.socket) -> None:
+    def test_use_magician_with_two_cards(self, client: httpx.Client) -> None:
         """Test using The Magician with 2 cards."""
         gamestate = load_fixture(
             client,
@@ -90,7 +90,7 @@ class TestUseEndpoint:
         assert after["hand"]["cards"][5]["modifier"]["enhancement"] == "LUCKY"
         assert after["hand"]["cards"][7]["modifier"]["enhancement"] == "LUCKY"
 
-    def test_use_familiar_all_hand(self, client: socket.socket) -> None:
+    def test_use_familiar_all_hand(self, client: httpx.Client) -> None:
         """Test using Familiar (destroys cards, #G.hand.cards > 1)."""
         before = load_fixture(
             client,
@@ -109,7 +109,7 @@ class TestUseEndpoint:
 class TestUseEndpointValidation:
     """Test use endpoint parameter validation."""
 
-    def test_use_no_consumable_provided(self, client: socket.socket) -> None:
+    def test_use_no_consumable_provided(self, client: httpx.Client) -> None:
         """Test that use fails when consumable parameter is missing."""
         gamestate = load_fixture(
             client,
@@ -123,7 +123,7 @@ class TestUseEndpointValidation:
             "Missing required field 'consumable'",
         )
 
-    def test_use_invalid_consumable_type(self, client: socket.socket) -> None:
+    def test_use_invalid_consumable_type(self, client: httpx.Client) -> None:
         """Test that use fails when consumable is not an integer."""
         gamestate = load_fixture(
             client,
@@ -137,7 +137,7 @@ class TestUseEndpointValidation:
             "Field 'consumable' must be an integer",
         )
 
-    def test_use_invalid_consumable_index_negative(self, client: socket.socket) -> None:
+    def test_use_invalid_consumable_index_negative(self, client: httpx.Client) -> None:
         """Test that use fails when consumable index is negative."""
         gamestate = load_fixture(
             client,
@@ -151,7 +151,7 @@ class TestUseEndpointValidation:
             "Consumable index out of range: -1",
         )
 
-    def test_use_invalid_consumable_index_too_high(self, client: socket.socket) -> None:
+    def test_use_invalid_consumable_index_too_high(self, client: httpx.Client) -> None:
         """Test that use fails when consumable index >= count."""
         gamestate = load_fixture(
             client,
@@ -165,7 +165,7 @@ class TestUseEndpointValidation:
             "Consumable index out of range: 999",
         )
 
-    def test_use_invalid_cards_type(self, client: socket.socket) -> None:
+    def test_use_invalid_cards_type(self, client: httpx.Client) -> None:
         """Test that use fails when cards is not an array."""
         gamestate = load_fixture(
             client,
@@ -179,7 +179,7 @@ class TestUseEndpointValidation:
             "Field 'cards' must be an array",
         )
 
-    def test_use_invalid_cards_item_type(self, client: socket.socket) -> None:
+    def test_use_invalid_cards_item_type(self, client: httpx.Client) -> None:
         """Test that use fails when cards array contains non-integer."""
         gamestate = load_fixture(
             client,
@@ -193,7 +193,7 @@ class TestUseEndpointValidation:
             "Field 'cards' array item at index 0 must be of type integer",
         )
 
-    def test_use_invalid_card_index_negative(self, client: socket.socket) -> None:
+    def test_use_invalid_card_index_negative(self, client: httpx.Client) -> None:
         """Test that use fails when a card index is negative."""
         gamestate = load_fixture(
             client,
@@ -207,7 +207,7 @@ class TestUseEndpointValidation:
             "Card index out of range: -1",
         )
 
-    def test_use_invalid_card_index_too_high(self, client: socket.socket) -> None:
+    def test_use_invalid_card_index_too_high(self, client: httpx.Client) -> None:
         """Test that use fails when a card index >= hand count."""
         gamestate = load_fixture(
             client,
@@ -221,7 +221,7 @@ class TestUseEndpointValidation:
             "Card index out of range: 999",
         )
 
-    def test_use_magician_without_cards(self, client: socket.socket) -> None:
+    def test_use_magician_without_cards(self, client: httpx.Client) -> None:
         """Test that using The Magician without cards parameter fails."""
         gamestate = load_fixture(
             client,
@@ -236,7 +236,7 @@ class TestUseEndpointValidation:
             "Consumable 'The Magician' requires card selection",
         )
 
-    def test_use_magician_with_empty_cards(self, client: socket.socket) -> None:
+    def test_use_magician_with_empty_cards(self, client: httpx.Client) -> None:
         """Test that using The Magician with empty cards array fails."""
         gamestate = load_fixture(
             client,
@@ -251,7 +251,7 @@ class TestUseEndpointValidation:
             "Consumable 'The Magician' requires card selection",
         )
 
-    def test_use_magician_too_many_cards(self, client: socket.socket) -> None:
+    def test_use_magician_too_many_cards(self, client: httpx.Client) -> None:
         """Test that using The Magician with 3 cards fails (max=2)."""
         gamestate = load_fixture(
             client,
@@ -266,7 +266,7 @@ class TestUseEndpointValidation:
             "Consumable 'The Magician' requires at most 2 cards (provided: 3)",
         )
 
-    def test_use_death_too_few_cards(self, client: socket.socket) -> None:
+    def test_use_death_too_few_cards(self, client: httpx.Client) -> None:
         """Test that using Death with 1 card fails (requires exactly 2)."""
         gamestate = load_fixture(
             client,
@@ -281,7 +281,7 @@ class TestUseEndpointValidation:
             "Consumable 'Death' requires exactly 2 cards (provided: 1)",
         )
 
-    def test_use_death_too_many_cards(self, client: socket.socket) -> None:
+    def test_use_death_too_many_cards(self, client: httpx.Client) -> None:
         """Test that using Death with 3 cards fails (requires exactly 2)."""
         gamestate = load_fixture(
             client,
@@ -300,7 +300,7 @@ class TestUseEndpointValidation:
 class TestUseEndpointStateRequirements:
     """Test use endpoint state requirements."""
 
-    def test_use_from_BLIND_SELECT(self, client: socket.socket) -> None:
+    def test_use_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that use fails from BLIND_SELECT state."""
         gamestate = load_fixture(
             client,
@@ -314,7 +314,7 @@ class TestUseEndpointStateRequirements:
             "Method 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_use_from_ROUND_EVAL(self, client: socket.socket) -> None:
+    def test_use_from_ROUND_EVAL(self, client: httpx.Client) -> None:
         """Test that use fails from ROUND_EVAL state."""
         gamestate = load_fixture(
             client,
@@ -328,7 +328,7 @@ class TestUseEndpointStateRequirements:
             "Method 'use' requires one of these states: SELECTING_HAND, SHOP",
         )
 
-    def test_use_magician_from_SHOP(self, client: socket.socket) -> None:
+    def test_use_magician_from_SHOP(self, client: httpx.Client) -> None:
         """Test that using The Magician fails from SHOP (needs SELECTING_HAND)."""
         gamestate = load_fixture(
             client,
@@ -343,7 +343,7 @@ class TestUseEndpointStateRequirements:
             "Consumable 'The Magician' requires card selection and can only be used in SELECTING_HAND state",
         )
 
-    def test_use_familiar_from_SHOP(self, client: socket.socket) -> None:
+    def test_use_familiar_from_SHOP(self, client: httpx.Client) -> None:
         """Test that using The Magician fails from SHOP (needs SELECTING_HAND)."""
         gamestate = load_fixture(
             client,

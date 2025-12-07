@@ -1,7 +1,8 @@
 """Tests for src/lua/endpoints/save.lua"""
 
-import socket
 from pathlib import Path
+
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -14,9 +15,7 @@ from tests.lua.conftest import (
 class TestSaveEndpoint:
     """Test basic save endpoint functionality."""
 
-    def test_save_from_BLIND_SELECT(
-        self, client: socket.socket, tmp_path: Path
-    ) -> None:
+    def test_save_from_BLIND_SELECT(self, client: httpx.Client, tmp_path: Path) -> None:
         """Test that save succeeds from BLIND_SELECT state."""
         gamestate = load_fixture(client, "save", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -28,7 +27,7 @@ class TestSaveEndpoint:
         assert temp_file.stat().st_size > 0
 
     def test_save_creates_valid_file(
-        self, client: socket.socket, tmp_path: Path
+        self, client: httpx.Client, tmp_path: Path
     ) -> None:
         """Test that saved file can be loaded back successfully."""
         gamestate = load_fixture(client, "save", "state-BLIND_SELECT")
@@ -43,7 +42,7 @@ class TestSaveEndpoint:
 class TestSaveValidation:
     """Test save endpoint parameter validation."""
 
-    def test_missing_path_parameter(self, client: socket.socket) -> None:
+    def test_missing_path_parameter(self, client: httpx.Client) -> None:
         """Test that save fails when path parameter is missing."""
         response = api(client, "save", {})
         assert_error_response(
@@ -52,7 +51,7 @@ class TestSaveValidation:
             "Missing required field 'path'",
         )
 
-    def test_invalid_path_type(self, client: socket.socket) -> None:
+    def test_invalid_path_type(self, client: httpx.Client) -> None:
         """Test that save fails when path is not a string."""
         response = api(client, "save", {"path": 123})
         assert_error_response(
@@ -65,7 +64,7 @@ class TestSaveValidation:
 class TestSaveStateRequirements:
     """Test save endpoint state requirements."""
 
-    def test_save_from_MENU(self, client: socket.socket, tmp_path: Path) -> None:
+    def test_save_from_MENU(self, client: httpx.Client, tmp_path: Path) -> None:
         """Test that save fails when not in an active run."""
         api(client, "menu", {})
         temp_file = tmp_path / "save"

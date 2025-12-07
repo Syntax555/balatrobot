@@ -1,7 +1,6 @@
 """Tests for src/lua/endpoints/add.lua"""
 
-import socket
-
+import httpx
 import pytest
 
 from tests.lua.conftest import (
@@ -15,7 +14,7 @@ from tests.lua.conftest import (
 class TestAddEndpoint:
     """Test basic add endpoint functionality."""
 
-    def test_add_joker(self, client: socket.socket) -> None:
+    def test_add_joker(self, client: httpx.Client) -> None:
         """Test adding a joker with valid key."""
         gamestate = load_fixture(
             client,
@@ -29,7 +28,7 @@ class TestAddEndpoint:
         assert after["jokers"]["count"] == 1
         assert after["jokers"]["cards"][0]["key"] == "j_joker"
 
-    def test_add_consumable_tarot(self, client: socket.socket) -> None:
+    def test_add_consumable_tarot(self, client: httpx.Client) -> None:
         """Test adding a tarot consumable with valid key."""
         gamestate = load_fixture(
             client,
@@ -43,7 +42,7 @@ class TestAddEndpoint:
         assert after["consumables"]["count"] == 1
         assert after["consumables"]["cards"][0]["key"] == "c_fool"
 
-    def test_add_consumable_planet(self, client: socket.socket) -> None:
+    def test_add_consumable_planet(self, client: httpx.Client) -> None:
         """Test adding a planet consumable with valid key."""
         gamestate = load_fixture(
             client,
@@ -57,7 +56,7 @@ class TestAddEndpoint:
         assert after["consumables"]["count"] == 1
         assert after["consumables"]["cards"][0]["key"] == "c_mercury"
 
-    def test_add_consumable_spectral(self, client: socket.socket) -> None:
+    def test_add_consumable_spectral(self, client: httpx.Client) -> None:
         """Test adding a spectral consumable with valid key."""
         gamestate = load_fixture(
             client,
@@ -71,7 +70,7 @@ class TestAddEndpoint:
         assert after["consumables"]["count"] == 1
         assert after["consumables"]["cards"][0]["key"] == "c_familiar"
 
-    def test_add_voucher(self, client: socket.socket) -> None:
+    def test_add_voucher(self, client: httpx.Client) -> None:
         """Test adding a voucher with valid key in SHOP state."""
         gamestate = load_fixture(
             client,
@@ -85,7 +84,7 @@ class TestAddEndpoint:
         assert after["vouchers"]["count"] == 1
         assert after["vouchers"]["cards"][0]["key"] == "v_overstock_norm"
 
-    def test_add_playing_card(self, client: socket.socket) -> None:
+    def test_add_playing_card(self, client: httpx.Client) -> None:
         """Test adding a playing card with valid key."""
         gamestate = load_fixture(
             client,
@@ -99,7 +98,7 @@ class TestAddEndpoint:
         assert after["hand"]["count"] == 9
         assert after["hand"]["cards"][8]["key"] == "H_A"
 
-    def test_add_no_key_provided(self, client: socket.socket) -> None:
+    def test_add_no_key_provided(self, client: httpx.Client) -> None:
         """Test add endpoint with no key parameter."""
         gamestate = load_fixture(
             client,
@@ -117,7 +116,7 @@ class TestAddEndpoint:
 class TestAddEndpointValidation:
     """Test add endpoint parameter validation."""
 
-    def test_invalid_key_type_number(self, client: socket.socket) -> None:
+    def test_invalid_key_type_number(self, client: httpx.Client) -> None:
         """Test that add fails when key parameter is a number."""
         gamestate = load_fixture(
             client,
@@ -131,7 +130,7 @@ class TestAddEndpointValidation:
             "Field 'key' must be of type string",
         )
 
-    def test_invalid_key_unknown_format(self, client: socket.socket) -> None:
+    def test_invalid_key_unknown_format(self, client: httpx.Client) -> None:
         """Test that add fails when key has unknown prefix format."""
         gamestate = load_fixture(
             client,
@@ -145,7 +144,7 @@ class TestAddEndpointValidation:
             "Invalid card key format. Expected: joker (j_*), consumable (c_*), voucher (v_*), or playing card (SUIT_RANK)",
         )
 
-    def test_invalid_key_known_format(self, client: socket.socket) -> None:
+    def test_invalid_key_known_format(self, client: httpx.Client) -> None:
         """Test that add fails when key has known format."""
         gamestate = load_fixture(
             client,
@@ -163,7 +162,7 @@ class TestAddEndpointValidation:
 class TestAddEndpointStateRequirements:
     """Test add endpoint state requirements."""
 
-    def test_add_from_BLIND_SELECT(self, client: socket.socket) -> None:
+    def test_add_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that add fails from BLIND_SELECT state."""
         gamestate = load_fixture(client, "add", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"
@@ -173,7 +172,7 @@ class TestAddEndpointStateRequirements:
             "Method 'add' requires one of these states: SELECTING_HAND, SHOP, ROUND_EVAL",
         )
 
-    def test_add_playing_card_from_SHOP(self, client: socket.socket) -> None:
+    def test_add_playing_card_from_SHOP(self, client: httpx.Client) -> None:
         """Test that add playing card fails from SHOP state."""
         gamestate = load_fixture(
             client,
@@ -187,7 +186,7 @@ class TestAddEndpointStateRequirements:
             "Playing cards can only be added in SELECTING_HAND state",
         )
 
-    def test_add_voucher_card_from_SELECTING_HAND(self, client: socket.socket) -> None:
+    def test_add_voucher_card_from_SELECTING_HAND(self, client: httpx.Client) -> None:
         """Test that add voucher card fails from SELECTING_HAND state."""
         gamestate = load_fixture(
             client,
@@ -206,7 +205,7 @@ class TestAddEndpointSeal:
     """Test seal parameter for add endpoint."""
 
     @pytest.mark.parametrize("seal", ["RED", "BLUE", "GOLD", "PURPLE"])
-    def test_add_playing_card_with_seal(self, client: socket.socket, seal: str) -> None:
+    def test_add_playing_card_with_seal(self, client: httpx.Client, seal: str) -> None:
         """Test adding a playing card with various seals."""
         gamestate = load_fixture(
             client,
@@ -221,7 +220,7 @@ class TestAddEndpointSeal:
         assert after["hand"]["cards"][8]["key"] == "H_A"
         assert after["hand"]["cards"][8]["modifier"]["seal"] == seal
 
-    def test_add_playing_card_invalid_seal(self, client: socket.socket) -> None:
+    def test_add_playing_card_invalid_seal(self, client: httpx.Client) -> None:
         """Test adding a playing card with invalid seal value."""
         gamestate = load_fixture(
             client,
@@ -239,7 +238,7 @@ class TestAddEndpointSeal:
 
     @pytest.mark.parametrize("key", ["j_joker", "c_fool", "v_overstock_norm"])
     def test_add_non_playing_card_with_seal_fails(
-        self, client: socket.socket, key: str
+        self, client: httpx.Client, key: str
     ) -> None:
         """Test that adding non-playing cards with seal parameter fails."""
         gamestate = load_fixture(
@@ -260,7 +259,7 @@ class TestAddEndpointEdition:
     """Test edition parameter for add endpoint."""
 
     @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME", "NEGATIVE"])
-    def test_add_joker_with_edition(self, client: socket.socket, edition: str) -> None:
+    def test_add_joker_with_edition(self, client: httpx.Client, edition: str) -> None:
         """Test adding a joker with various editions."""
         gamestate = load_fixture(
             client,
@@ -277,7 +276,7 @@ class TestAddEndpointEdition:
 
     @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME", "NEGATIVE"])
     def test_add_playing_card_with_edition(
-        self, client: socket.socket, edition: str
+        self, client: httpx.Client, edition: str
     ) -> None:
         """Test adding a playing card with various editions."""
         gamestate = load_fixture(
@@ -293,7 +292,7 @@ class TestAddEndpointEdition:
         assert after["hand"]["cards"][8]["key"] == "H_A"
         assert after["hand"]["cards"][8]["modifier"]["edition"] == edition
 
-    def test_add_consumable_with_negative_edition(self, client: socket.socket) -> None:
+    def test_add_consumable_with_negative_edition(self, client: httpx.Client) -> None:
         """Test adding a consumable with NEGATIVE edition (only valid edition for consumables)."""
         gamestate = load_fixture(
             client,
@@ -310,7 +309,7 @@ class TestAddEndpointEdition:
 
     @pytest.mark.parametrize("edition", ["HOLO", "FOIL", "POLYCHROME"])
     def test_add_consumable_with_non_negative_edition_fails(
-        self, client: socket.socket, edition: str
+        self, client: httpx.Client, edition: str
     ) -> None:
         """Test that adding a consumable with HOLO | FOIL | POLYCHROME edition fails."""
         gamestate = load_fixture(
@@ -327,7 +326,7 @@ class TestAddEndpointEdition:
             "Consumables can only have NEGATIVE edition",
         )
 
-    def test_add_voucher_with_edition_fails(self, client: socket.socket) -> None:
+    def test_add_voucher_with_edition_fails(self, client: httpx.Client) -> None:
         """Test that adding a voucher with any edition fails."""
         gamestate = load_fixture(
             client,
@@ -341,7 +340,7 @@ class TestAddEndpointEdition:
             response, "BAD_REQUEST", "Edition cannot be applied to vouchers"
         )
 
-    def test_add_playing_card_invalid_edition(self, client: socket.socket) -> None:
+    def test_add_playing_card_invalid_edition(self, client: httpx.Client) -> None:
         """Test adding a playing card with invalid edition value."""
         gamestate = load_fixture(
             client,
@@ -366,7 +365,7 @@ class TestAddEndpointEnhancement:
         ["BONUS", "MULT", "WILD", "GLASS", "STEEL", "STONE", "GOLD", "LUCKY"],
     )
     def test_add_playing_card_with_enhancement(
-        self, client: socket.socket, enhancement: str
+        self, client: httpx.Client, enhancement: str
     ) -> None:
         """Test adding a playing card with various enhancements."""
         gamestate = load_fixture(
@@ -382,7 +381,7 @@ class TestAddEndpointEnhancement:
         assert after["hand"]["cards"][8]["key"] == "H_A"
         assert after["hand"]["cards"][8]["modifier"]["enhancement"] == enhancement
 
-    def test_add_playing_card_invalid_enhancement(self, client: socket.socket) -> None:
+    def test_add_playing_card_invalid_enhancement(self, client: httpx.Client) -> None:
         """Test adding a playing card with invalid enhancement value."""
         gamestate = load_fixture(
             client,
@@ -400,7 +399,7 @@ class TestAddEndpointEnhancement:
 
     @pytest.mark.parametrize("key", ["j_joker", "c_fool", "v_overstock_norm"])
     def test_add_non_playing_card_with_enhancement_fails(
-        self, client: socket.socket, key: str
+        self, client: httpx.Client, key: str
     ) -> None:
         """Test that adding non-playing cards with enhancement parameter fails."""
         gamestate = load_fixture(
@@ -421,7 +420,7 @@ class TestAddEndpointEnhancement:
 class TestAddEndpointStickers:
     """Test sticker parameters (eternal, perishable) for add endpoint."""
 
-    def test_add_joker_with_eternal(self, client: socket.socket) -> None:
+    def test_add_joker_with_eternal(self, client: httpx.Client) -> None:
         """Test adding an eternal joker."""
         gamestate = load_fixture(
             client,
@@ -438,7 +437,7 @@ class TestAddEndpointStickers:
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
     def test_add_non_joker_with_eternal_fails(
-        self, client: socket.socket, key: str
+        self, client: httpx.Client, key: str
     ) -> None:
         """Test that adding non-joker cards with eternal parameter fails."""
         gamestate = load_fixture(
@@ -454,7 +453,7 @@ class TestAddEndpointStickers:
             "Eternal can only be applied to jokers",
         )
 
-    def test_add_playing_card_with_eternal_fails(self, client: socket.socket) -> None:
+    def test_add_playing_card_with_eternal_fails(self, client: httpx.Client) -> None:
         """Test that adding a playing card with eternal parameter fails."""
         gamestate = load_fixture(
             client,
@@ -470,9 +469,7 @@ class TestAddEndpointStickers:
         )
 
     @pytest.mark.parametrize("rounds", [1, 5, 10])
-    def test_add_joker_with_perishable(
-        self, client: socket.socket, rounds: int
-    ) -> None:
+    def test_add_joker_with_perishable(self, client: httpx.Client, rounds: int) -> None:
         """Test adding a perishable joker with valid round values."""
         gamestate = load_fixture(
             client,
@@ -487,7 +484,7 @@ class TestAddEndpointStickers:
         assert after["jokers"]["cards"][0]["key"] == "j_joker"
         assert after["jokers"]["cards"][0]["modifier"]["perishable"] == rounds
 
-    def test_add_joker_with_eternal_and_perishable(self, client: socket.socket) -> None:
+    def test_add_joker_with_eternal_and_perishable(self, client: httpx.Client) -> None:
         """Test adding a joker with both eternal and perishable stickers."""
         gamestate = load_fixture(
             client,
@@ -507,7 +504,7 @@ class TestAddEndpointStickers:
 
     @pytest.mark.parametrize("invalid_value", [0, -1])
     def test_add_joker_with_perishable_invalid_integer_fails(
-        self, client: socket.socket, invalid_value: int
+        self, client: httpx.Client, invalid_value: int
     ) -> None:
         """Test that invalid perishable values (zero, negative, float) are rejected."""
         gamestate = load_fixture(
@@ -526,7 +523,7 @@ class TestAddEndpointStickers:
 
     @pytest.mark.parametrize("invalid_value", [1.5, "NOT_INT_1"])
     def test_add_joker_with_perishable_invalid_type_fails(
-        self, client: socket.socket, invalid_value: float | str
+        self, client: httpx.Client, invalid_value: float | str
     ) -> None:
         """Test that perishable with string value is rejected."""
         gamestate = load_fixture(
@@ -545,7 +542,7 @@ class TestAddEndpointStickers:
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
     def test_add_non_joker_with_perishable_fails(
-        self, client: socket.socket, key: str
+        self, client: httpx.Client, key: str
     ) -> None:
         """Test that adding non-joker cards with perishable parameter fails."""
         gamestate = load_fixture(
@@ -561,9 +558,7 @@ class TestAddEndpointStickers:
             "Perishable can only be applied to jokers",
         )
 
-    def test_add_playing_card_with_perishable_fails(
-        self, client: socket.socket
-    ) -> None:
+    def test_add_playing_card_with_perishable_fails(self, client: httpx.Client) -> None:
         """Test that adding a playing card with perishable parameter fails."""
         gamestate = load_fixture(
             client,
@@ -579,7 +574,7 @@ class TestAddEndpointStickers:
             "Perishable can only be applied to jokers",
         )
 
-    def test_add_joker_with_rental(self, client: socket.socket) -> None:
+    def test_add_joker_with_rental(self, client: httpx.Client) -> None:
         """Test adding a rental joker."""
         gamestate = load_fixture(
             client,
@@ -596,7 +591,7 @@ class TestAddEndpointStickers:
 
     @pytest.mark.parametrize("key", ["c_fool", "v_overstock_norm"])
     def test_add_non_joker_with_rental_fails(
-        self, client: socket.socket, key: str
+        self, client: httpx.Client, key: str
     ) -> None:
         """Test that rental can only be applied to jokers."""
         gamestate = load_fixture(
@@ -612,7 +607,7 @@ class TestAddEndpointStickers:
             "Rental can only be applied to jokers",
         )
 
-    def test_add_joker_with_rental_and_eternal(self, client: socket.socket) -> None:
+    def test_add_joker_with_rental_and_eternal(self, client: httpx.Client) -> None:
         """Test adding a joker with both rental and eternal stickers."""
         gamestate = load_fixture(
             client,
@@ -630,7 +625,7 @@ class TestAddEndpointStickers:
         assert after["jokers"]["cards"][0]["modifier"]["rental"] is True
         assert after["jokers"]["cards"][0]["modifier"]["eternal"] is True
 
-    def test_add_playing_card_with_rental_fails(self, client: socket.socket) -> None:
+    def test_add_playing_card_with_rental_fails(self, client: httpx.Client) -> None:
         """Test that rental cannot be applied to playing cards."""
         gamestate = load_fixture(
             client,

@@ -5,7 +5,7 @@
 # - Basic health check functionality
 # - Response structure and fields
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -18,13 +18,13 @@ from tests.lua.conftest import (
 class TestHealthEndpoint:
     """Test basic health endpoint functionality."""
 
-    def test_health_from_MENU(self, client: socket.socket) -> None:
+    def test_health_from_MENU(self, client: httpx.Client) -> None:
         """Test that health check returns status ok."""
         response = api(client, "menu", {})
         assert_gamestate_response(response, state="MENU")
         assert_health_response(api(client, "health", {}))
 
-    def test_health_from_BLIND_SELECT(self, client: socket.socket) -> None:
+    def test_health_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that health check returns status ok."""
         save = "state-BLIND_SELECT"
         gamestate = load_fixture(client, "health", save)

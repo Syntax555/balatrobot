@@ -1,7 +1,6 @@
 """Tests for src/lua/endpoints/buy.lua"""
 
-import socket
-
+import httpx
 import pytest
 
 from tests.lua.conftest import (
@@ -16,7 +15,7 @@ class TestBuyEndpoint:
     """Test basic buy endpoint functionality."""
 
     @pytest.mark.flaky(reruns=2)
-    def test_buy_no_args(self, client: socket.socket) -> None:
+    def test_buy_no_args(self, client: httpx.Client) -> None:
         """Test buy endpoint with no arguments."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -28,7 +27,7 @@ class TestBuyEndpoint:
         )
 
     @pytest.mark.flaky(reruns=2)
-    def test_buy_multi_args(self, client: socket.socket) -> None:
+    def test_buy_multi_args(self, client: httpx.Client) -> None:
         """Test buy endpoint with multiple arguments."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -39,7 +38,7 @@ class TestBuyEndpoint:
             "Invalid arguments. Cannot provide more than one of: card, voucher, or pack",
         )
 
-    def test_buy_no_card_in_shop_area(self, client: socket.socket) -> None:
+    def test_buy_no_card_in_shop_area(self, client: httpx.Client) -> None:
         """Test buy endpoint with no card in shop area."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.count-0")
         assert gamestate["state"] == "SHOP"
@@ -50,7 +49,7 @@ class TestBuyEndpoint:
             "No jokers/consumables/cards in the shop. Reroll to restock the shop",
         )
 
-    def test_buy_invalid_index(self, client: socket.socket) -> None:
+    def test_buy_invalid_index(self, client: httpx.Client) -> None:
         """Test buy endpoint with invalid card index."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -61,7 +60,7 @@ class TestBuyEndpoint:
             "Card index out of range. Index: 999, Available cards: 2",
         )
 
-    def test_buy_insufficient_funds(self, client: socket.socket) -> None:
+    def test_buy_insufficient_funds(self, client: httpx.Client) -> None:
         """Test buy endpoint when player has insufficient funds."""
         gamestate = load_fixture(client, "buy", "state-SHOP--money-0")
         assert gamestate["state"] == "SHOP"
@@ -72,7 +71,7 @@ class TestBuyEndpoint:
             "Card is not affordable. Cost: 5, Current money: 0",
         )
 
-    def test_buy_joker_slots_full(self, client: socket.socket) -> None:
+    def test_buy_joker_slots_full(self, client: httpx.Client) -> None:
         """Test buy endpoint when player has the maximum number of consumables."""
         gamestate = load_fixture(
             client, "buy", "state-SHOP--jokers.count-5--shop.cards[0].set-JOKER"
@@ -86,7 +85,7 @@ class TestBuyEndpoint:
             "Cannot purchase joker card, joker slots are full. Current: 5, Limit: 5",
         )
 
-    def test_buy_consumable_slots_full(self, client: socket.socket) -> None:
+    def test_buy_consumable_slots_full(self, client: httpx.Client) -> None:
         """Test buy endpoint when player has the maximum number of consumables."""
         gamestate = load_fixture(
             client,
@@ -102,7 +101,7 @@ class TestBuyEndpoint:
             "Cannot purchase consumable card, consumable slots are full. Current: 2, Limit: 2",
         )
 
-    def test_buy_vouchers_slot_empty(self, client: socket.socket) -> None:
+    def test_buy_vouchers_slot_empty(self, client: httpx.Client) -> None:
         """Test buy endpoint when player has the maximum number of vouchers."""
         gamestate = load_fixture(client, "buy", "state-SHOP--voucher.count-0")
         assert gamestate["state"] == "SHOP"
@@ -116,7 +115,7 @@ class TestBuyEndpoint:
     @pytest.mark.skip(
         reason="Fixture not available yet. We need to be able to skip a pack."
     )
-    def test_buy_packs_slot_empty(self, client: socket.socket) -> None:
+    def test_buy_packs_slot_empty(self, client: httpx.Client) -> None:
         """Test buy endpoint when player has the maximum number of vouchers."""
         gamestate = load_fixture(client, "buy", "state-SHOP--packs.count-0")
         assert gamestate["state"] == "SHOP"
@@ -127,7 +126,7 @@ class TestBuyEndpoint:
             "No vouchers to redeem. Defeat boss blind to restock",
         )
 
-    def test_buy_joker_success(self, client: socket.socket) -> None:
+    def test_buy_joker_success(self, client: httpx.Client) -> None:
         """Test buying a joker card from shop."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -136,7 +135,7 @@ class TestBuyEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["jokers"]["cards"][0]["set"] == "JOKER"
 
-    def test_buy_consumable_success(self, client: socket.socket) -> None:
+    def test_buy_consumable_success(self, client: httpx.Client) -> None:
         """Test buying a consumable card (Planet/Tarot/Spectral) from shop."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[1].set-PLANET")
         assert gamestate["state"] == "SHOP"
@@ -145,7 +144,7 @@ class TestBuyEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["consumables"]["cards"][0]["set"] == "PLANET"
 
-    def test_buy_voucher_success(self, client: socket.socket) -> None:
+    def test_buy_voucher_success(self, client: httpx.Client) -> None:
         """Test buying a voucher from shop."""
         gamestate = load_fixture(
             client, "buy", "state-SHOP--voucher.cards[0].set-VOUCHER"
@@ -157,7 +156,7 @@ class TestBuyEndpoint:
         assert gamestate["used_vouchers"] is not None
         assert len(gamestate["used_vouchers"]) > 0
 
-    def test_buy_packs_success(self, client: socket.socket) -> None:
+    def test_buy_packs_success(self, client: httpx.Client) -> None:
         """Test buying a pack from shop."""
         gamestate = load_fixture(
             client,
@@ -176,7 +175,7 @@ class TestBuyEndpoint:
 class TestBuyEndpointValidation:
     """Test buy endpoint parameter validation."""
 
-    def test_invalid_card_type_string(self, client: socket.socket) -> None:
+    def test_invalid_card_type_string(self, client: httpx.Client) -> None:
         """Test that buy fails when card parameter is a string instead of integer."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -187,7 +186,7 @@ class TestBuyEndpointValidation:
             "Field 'card' must be an integer",
         )
 
-    def test_invalid_voucher_type_string(self, client: socket.socket) -> None:
+    def test_invalid_voucher_type_string(self, client: httpx.Client) -> None:
         """Test that buy fails when voucher parameter is a string instead of integer."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -198,7 +197,7 @@ class TestBuyEndpointValidation:
             "Field 'voucher' must be an integer",
         )
 
-    def test_invalid_pack_type_string(self, client: socket.socket) -> None:
+    def test_invalid_pack_type_string(self, client: httpx.Client) -> None:
         """Test that buy fails when pack parameter is a string instead of integer."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -213,7 +212,7 @@ class TestBuyEndpointValidation:
 class TestBuyEndpointStateRequirements:
     """Test buy endpoint state requirements."""
 
-    def test_buy_from_BLIND_SELECT(self, client: socket.socket) -> None:
+    def test_buy_from_BLIND_SELECT(self, client: httpx.Client) -> None:
         """Test that buy fails when not in SHOP state."""
         gamestate = load_fixture(client, "buy", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

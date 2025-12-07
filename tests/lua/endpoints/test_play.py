@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/play.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestPlayEndpoint:
     """Test basic play endpoint functionality."""
 
-    def test_play_zero_cards(self, client: socket.socket) -> None:
+    def test_play_zero_cards(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -23,7 +23,7 @@ class TestPlayEndpoint:
             "Must provide at least one card to play",
         )
 
-    def test_play_six_cards(self, client: socket.socket) -> None:
+    def test_play_six_cards(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -33,7 +33,7 @@ class TestPlayEndpoint:
             "You can only play 5 cards",
         )
 
-    def test_play_out_of_range_cards(self, client: socket.socket) -> None:
+    def test_play_out_of_range_cards(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -43,7 +43,7 @@ class TestPlayEndpoint:
             "Invalid card index: 999",
         )
 
-    def test_play_valid_cards_and_round_active(self, client: socket.socket) -> None:
+    def test_play_valid_cards_and_round_active(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -52,7 +52,7 @@ class TestPlayEndpoint:
         assert gamestate["hands"]["Flush"]["played_this_round"] == 1
         assert gamestate["round"]["chips"] == 260
 
-    def test_play_valid_cards_and_round_won(self, client: socket.socket) -> None:
+    def test_play_valid_cards_and_round_won(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(
             client, "play", "state-SELECTING_HAND--round.chips-200"
@@ -62,7 +62,7 @@ class TestPlayEndpoint:
         response = api(client, "play", {"cards": [0, 3, 4, 5, 6]})
         assert_gamestate_response(response, state="ROUND_EVAL")
 
-    def test_play_valid_cards_and_game_won(self, client: socket.socket) -> None:
+    def test_play_valid_cards_and_game_won(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(
             client,
@@ -76,7 +76,7 @@ class TestPlayEndpoint:
         response = api(client, "play", {"cards": [0, 3, 4, 5, 6]})
         assert_gamestate_response(response, won=True)
 
-    def test_play_valid_cards_and_game_over(self, client: socket.socket) -> None:
+    def test_play_valid_cards_and_game_over(self, client: httpx.Client) -> None:
         """Test play endpoint from BLIND_SELECT state."""
         gamestate = load_fixture(
             client, "play", "state-SELECTING_HAND--round.hands_left-1"
@@ -90,7 +90,7 @@ class TestPlayEndpoint:
 class TestPlayEndpointValidation:
     """Test play endpoint parameter validation."""
 
-    def test_missing_cards_parameter(self, client: socket.socket):
+    def test_missing_cards_parameter(self, client: httpx.Client):
         """Test that play fails when cards parameter is missing."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -100,7 +100,7 @@ class TestPlayEndpointValidation:
             "Missing required field 'cards'",
         )
 
-    def test_invalid_cards_type(self, client: socket.socket):
+    def test_invalid_cards_type(self, client: httpx.Client):
         """Test that play fails when cards parameter is not an array."""
         gamestate = load_fixture(client, "play", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -114,7 +114,7 @@ class TestPlayEndpointValidation:
 class TestPlayEndpointStateRequirements:
     """Test play endpoint state requirements."""
 
-    def test_play_from_BLIND_SELECT(self, client: socket.socket):
+    def test_play_from_BLIND_SELECT(self, client: httpx.Client):
         """Test that play fails when not in SELECTING_HAND state."""
         gamestate = load_fixture(client, "play", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

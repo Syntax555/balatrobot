@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/discard.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestDiscardEndpoint:
     """Test basic discard endpoint functionality."""
 
-    def test_discard_zero_cards(self, client: socket.socket) -> None:
+    def test_discard_zero_cards(self, client: httpx.Client) -> None:
         """Test discard endpoint with empty cards array."""
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -23,7 +23,7 @@ class TestDiscardEndpoint:
             "Must provide at least one card to discard",
         )
 
-    def test_discard_too_many_cards(self, client: socket.socket) -> None:
+    def test_discard_too_many_cards(self, client: httpx.Client) -> None:
         """Test discard endpoint with more cards than limit."""
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -33,7 +33,7 @@ class TestDiscardEndpoint:
             "You can only discard 5 cards",
         )
 
-    def test_discard_out_of_range_cards(self, client: socket.socket) -> None:
+    def test_discard_out_of_range_cards(self, client: httpx.Client) -> None:
         """Test discard endpoint with invalid card index."""
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -43,7 +43,7 @@ class TestDiscardEndpoint:
             "Invalid card index: 999",
         )
 
-    def test_discard_no_discards_left(self, client: socket.socket) -> None:
+    def test_discard_no_discards_left(self, client: httpx.Client) -> None:
         """Test discard endpoint when no discards remain."""
         gamestate = load_fixture(
             client, "discard", "state-SELECTING_HAND--round.discards_left-0"
@@ -56,7 +56,7 @@ class TestDiscardEndpoint:
             "No discards left",
         )
 
-    def test_discard_valid_single_card(self, client: socket.socket) -> None:
+    def test_discard_valid_single_card(self, client: httpx.Client) -> None:
         """Test discard endpoint with valid single card."""
         before = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert before["state"] == "SELECTING_HAND"
@@ -64,7 +64,7 @@ class TestDiscardEndpoint:
         after = assert_gamestate_response(response, state="SELECTING_HAND")
         assert after["round"]["discards_left"] == before["round"]["discards_left"] - 1
 
-    def test_discard_valid_multiple_cards(self, client: socket.socket) -> None:
+    def test_discard_valid_multiple_cards(self, client: httpx.Client) -> None:
         """Test discard endpoint with valid multiple cards."""
         before = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert before["state"] == "SELECTING_HAND"
@@ -76,7 +76,7 @@ class TestDiscardEndpoint:
 class TestDiscardEndpointValidation:
     """Test discard endpoint parameter validation."""
 
-    def test_missing_cards_parameter(self, client: socket.socket):
+    def test_missing_cards_parameter(self, client: httpx.Client):
         """Test that discard fails when cards parameter is missing."""
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -86,7 +86,7 @@ class TestDiscardEndpointValidation:
             "Missing required field 'cards'",
         )
 
-    def test_invalid_cards_type(self, client: socket.socket):
+    def test_invalid_cards_type(self, client: httpx.Client):
         """Test that discard fails when cards parameter is not an array."""
         gamestate = load_fixture(client, "discard", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -100,7 +100,7 @@ class TestDiscardEndpointValidation:
 class TestDiscardEndpointStateRequirements:
     """Test discard endpoint state requirements."""
 
-    def test_discard_from_BLIND_SELECT(self, client: socket.socket):
+    def test_discard_from_BLIND_SELECT(self, client: httpx.Client):
         """Test that discard fails when not in SELECTING_HAND state."""
         gamestate = load_fixture(client, "discard", "state-BLIND_SELECT")
         assert gamestate["state"] == "BLIND_SELECT"

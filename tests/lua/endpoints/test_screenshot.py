@@ -1,7 +1,8 @@
 """Tests for src/lua/endpoints/screenshot.lua"""
 
-import socket
 from pathlib import Path
+
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -15,7 +16,7 @@ from tests.lua.conftest import (
 class TestScreenshotEndpoint:
     """Test basic screenshot endpoint functionality."""
 
-    def test_screenshot_from_MENU(self, client: socket.socket, tmp_path: Path) -> None:
+    def test_screenshot_from_MENU(self, client: httpx.Client, tmp_path: Path) -> None:
         """Test that screenshot succeeds from MENU state."""
         gamestate = api(client, "menu", {})
         assert_gamestate_response(gamestate, state="MENU")
@@ -28,7 +29,7 @@ class TestScreenshotEndpoint:
         assert temp_file.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
     def test_screenshot_from_BLIND_SELECT(
-        self, client: socket.socket, tmp_path: Path
+        self, client: httpx.Client, tmp_path: Path
     ) -> None:
         """Test that screenshot succeeds from BLIND_SELECT state."""
         gamestate = load_fixture(client, "screenshot", "state-BLIND_SELECT")
@@ -45,7 +46,7 @@ class TestScreenshotEndpoint:
 class TestScreenshotValidation:
     """Test screenshot endpoint parameter validation."""
 
-    def test_missing_path_parameter(self, client: socket.socket) -> None:
+    def test_missing_path_parameter(self, client: httpx.Client) -> None:
         """Test that screenshot fails when path parameter is missing."""
         response = api(client, "screenshot", {})
         assert_error_response(
@@ -54,7 +55,7 @@ class TestScreenshotValidation:
             "Missing required field 'path'",
         )
 
-    def test_invalid_path_type(self, client: socket.socket) -> None:
+    def test_invalid_path_type(self, client: httpx.Client) -> None:
         """Test that screenshot fails when path is not a string."""
         response = api(client, "save", {"path": 123})
         assert_error_response(

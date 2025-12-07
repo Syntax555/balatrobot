@@ -1,6 +1,6 @@
 """Tests for src/lua/endpoints/set.lua"""
 
-import socket
+import httpx
 
 from tests.lua.conftest import (
     api,
@@ -13,7 +13,7 @@ from tests.lua.conftest import (
 class TestSetEndpoint:
     """Test basic set endpoint functionality."""
 
-    def test_set_game_not_in_run(self, client: socket.socket) -> None:
+    def test_set_game_not_in_run(self, client: httpx.Client) -> None:
         """Test that set fails when game is not in run."""
         api(client, "menu", {})
         response = api(client, "set", {})
@@ -23,7 +23,7 @@ class TestSetEndpoint:
             "Can only set during an active run",
         )
 
-    def test_set_no_fields(self, client: socket.socket) -> None:
+    def test_set_no_fields(self, client: httpx.Client) -> None:
         """Test that set fails when no fields are provided."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -34,7 +34,7 @@ class TestSetEndpoint:
             "Must provide at least one field to set",
         )
 
-    def test_set_negative_money(self, client: socket.socket) -> None:
+    def test_set_negative_money(self, client: httpx.Client) -> None:
         """Test that set fails when money is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -45,14 +45,14 @@ class TestSetEndpoint:
             "Money must be a positive integer",
         )
 
-    def test_set_money(self, client: socket.socket) -> None:
+    def test_set_money(self, client: httpx.Client) -> None:
         """Test that set succeeds when money is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"money": 100})
         assert_gamestate_response(response, money=100)
 
-    def test_set_negative_chips(self, client: socket.socket) -> None:
+    def test_set_negative_chips(self, client: httpx.Client) -> None:
         """Test that set fails when chips is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -63,7 +63,7 @@ class TestSetEndpoint:
             "Chips must be a positive integer",
         )
 
-    def test_set_chips(self, client: socket.socket) -> None:
+    def test_set_chips(self, client: httpx.Client) -> None:
         """Test that set succeeds when chips is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -71,7 +71,7 @@ class TestSetEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["round"]["chips"] == 100
 
-    def test_set_negative_ante(self, client: socket.socket) -> None:
+    def test_set_negative_ante(self, client: httpx.Client) -> None:
         """Test that set fails when ante is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -82,14 +82,14 @@ class TestSetEndpoint:
             "Ante must be a positive integer",
         )
 
-    def test_set_ante(self, client: socket.socket) -> None:
+    def test_set_ante(self, client: httpx.Client) -> None:
         """Test that set succeeds when ante is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"ante": 8})
         assert_gamestate_response(response, ante_num=8)
 
-    def test_set_negative_round(self, client: socket.socket) -> None:
+    def test_set_negative_round(self, client: httpx.Client) -> None:
         """Test that set fails when round is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -100,14 +100,14 @@ class TestSetEndpoint:
             "Round must be a positive integer",
         )
 
-    def test_set_round(self, client: socket.socket) -> None:
+    def test_set_round(self, client: httpx.Client) -> None:
         """Test that set succeeds when round is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
         response = api(client, "set", {"round": 5})
         assert_gamestate_response(response, round_num=5)
 
-    def test_set_negative_hands(self, client: socket.socket) -> None:
+    def test_set_negative_hands(self, client: httpx.Client) -> None:
         """Test that set fails when hands is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -118,7 +118,7 @@ class TestSetEndpoint:
             "Hands must be a positive integer",
         )
 
-    def test_set_hands(self, client: socket.socket) -> None:
+    def test_set_hands(self, client: httpx.Client) -> None:
         """Test that set succeeds when hands is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -126,7 +126,7 @@ class TestSetEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["round"]["hands_left"] == 10
 
-    def test_set_negative_discards(self, client: socket.socket) -> None:
+    def test_set_negative_discards(self, client: httpx.Client) -> None:
         """Test that set fails when discards is negative."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -137,7 +137,7 @@ class TestSetEndpoint:
             "Discards must be a positive integer",
         )
 
-    def test_set_discards(self, client: socket.socket) -> None:
+    def test_set_discards(self, client: httpx.Client) -> None:
         """Test that set succeeds when discards is positive."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -145,7 +145,7 @@ class TestSetEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["round"]["discards_left"] == 10
 
-    def test_set_shop_from_selecting_hand(self, client: socket.socket) -> None:
+    def test_set_shop_from_selecting_hand(self, client: httpx.Client) -> None:
         """Test that set fails when shop is called from SELECTING_HAND state."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -156,7 +156,7 @@ class TestSetEndpoint:
             "Can re-stock shop only in SHOP state",
         )
 
-    def test_set_shop_from_SHOP(self, client: socket.socket) -> None:
+    def test_set_shop_from_SHOP(self, client: httpx.Client) -> None:
         """Test that set fails when shop is called from SHOP state."""
         before = load_fixture(client, "set", "state-SHOP")
         assert before["state"] == "SHOP"
@@ -168,7 +168,7 @@ class TestSetEndpoint:
         assert after["packs"] != before["packs"]
         assert after["vouchers"] != before["vouchers"]  # here only the id is changed
 
-    def test_set_shop_set_round_set_money(self, client: socket.socket) -> None:
+    def test_set_shop_set_round_set_money(self, client: httpx.Client) -> None:
         """Test that set fails when shop is called from SHOP state."""
         before = load_fixture(client, "set", "state-SHOP")
         assert before["state"] == "SHOP"
@@ -182,7 +182,7 @@ class TestSetEndpoint:
 class TestSetEndpointValidation:
     """Test set endpoint parameter validation."""
 
-    def test_invalid_money_type(self, client: socket.socket):
+    def test_invalid_money_type(self, client: httpx.Client):
         """Test that set fails when money parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -193,7 +193,7 @@ class TestSetEndpointValidation:
             "Field 'money' must be an integer",
         )
 
-    def test_invalid_chips_type(self, client: socket.socket):
+    def test_invalid_chips_type(self, client: httpx.Client):
         """Test that set fails when chips parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -204,7 +204,7 @@ class TestSetEndpointValidation:
             "Field 'chips' must be an integer",
         )
 
-    def test_invalid_ante_type(self, client: socket.socket):
+    def test_invalid_ante_type(self, client: httpx.Client):
         """Test that set fails when ante parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -215,7 +215,7 @@ class TestSetEndpointValidation:
             "Field 'ante' must be an integer",
         )
 
-    def test_invalid_round_type(self, client: socket.socket):
+    def test_invalid_round_type(self, client: httpx.Client):
         """Test that set fails when round parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -226,7 +226,7 @@ class TestSetEndpointValidation:
             "Field 'round' must be an integer",
         )
 
-    def test_invalid_hands_type(self, client: socket.socket):
+    def test_invalid_hands_type(self, client: httpx.Client):
         """Test that set fails when hands parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -237,7 +237,7 @@ class TestSetEndpointValidation:
             "Field 'hands' must be an integer",
         )
 
-    def test_invalid_discards_type(self, client: socket.socket):
+    def test_invalid_discards_type(self, client: httpx.Client):
         """Test that set fails when discards parameter is not an integer."""
         gamestate = load_fixture(client, "set", "state-SELECTING_HAND")
         assert gamestate["state"] == "SELECTING_HAND"
@@ -248,7 +248,7 @@ class TestSetEndpointValidation:
             "Field 'discards' must be an integer",
         )
 
-    def test_invalid_shop_type(self, client: socket.socket):
+    def test_invalid_shop_type(self, client: httpx.Client):
         """Test that set fails when shop parameter is not a boolean."""
         gamestate = load_fixture(client, "set", "state-SHOP")
         assert gamestate["state"] == "SHOP"
