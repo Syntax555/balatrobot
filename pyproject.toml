@@ -1,7 +1,7 @@
 [project]
 name = "balatrobot"
 version = "0.7.5"
-description = "A framework for Balatro bot development"
+description = "API for developing Balatro bots"
 readme = "README.md"
 authors = [
   { name = "S1M0N38", email = "bertolottosimone@gmail.com" },
@@ -11,14 +11,12 @@ authors = [
   { name = "phughesion" },
 ]
 requires-python = ">=3.13"
-dependencies = ["pydantic>=2.11.7"]
+dependencies = []
 classifiers = [
-  "Development Status :: 1 - Planning",
   "Framework :: Pytest",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.13",
-  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.urls]
@@ -26,10 +24,6 @@ Homepage = "https://github.com/coder/balatrobot"
 Issues = "https://github.com/coder/balatrobot/issues"
 Repository = "https://github.com/coder/balatrobot"
 Changelog = "https://github.com/coder/balatrobot/blob/main/CHANGELOG.md"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [tool.ruff]
 lint.extend-select = ["I"]
@@ -49,7 +43,6 @@ dev = [
   "mdformat-simple-breaks>=0.0.1",
   "mkdocs-llmstxt>=0.3.0",
   "mkdocs-material>=9.6.15",
-  "mkdocstrings[python]>=0.29.1",
   "pytest>=8.4.1",
   "pytest-cov>=6.2.1",
   "pytest-rerunfailures>=16.1",
