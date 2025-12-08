@@ -4,20 +4,17 @@
     <a href="https://github.com/coder/balatrobot/releases">
       <img alt="GitHub release" src="https://img.shields.io/github/v/release/coder/balatrobot?include_prereleases&sort=semver&style=for-the-badge&logo=github"/>
     </a>
-    <a href="https://pypi.org/project/balatrobot/">
-      <img alt="PyPI" src="https://img.shields.io/pypi/v/balatrobot?style=for-the-badge&logo=pypi&logoColor=white"/>
-    </a>
     <a href="https://discord.gg/TPn6FYgGPv">
       <img alt="Discord" src="https://img.shields.io/badge/discord-server?style=for-the-badge&logo=discord&logoColor=%23FFFFFF&color=%235865F2"/>
     </a>
   </p>
-  <div><img src="https://github.com/user-attachments/assets/514f85ab-485d-48f5-80fc-721eafad5192" alt="balatrobot" width="256" height="256"></div>
-  <p><em>A framework for Balatro bot development</em></p>
+  <div><img src="./docs/assets/balatrobot.svg" alt="balatrobot" width="170" height="170"></div>
+  <p><em>API for developing Balatro bots</em></p>
 </div>
 
 ---
 
-BalatroBot is a Python framework designed to help developers create automated bots for the card game Balatro. The framework provides a comprehensive API for interacting with the game, handling game state, making strategic decisions, and executing actions. Whether you're building a simple bot or a sophisticated AI player, BalatroBot offers the tools and structure needed to get started quickly.
+BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
 ## 📚 Documentation
 
