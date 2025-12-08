@@ -1,7 +1,32 @@
-<figure markdown="span">
-  ![Image title](assets/balatrobot.svg){ width="256" }
-  <figcaption>API for developing Balatro bots</figcaption>
-</figure>
+<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrobot/">
+      <img src="assets/balatrobot.svg" alt="BalatroBot" width="170">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
+      <small>API for developing Balatro bots</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrollm/">
+      <img src="assets/balatrollm.svg" alt="BalatroLLM" width="170">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrollm/">BalatroLLM</a><br>
+      <small>Play Balatro with LLMs</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrobench/">
+      <img src="assets/balatrobench.svg" alt="BalatroBench" width="170">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrobench/">BalatroBench</a><br>
+      <small>Benchmark LLMs playing Balatro</small>
+    </figcaption>
+  </figure>
+</div>
 
 ---
 
@@ -17,7 +42,7 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     [:octicons-arrow-right-24: Installation](installation.md)
 
-- :material-api:{ .lg .middle } __BalatroBot API__
+- :material-robot:{ .lg .middle } __BalatroBot API__
 
     ---
 
@@ -25,7 +50,7 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     [:octicons-arrow-right-24: API](api.md)
 
-- :material-robot:{ .lg .middle } __Contributing__
+- :material-code-tags:{ .lg .middle } __Contributing__
 
     ---
 
