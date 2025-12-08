@@ -16,3 +16,18 @@ balatrobot_oldish.lua
 balatro_oldish.sh
 *.jkr
 smods
+
+# old python balatrobot implementation
+tests/balatrobot
+src/balatrobot
+REFACTOR.md
+OLD_ENDPOINTS.md
+GAMESTATE.md
+ERRORS.md
+ENDPOINT_USE.md
+ENDPOINT_ADD.md
+ENDPOINTS.md
+balatro.sh
+OPEN-RPC_SPEC.md
+API.md
+docs_old
