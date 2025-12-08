@@ -7,6 +7,8 @@ site_url: https://coder.github.io/balatrobot/
 docs_dir: docs/
 theme:
   name: material
+  favicon: assets/balatrobot.svg
+  logo: assets/balatrobot.svg
   icon:
     repo: fontawesome/brands/github
   features:
@@ -42,7 +44,7 @@ plugins:
       full_output: llms-full.txt
       autoclean: true
 nav:
-  - index.md
+  - BalatroBot: index.md
   - Installation: installation.md
   - API Reference: api.md
   - Contributing: contributing.md
