@@ -1,11 +1,11 @@
 <figure markdown="span">
   ![Image title](assets/balatrobot.svg){ width="256" }
-  <figcaption>A framework for developing Balatro bots</figcaption>
+  <figcaption>API for developing Balatro bots</figcaption>
 </figure>
 
 ---
 
-BalatroBot is a Python framework designed to help developers create automated bots for the card game Balatro. The framework provides a comprehensive API for interacting with the game, handling game state, making strategic decisions, and executing actions. Whether you're building a simple bot or a sophisticated AI player, BalatroBot offers the tools and structure needed to get started quickly.
+BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
 <div class="grid cards" markdown>
 
@@ -13,31 +13,31 @@ BalatroBot is a Python framework designed to help developers create automated bo
 
     ---
 
-    Setup guide covering prerequisites, Steamodded mod installation, and Python environment setup.
+    Setup guide covering prerequisites and BalatroBot installation.
 
     [:octicons-arrow-right-24: Installation](installation.md)
 
-- :material-robot:{ .lg .middle } __Developing Bots__
+- :material-api:{ .lg .middle } __BalatroBot API__
 
     ---
 
-    Learn to develop bots with complete code examples, class structure, and game state handling.
+    Message formats, game states, methods, schema, enums and errors
 
-    [:octicons-arrow-right-24: Developing Bots](developing-bots.md)
+    [:octicons-arrow-right-24: API](api.md)
 
-- :material-api:{ .lg .middle } __Protocol API__
+- :material-robot:{ .lg .middle } __Contributing__
 
     ---
 
-    Technical reference for TCP socket communication, message formats, game states, and action types.
+    Setup guide for developers, test suite, and contributing guidelines.
 
-    [:octicons-arrow-right-24: Protocol API](protocol-api.md)
+    [:octicons-arrow-right-24: Contributing](contributing.md)
 
 - :octicons-sparkle-fill-16:{ .lg .middle } __Documentation for LLM__
 
     ---
 
-    Documentation in [llms.txt](https://llmstxt.org/) format. Just paste the following link (or its content) into the LLM chat.
+    Docs in [llms.txt](https://llmstxt.org/) format. Paste the following link (or its content) into the LLM.
 
     [:octicons-arrow-right-24: llms-full.txt](llms-full.txt)
 

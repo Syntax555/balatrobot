@@ -1,276 +1,123 @@
-# Contributing to BalatroBot
+# Contributing
 
-Welcome to BalatroBot! We're excited that you're interested in contributing to this Python framework and Lua mod for creating automated bots to play Balatro.
+Guide for contributing to BalatroBot development.
 
-BalatroBot uses a dual-architecture approach with a Python framework that communicates with a Lua mod running inside Balatro via TCP sockets. This allows for real-time bot automation and game state analysis.
+## Prerequisites
 
-## Project Status & Priorities
+- **Balatro** (v1.0.1+)
+- **Lovely Injector** - [Installation](https://github.com/ethangreen-dev/lovely-injector)
+- **Steamodded** - [Installation](https://github.com/Steamopollys/Steamodded)
+- **DebugPlus** (optional) - Required for test endpoints
 
-We track all development work using the [BalatroBot GitHub Project](https://github.com/orgs/coder/projects). This is the best place to see current priorities, ongoing work, and opportunities for contribution.
+## Development Setup
 
-## Getting Started
-
-### Prerequisites
-
-Before contributing, ensure you have:
-
-- **Balatro**: Version 1.0.1o-FULL
-- **SMODS (Steamodded)**: Version 1.0.0-beta-0711a or newer
-- **Python**: 3.13+ (managed via uv)
-- **uv**: Python package manager ([Installation Guide](https://docs.astral.sh/uv/))
-- **OS**: macOS, Linux. Windows is not currently supported
-- **[DebugPlus](https://github.com/WilsontheWolf/DebugPlus) (optional)**: useful for Lua API development and debugging
-
-### Development Environment Setup
-
-1. **Fork and Clone**
-
-    ```bash
-    git clone https://github.com/YOUR_USERNAME/balatrobot.git
-    cd balatrobot
-    ```
-
-2. **Install Dependencies**
-
-    ```bash
-    make install-dev
-    ```
-
-3. **Start Balatro with Mods**
-
-    ```bash
-    ./balatro.sh -p 12346
-    ```
-
-4. **Verify Balatro is Running**
-
-    ```bash
-    # Check if Balatro is running
-    ./balatro.sh --status
-
-    # Monitor startup logs
-    tail -n 100 logs/balatro_12346.log
-    ```
-
-    Look for these success indicators:
-
-    - "BalatrobotAPI initialized"
-    - "BalatroBot loaded - version X.X.X"
-    - "TCP socket created on port 12346"
-
-## How to Contribute
-
-### Types of Contributions Welcome
-
-- **Bug Fixes**: Issues tracked in our GitHub project
-- **Feature Development**: New bot strategies, API enhancements
-- **Performance Improvements**: Optimization of TCP communication or game interaction
-- **Documentation**: Improvements to guides, API documentation, or examples
-- **Testing**: Additional test coverage, edge case handling
-
-### Contribution Workflow
-
-1. **Check Issues First** (Highly Encouraged)
-
-    - Browse the [BalatroBot GitHub Project](https://github.com/orgs/coder/projects)
-    - Comment on issues you'd like to work on
-    - Create new issues for bugs or feature requests
-
-2. **Fork & Branch**
-
-    ```bash
-    git checkout -b feature/your-feature-name
-    ```
-
-3. **Make Changes**
-
-    - Follow our code style guidelines (see below)
-    - Add tests for new functionality
-    - Update documentation as needed
-
-4. **Create Pull Request**
-
-    - **Important**: Enable "Allow edits from maintainers" when creating your PR
-    - Link to related issues
-    - Provide clear description of changes
-    - Include tests for new functionality
-
-### Commit Messages
-
-We highly encourage following [Conventional Commits](https://www.conventionalcommits.org/) format:
-
-```
-feat(api): add new game state detection
-fix(tcp): resolve connection timeout issues
-docs(readme): update setup instructions
-test(api): add shop booster validation tests
-```
-
-## Development & Testing
-
-### Makefile Commands
-
-BalatroBot includes a comprehensive Makefile that provides a convenient interface for all development tasks. Use `make help` to see all available commands:
+### 1. Clone the Repository
 
 ```bash
-# Show all available commands with descriptions
-make help
+git clone https://github.com/your-repo/balatrobot.git
+cd balatrobot
 ```
 
-#### Installation & Setup
+### 2. Symlink to Mods Folder
+
+Instead of copying files, create a symlink for easier development:
+
+**macOS:**
+```bash
+ln -s "$(pwd)" ~/Library/Application\ Support/Balatro/Mods/balatrobot
+```
+
+**Linux:**
+```bash
+ln -s "$(pwd)" ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/
+```
+
+**Windows (PowerShell as Admin):**
+```powershell
+New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Balatro\Mods\balatrobot" -Target (Get-Location)
+```
+
+### 3. Set Environment Variables
 
 ```bash
-make install        # Install package dependencies
-make install-dev    # Install with development dependencies
+export BALATROBOT_DEBUG=1
+export BALATROBOT_FAST=1
 ```
 
-#### Code Quality & Formatting
+### 4. Launch Balatro
+
+Start the game normally. Check logs for "BalatroBot API initialized" to confirm the mod loaded.
+
+## Running Tests
+
+Tests use Python + pytest to communicate with the Lua API:
 
 ```bash
-make lint           # Run ruff linter (check only)
-make lint-fix       # Run ruff linter with auto-fixes
-make format         # Run ruff formatter and stylua
-make format-md      # Run markdown formatter
-make typecheck      # Run type checker
-make quality        # Run all code quality checks
-make dev            # Quick development check (format + lint + typecheck, no tests)
+# Install all dependencies
+make install
+
+# Run all tests (restarts game automatically)
+make test
+
+# Run specific test file
+pytest tests/lua/endpoints/test_health.py -v
+
+# Run tests with dev marker
+make test PYTEST_MARKER=dev
 ```
 
-### Testing Requirements
+## Code Structure
 
-#### Testing with Makefile
-
-```bash
-make test           # Run tests with single instance (auto-starts if needed)
-make test-parallel  # Run tests on 4 instances (auto-starts if needed)
-make test-teardown  # Kill all Balatro instances
-
-# Complete workflow including tests
-make all            # Run format + lint + typecheck + test
+```
+src/lua/
+├── core/
+│   ├── server.lua       # HTTP server
+│   ├── dispatcher.lua   # Request routing
+│   └── validator.lua    # Schema validation
+├── endpoints/           # API endpoints
+│   ├── health.lua
+│   ├── gamestate.lua
+│   ├── play.lua
+│   └── ...
+└── utils/
+    ├── types.lua        # Type definitions
+    ├── enums.lua        # Enum values
+    ├── errors.lua       # Error codes
+    ├── gamestate.lua    # State extraction
+    └── openrpc.json     # API spec
 ```
 
-The testing system automatically handles Balatro instance management:
+## Adding a New Endpoint
 
-- **`make test`**: Runs tests with a single instance, auto-starting if needed
-- **`make test-parallel`**: Runs tests on 4 instances for ~4x speedup, auto-starting if needed
-- **`make test-teardown`**: Cleans up all instances when done
+1. Create `src/lua/endpoints/your_endpoint.lua`:
 
-Both test commands keep instances running after completion for faster subsequent runs.
-
-#### Using Checkpoints for Test Setup
-
-The checkpointing system allows you to save and load specific game states, significantly speeding up test setup:
-
-**Creating Test Checkpoints:**
-
-```bash
-# Create a checkpoint at a specific game state
-python scripts/create_test_checkpoint.py shop tests/lua/endpoints/checkpoints/shop_state.jkr
-python scripts/create_test_checkpoint.py blind_select tests/lua/endpoints/checkpoints/blind_select.jkr
-python scripts/create_test_checkpoint.py in_game tests/lua/endpoints/checkpoints/in_game.jkr
+```lua
+return {
+  name = "your_endpoint",
+  description = "Brief description",
+  schema = {
+    param_name = {
+      type = "string",
+      required = true,
+      description = "Parameter description",
+    },
+  },
+  requires_state = { G.STATES.SHOP },  -- Optional
+  execute = function(args, send_response)
+    -- Implementation
+    send_response(BB_GAMESTATE.get_gamestate())
+  end,
+}
 ```
 
-**Using Checkpoints in Tests:**
+2. Add tests in `tests/lua/endpoints/test_your_endpoint.py`
 
-```python
-# In conftest.py or test files
-from ..conftest import prepare_checkpoint
+3. Update `src/lua/utils/openrpc.json` with the new method
 
-def setup_and_teardown(tcp_client):
-    # Load a checkpoint directly (no restart needed!)
-    checkpoint_path = Path(__file__).parent / "checkpoints" / "shop_state.jkr"
-    game_state = prepare_checkpoint(tcp_client, checkpoint_path)
-    assert game_state["state"] == State.SHOP.value
-```
+## Pull Request Guidelines
 
-**Benefits of Checkpoints:**
-
-- **Faster Tests**: Skip manual game setup steps (particularly helpful for edge cases)
-- **Consistency**: Always start from exact same state
-- **Reusability**: Share checkpoints across multiple tests
-- **No Restarts**: Uses `load_save` API to load directly from any game state
-
-**Python Client Methods:**
-
-```python
-from balatrobot import BalatroClient
-
-with BalatroClient() as client:
-    # Save current game state as checkpoint
-    client.save_checkpoint("tests/fixtures/my_state.jkr")
-
-    # Load a checkpoint for testing
-    save_path = client.prepare_save("tests/fixtures/my_state.jkr")
-    game_state = client.load_save(save_path)
-```
-
-**Manual Setup for Advanced Testing:**
-
-```bash
-# Check/manage Balatro instances
-./balatro.sh --status                   # Show running instances
-./balatro.sh --kill                     # Kill all instances
-
-# Start instances manually
-./balatro.sh -p 12346 -p 12347          # Two instances
-./balatro.sh --headless --fast -p 12346 -p 12347 -p 12348 -p 12349  # Full setup
-./balatro.sh --audio -p 12346                                    # With audio enabled
-
-# Manual parallel testing
-pytest -n 4 --port 12346 --port 12347 --port 12348 --port 12349 tests/lua/
-```
-
-**Performance Modes:**
-
-- **`--headless`**: No graphics, ideal for servers
-- **`--fast`**: 10x speed, disabled effects, optimal for testing
-- **`--audio`**: Enable audio (disabled by default for performance)
-
-### Documentation
-
-```bash
-make docs-serve     # Serve documentation locally
-make docs-build     # Build documentation
-make docs-clean     # Clean built documentation
-```
-
-### Build & Maintenance
-
-```bash
-make build          # Build package for distribution
-make clean          # Clean build artifacts and caches
-```
-
-## Technical Guidelines
-
-### Python Development
-
-- **Style**: Follow modern Python 3.13+ patterns
-- **Type Hints**: Use pipe operator for unions (`str | int | None`)
-- **Type Aliases**: Use `type` statement
-- **Docstrings**: Google-style without type information (types in annotations)
-- **Generics**: Modern syntax (`class Container[T]:`)
-
-### Lua Development
-
-- **Focus Area**: Primary development is on `src/lua/api.lua`
-- **Communication**: TCP protocol on port 12346
-- **Debugging**: Use DebugPlus mod for enhanced debugging capabilities
-
-### Environment Variables
-
-Configure BalatroBot behavior with these environment variables:
-
-- **`BALATROBOT_HEADLESS=1`**: Disable graphics for server environments
-- **`BALATROBOT_FAST=1`**: Enable 10x speed with disabled effects for testing
-- **`BALATROBOT_AUDIO=1`**: Enable audio (disabled by default for performance)
-- **`BALATROBOT_PORT`**: TCP communication port (default: "12346")
-
-## Communication & Community
-
-### Preferred Channels
-
-- **GitHub Issues**: Primary communication for bugs, features, and project coordination
-- **Discord**: Join us at the [Balatro Discord](https://discord.com/channels/1116389027176787968/1391371948629426316) for real-time discussions
-
-Happy contributing!
+1. **One feature per PR** - Keep changes focused
+2. **Add tests** - New endpoints need test coverage
+3. **Update docs** - Update api.md and openrpc.json for API changes
+4. **Follow conventions** - Match existing code style
+5. **Test locally** - Ensure `make test` passes

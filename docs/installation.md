@@ -1,262 +1,79 @@
-# Installation Guide
+# Installation
 
-This guide will walk you through installing and setting up BalatroBot.
+This guide covers installing the BalatroBot mod for Balatro.
 
 ## Prerequisites
 
-Before installing BalatroBot, ensure you have:
+1. **Balatro** (v1.0.1+) - Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
+2. **Lovely Injector** - Follow the [installation guide](https://github.com/ethangreen-dev/lovely-injector#manual-installation)
+3. **Steamodded** - Follow the [installation guide](https://github.com/Steamopollys/Steamodded#installation)
 
-- **[balatro](https://store.steampowered.com/app/2379780/Balatro/)**: Steam version (>= 1.0.1)
-- **[git](https://git-scm.com/downloads)**: for cloning the repository
-- **[uv](https://docs.astral.sh/uv/)**: for managing Python installations, environments, and dependencies
-- **[lovely](https://github.com/ethangreen-dev/lovely-injector)**: for injecting Lua code into Balatro (>= 0.8.0)
-- **[steamodded](https://github.com/Steamodded/smods)**: for loading and injecting mods (>= 1.0.0)
+## Mod Installation
 
-## Step 1: Install BalatroBot
+### 1. Download BalatroBot
 
-BalatroBot is installed like any other Steamodded mod.
+Download the latest release from the [releases page](https://github.com/your-repo/balatrobot/releases) or clone the repository.
 
-=== "Windows"
+### 2. Copy to Mods Folder
 
-    ```sh
-    cd %AppData%/Balatro
-    mkdir -p Mods
-    cd Mods
-    git clone https://github.com/coder/balatrobot.git
-    ```
+Copy the following files/folders to your Balatro Mods directory:
 
-=== "MacOS"
+```
+balatrobot/
+├── balatrobot.json    # Mod manifest
+├── balatrobot.lua     # Entry point
+└── src/lua/           # API source code
+```
 
-    ```sh
-    cd "/Users/$USER/Library/Application Support/Balatro"
-    mkdir -p Mods
-    cd Mods
-    git clone https://github.com/coder/balatrobot.git
-    ```
+**Mods directory location:**
 
-=== "Linux"
+| Platform | Path                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------- |
+| Windows  | `%AppData%/Balatro/Mods/balatrobot/`                                                                          |
+| macOS    | `~/Library/Application Support/Balatro/Mods/balatrobot/`                                                      |
+| Linux    | `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/` |
 
-    ```sh
-    cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro
-    mkdir -p Mods
-    cd Mods
-    git clone https://github.com/coder/balatrobot.git
-    ```
+### 3. Configure (Optional)
 
-!!! tip
+BalatroBot reads configuration from environment variables. Set these before launching Balatro:
 
-    You can also clone the repository somewhere else and then provide a symlink
-    to the `balatrobot` directory in the `Mods` directory.
+| Variable                  | Default     | Description                                |
+| ------------------------- | ----------- | ------------------------------------------ |
+| `BALATROBOT_HOST`         | `127.0.0.1` | Server hostname                            |
+| `BALATROBOT_PORT`         | `12346`     | Server port                                |
+| `BALATROBOT_FAST`         | `0`         | Fast mode (1=enabled)                      |
+| `BALATROBOT_HEADLESS`     | `0`         | Headless mode (1=enabled)                  |
+| `BALATROBOT_RENDER_ON_API`| `0`         | Render only on API calls (1=enabled)       |
+| `BALATROBOT_AUDIO`        | `0`         | Audio (1=enabled)                          |
+| `BALATROBOT_DEBUG`        | `0`         | Debug mode (1=enabled, requires DebugPlus) |
+| `BALATROBOT_NO_SHADERS`   | `0`         | Disable all shaders (1=enabled)            |
 
-    === "Windows"
+Example (bash):
 
-        ```sh
-        # Clone repository to a custom location
-        cd C:\your\custom\path
-        git clone https://github.com/coder/balatrobot.git
+```bash
+export BALATROBOT_PORT=12346
+export BALATROBOT_FAST=1
+# Then launch Balatro
+```
 
-        # Create symlink in Mods directory
-        cd %AppData%/Balatro/Mods
-        mklink /D balatrobot C:\your\custom\path\balatrobot
-        ```
+### 4. Verify Installation
 
-    === "MacOS"
+Start Balatro, then test the connection:
 
-        ```sh
-        # Clone repository to a custom location
-        cd /your/custom/path
-        git clone https://github.com/coder/balatrobot.git
+```bash
+curl -X POST http://127.0.0.1:12346 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "method": "health", "id": 1}'
+```
 
-        # Create symlink in Mods directory
-        cd "/Users/$USER/Library/Application Support/Balatro/Mods"
-        ln -s /your/custom/path/balatrobot balatrobot
-        ```
+Expected response:
 
-    === "Linux"
-
-        ```sh
-        # Clone repository to a custom location
-        cd /your/custom/path
-        git clone https://github.com/coder/balatrobot.git
-
-        # Create symlink in Mods directory
-        cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods
-        ln -s /your/custom/path/balatrobot balatrobot
-        ```
-
-??? "Update BalatroBot"
-
-    Updating BalatroBot is as simple as pulling the latest changes from the repository.
-
-    === "Windows"
-
-        ```sh
-        cd %AppData%/Balatro/Mods/balatrobot
-        git pull
-        ```
-
-    === "MacOS"
-
-        ```sh
-        cd "/Users/$USER/Library/Application Support/Balatro/Mods/balatrobot"
-        git pull
-        ```
-
-    === "Linux"
-
-        ```sh
-        cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/balatrobot
-        git pull
-        ```
-
-??? "Uninstall BalatroBot"
-
-    Simply delete the balatrobot mod directory.
-
-    === "Windows"
-
-        ```sh
-        cd %AppData%/Balatro/Mods
-        rmdir /S /Q balatrobot
-        ```
-
-    === "MacOS"
-
-        ```sh
-        cd "/Users/$USER/Library/Application Support/Balatro/Mods"
-        rm -rf balatrobot
-        ```
-
-    === "Linux"
-
-        ```sh
-        cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods
-        rm -rf balatrobot
-        ```
-
-## Step 2: Set Up Python Environment
-
-Uv takes care of managing Python installations, virtual environment creation, and dependency installation.
-To set up the Python environment for running BalatroBot bots, simply run:
-
-=== "Windows"
-
-    ```sh
-    cd %AppData%/Balatro/Mods/balatrobot
-    uv sync
-    ```
-
-=== "MacOS"
-
-    ```sh
-    cd "/Users/$USER/Library/Application Support/Balatro/Mods/balatrobot"
-    uv sync
-    ```
-
-=== "Linux"
-
-    ```sh
-    cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/balatrobot
-    uv sync
-    ```
-
-The same command can be used to update the Python environment and dependencies in the future.
-
-??? "Remove Python Environment"
-
-    To uninstall the Python environment and dependencies, simply remove the `.venv` directory.
-
-    === "Windows"
-
-        ```sh
-        cd %AppData%/Balatro/Mods/balatrobot
-        rmdir /S /Q .venv
-        ```
-
-    === "MacOS"
-
-        ```sh
-        cd "/Users/$USER/Library/Application Support/Balatro/Mods/balatrobot"
-        rm -rf .venv
-        ```
-
-    === "Linux"
-
-        ```sh
-        cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/balatrobot
-        rm -rf .venv
-        ```
-
-## Step 3: Test Installation
-
-### Launch Balatro with Mods
-
-1. Start Balatro through Steam
-2. In the main menu, click "Mods"
-3. Verify "BalatroBot" appears in the mod list
-4. Enable the mod if it's not already enabled and restart the game
-
-!!! warning "macOS Steam Client Issue"
-
-    On macOS, you cannot start Balatro through the Steam App due to a bug in the
-    Steam client. Instead, you must use the `run_lovely_macos.sh` script.
-
-    === "MacOS"
-
-        ```sh
-        cd "/Users/$USER/Library/Application Support/Steam/steamapps/common/Balatro"
-        ./run_lovely_macos.sh
-        ```
-
-    **First-time setup:** If this is your first time running the script, macOS Security & Privacy
-    settings will prevent it from executing. Open **System Preferences** → **Security & Privacy**
-    and click "Allow" when prompted, then run the script again.
-
-### Quick Test with Example Bot
-
-With Balatro running and the mod enabled, you can quickly test if everything is set up correctly using the provided example bot.
-
-=== "Windows"
-
-    ```sh
-    cd %AppData%/Balatro/Mods/balatrobot
-    uv run bots/example.py
-    ```
-
-=== "MacOS"
-
-    ```sh
-    cd "/Users/$USER/Library/Application Support/Balatro/Mods/balatrobot"
-    uv run bots/example.py
-    ```
-
-=== "Linux"
-
-    ```sh
-    cd ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/balatrobot
-    uv run bots/example.py
-    ```
-
-!!! tip
-
-    You can also navigate to the `balatrobot` directory, activate the Python
-    environment and run the bot with `python bots/example.py` if you prefer.
-    However, remember to always activate the virtual environment first.
-
-The bot is working correctly if:
-
-1. Game starts automatically
-2. Cards are played/discarded automatically
-3. Win the first blind
-4. Game progresses through blinds
+```json
+{"jsonrpc":"2.0","result":{"status":"ok"},"id":1}
+```
 
 ## Troubleshooting
 
-If you encounter issues during installation or testing:
-
-- **Discord Support**: Join our community at [https://discord.gg/xzBAj4JFVC](https://discord.gg/xzBAj4JFVC) for real-time help
-- **GitHub Issues**: Report bugs or request features by [opening an issue](https://github.com/coder/balatrobot/issues) on GitHub
-
----
-
-*Once installation is complete, proceed to the [Developing Bots](developing-bots.md) to create your first bot!*
+- **Connection refused**: Ensure Balatro is running and the mod loaded successfully
+- **Mod not loading**: Check that Lovely and Steamodded are installed correctly
+- **Port in use**: Change `BALATROBOT_PORT` to a different value
