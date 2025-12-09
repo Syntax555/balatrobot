@@ -1267,478 +1267,1580 @@
         ]
       },
       "State": {
-        "type": "string",
         "description": "Game state enumeration",
-        "enum": [
-          "MENU",
-          "BLIND_SELECT",
-          "SELECTING_HAND",
-          "HAND_PLAYED",
-          "DRAW_TO_HAND",
-          "NEW_ROUND",
-          "ROUND_EVAL",
-          "SHOP",
-          "PLAY_TAROT",
-          "TAROT_PACK",
-          "PLANET_PACK",
-          "SPECTRAL_PACK",
-          "STANDARD_PACK",
-          "BUFFOON_PACK",
-          "GAME_OVER"
+        "oneOf": [
+          {
+            "const": "MENU",
+            "description": "Main menu of the game"
+          },
+          {
+            "const": "BLIND_SELECT",
+            "description": "Blind selection phase"
+          },
+          {
+            "const": "SELECTING_HAND",
+            "description": "Selecting cards to play or discard"
+          },
+          {
+            "const": "HAND_PLAYED",
+            "description": "During hand playing animation"
+          },
+          {
+            "const": "DRAW_TO_HAND",
+            "description": "During hand drawing animation"
+          },
+          {
+            "const": "NEW_ROUND",
+            "description": "Round is won and new round begins"
+          },
+          {
+            "const": "ROUND_EVAL",
+            "description": "Round end, inside the cash out phase"
+          },
+          {
+            "const": "SHOP",
+            "description": "Inside the shop"
+          },
+          {
+            "const": "PLAY_TAROT",
+            "description": "Playing a tarot card"
+          },
+          {
+            "const": "TAROT_PACK",
+            "description": "Opening a tarot pack"
+          },
+          {
+            "const": "PLANET_PACK",
+            "description": "Opening a planet pack"
+          },
+          {
+            "const": "SPECTRAL_PACK",
+            "description": "Opening a spectral pack"
+          },
+          {
+            "const": "STANDARD_PACK",
+            "description": "Opening a standard pack"
+          },
+          {
+            "const": "BUFFOON_PACK",
+            "description": "Opening a buffoon pack"
+          },
+          {
+            "const": "GAME_OVER",
+            "description": "Game is over"
+          }
         ]
       },
       "Deck": {
-        "type": "string",
-        "description": "Deck enumeration",
-        "enum": [
-          "RED",
-          "BLUE",
-          "YELLOW",
-          "GREEN",
-          "BLACK",
-          "MAGIC",
-          "NEBULA",
-          "GHOST",
-          "ABANDONED",
-          "CHECKERED",
-          "ZODIAC",
-          "PAINTED",
-          "ANAGLYPH",
-          "PLASMA",
-          "ERRATIC"
+        "description": "Deck type",
+        "oneOf": [
+          {
+            "const": "RED",
+            "description": "+1 discard every round"
+          },
+          {
+            "const": "BLUE",
+            "description": "+1 hand every round"
+          },
+          {
+            "const": "YELLOW",
+            "description": "Start with extra $10"
+          },
+          {
+            "const": "GREEN",
+            "description": "$2 per remaining Hand, $1 per remaining Discard, no interest"
+          },
+          {
+            "const": "BLACK",
+            "description": "+1 Joker slot, -1 hand every round"
+          },
+          {
+            "const": "MAGIC",
+            "description": "Start with Crystal Ball voucher and 2 copies of The Fool"
+          },
+          {
+            "const": "NEBULA",
+            "description": "Start with Telescope voucher, -1 consumable slot"
+          },
+          {
+            "const": "GHOST",
+            "description": "Spectral cards may appear in shop, start with Hex card"
+          },
+          {
+            "const": "ABANDONED",
+            "description": "Start with no Face Cards in deck"
+          },
+          {
+            "const": "CHECKERED",
+            "description": "Start with 26 Spades and 26 Hearts in deck"
+          },
+          {
+            "const": "ZODIAC",
+            "description": "Start with Tarot Merchant, Planet Merchant, and Overstock"
+          },
+          {
+            "const": "PAINTED",
+            "description": "+2 hand size, -1 Joker slot"
+          },
+          {
+            "const": "ANAGLYPH",
+            "description": "Gain Double Tag after each Boss Blind"
+          },
+          {
+            "const": "PLASMA",
+            "description": "Balanced Chips and Mult, 2X base Blind size"
+          },
+          {
+            "const": "ERRATIC",
+            "description": "All Ranks and Suits in deck are randomized"
+          }
         ]
       },
       "Stake": {
-        "type": "string",
-        "description": "Stake level enumeration",
-        "enum": [
-          "WHITE",
-          "RED",
-          "GREEN",
-          "BLACK",
-          "BLUE",
-          "PURPLE",
-          "ORANGE",
-          "GOLD"
+        "description": "Stake level",
+        "oneOf": [
+          {
+            "const": "WHITE",
+            "description": "Base Difficulty"
+          },
+          {
+            "const": "RED",
+            "description": "Small Blind gives no reward money"
+          },
+          {
+            "const": "GREEN",
+            "description": "Required scores scale faster for each Ante"
+          },
+          {
+            "const": "BLACK",
+            "description": "Shop can have Eternal Jokers"
+          },
+          {
+            "const": "BLUE",
+            "description": "-1 Discard"
+          },
+          {
+            "const": "PURPLE",
+            "description": "Required score scales faster for each Ante"
+          },
+          {
+            "const": "ORANGE",
+            "description": "Shop can have Perishable Jokers"
+          },
+          {
+            "const": "GOLD",
+            "description": "Shop can have Rental Jokers"
+          }
         ]
       },
       "Suit": {
-        "type": "string",
         "description": "Card suit",
-        "enum": [
-          "H",
-          "D",
-          "C",
-          "S"
+        "oneOf": [
+          {
+            "const": "H",
+            "description": "Hearts"
+          },
+          {
+            "const": "D",
+            "description": "Diamonds"
+          },
+          {
+            "const": "C",
+            "description": "Clubs"
+          },
+          {
+            "const": "S",
+            "description": "Spades"
+          }
         ]
       },
       "Rank": {
-        "type": "string",
         "description": "Card rank",
-        "enum": [
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9",
-          "T",
-          "J",
-          "Q",
-          "K",
-          "A"
+        "oneOf": [
+          {
+            "const": "2",
+            "description": "Two"
+          },
+          {
+            "const": "3",
+            "description": "Three"
+          },
+          {
+            "const": "4",
+            "description": "Four"
+          },
+          {
+            "const": "5",
+            "description": "Five"
+          },
+          {
+            "const": "6",
+            "description": "Six"
+          },
+          {
+            "const": "7",
+            "description": "Seven"
+          },
+          {
+            "const": "8",
+            "description": "Eight"
+          },
+          {
+            "const": "9",
+            "description": "Nine"
+          },
+          {
+            "const": "T",
+            "description": "Ten"
+          },
+          {
+            "const": "J",
+            "description": "Jack"
+          },
+          {
+            "const": "Q",
+            "description": "Queen"
+          },
+          {
+            "const": "K",
+            "description": "King"
+          },
+          {
+            "const": "A",
+            "description": "Ace"
+          }
         ]
       },
       "Seal": {
-        "type": "string",
         "description": "Card seal type",
-        "enum": [
-          "RED",
-          "BLUE",
-          "GOLD",
-          "PURPLE"
+        "oneOf": [
+          {
+            "const": "RED",
+            "description": "Retrigger this card 1 time"
+          },
+          {
+            "const": "BLUE",
+            "description": "Creates Planet card for final played poker hand if held in hand"
+          },
+          {
+            "const": "GOLD",
+            "description": "Earn $3 when this card is played and scores"
+          },
+          {
+            "const": "PURPLE",
+            "description": "Creates a Tarot card when discarded"
+          }
         ]
       },
       "Edition": {
-        "type": "string",
         "description": "Card edition type",
-        "enum": [
-          "HOLO",
-          "FOIL",
-          "POLYCHROME",
-          "NEGATIVE"
+        "oneOf": [
+          {
+            "const": "FOIL",
+            "description": "+50 Chips when scored"
+          },
+          {
+            "const": "HOLO",
+            "description": "+10 Mult when scored"
+          },
+          {
+            "const": "POLYCHROME",
+            "description": "X1.5 Mult when scored"
+          },
+          {
+            "const": "NEGATIVE",
+            "description": "+1 Joker slot (Jokers) or +1 Consumable slot (Consumables)"
+          }
         ]
       },
       "Enhancement": {
-        "type": "string",
         "description": "Card enhancement type",
-        "enum": [
-          "BONUS",
-          "MULT",
-          "WILD",
-          "GLASS",
-          "STEEL",
-          "STONE",
-          "GOLD",
-          "LUCKY"
+        "oneOf": [
+          {
+            "const": "BONUS",
+            "description": "+30 Chips when scored"
+          },
+          {
+            "const": "MULT",
+            "description": "+4 Mult when scored"
+          },
+          {
+            "const": "WILD",
+            "description": "Counts as every suit simultaneously"
+          },
+          {
+            "const": "GLASS",
+            "description": "X2 Mult when scored"
+          },
+          {
+            "const": "STEEL",
+            "description": "X1.5 Mult while held in hand"
+          },
+          {
+            "const": "STONE",
+            "description": "+50 Chips, no rank or suit"
+          },
+          {
+            "const": "GOLD",
+            "description": "$3 if held in hand at end of round"
+          },
+          {
+            "const": "LUCKY",
+            "description": "1 in 5 chance +20 Mult, 1 in 15 chance $20"
+          }
         ]
       },
       "CardSet": {
-        "type": "string",
         "description": "Card set/type",
-        "enum": [
-          "DEFAULT",
-          "ENHANCED",
-          "JOKER",
-          "TAROT",
-          "PLANET",
-          "SPECTRAL",
-          "VOUCHER",
-          "BOOSTER"
+        "oneOf": [
+          {
+            "const": "DEFAULT",
+            "description": "Default playing card"
+          },
+          {
+            "const": "ENHANCED",
+            "description": "Playing card with an enhancement"
+          },
+          {
+            "const": "JOKER",
+            "description": "Joker card"
+          },
+          {
+            "const": "TAROT",
+            "description": "Tarot consumable card"
+          },
+          {
+            "const": "PLANET",
+            "description": "Planet consumable card"
+          },
+          {
+            "const": "SPECTRAL",
+            "description": "Spectral consumable card"
+          },
+          {
+            "const": "VOUCHER",
+            "description": "Voucher card"
+          },
+          {
+            "const": "BOOSTER",
+            "description": "Booster pack"
+          }
         ]
       },
       "BlindType": {
-        "type": "string",
         "description": "Blind type",
-        "enum": [
-          "SMALL",
-          "BIG",
-          "BOSS"
+        "oneOf": [
+          {
+            "const": "SMALL",
+            "description": "No special effects, can be skipped for a Tag"
+          },
+          {
+            "const": "BIG",
+            "description": "No special effects, can be skipped for a Tag"
+          },
+          {
+            "const": "BOSS",
+            "description": "Various effects depending on boss type, cannot be skipped"
+          }
         ]
       },
       "BlindStatus": {
-        "type": "string",
         "description": "Blind status",
-        "enum": [
-          "UPCOMING",
-          "CURRENT",
-          "DEFEATED",
-          "SKIPPED",
-          "SELECT"
+        "oneOf": [
+          {
+            "const": "SELECT",
+            "description": "Selectable blind"
+          },
+          {
+            "const": "CURRENT",
+            "description": "Currently selected blind"
+          },
+          {
+            "const": "UPCOMING",
+            "description": "Future blind"
+          },
+          {
+            "const": "DEFEATED",
+            "description": "Previously defeated blind"
+          },
+          {
+            "const": "SKIPPED",
+            "description": "Previously skipped blind"
+          }
         ]
       },
       "TarotKey": {
-        "type": "string",
         "description": "Tarot consumable card key",
-        "enum": [
-          "c_fool",
-          "c_magician",
-          "c_high_priestess",
-          "c_empress",
-          "c_emperor",
-          "c_heirophant",
-          "c_lovers",
-          "c_chariot",
-          "c_justice",
-          "c_hermit",
-          "c_wheel_of_fortune",
-          "c_strength",
-          "c_hanged_man",
-          "c_death",
-          "c_temperance",
-          "c_devil",
-          "c_tower",
-          "c_star",
-          "c_moon",
-          "c_sun",
-          "c_judgement",
-          "c_world"
+        "oneOf": [
+          {
+            "const": "c_fool",
+            "description": "The Fool: Creates the last Tarot or Planet card used during this run"
+          },
+          {
+            "const": "c_magician",
+            "description": "The Magician: Enhances 2 selected cards to Lucky Cards"
+          },
+          {
+            "const": "c_high_priestess",
+            "description": "The High Priestess: Creates up to 2 random Planet cards"
+          },
+          {
+            "const": "c_empress",
+            "description": "The Empress: Enhances 2 selected cards to Mult Cards"
+          },
+          {
+            "const": "c_emperor",
+            "description": "The Emperor: Creates up to 2 random Tarot cards"
+          },
+          {
+            "const": "c_heirophant",
+            "description": "The Hierophant: Enhances 2 selected cards to Bonus Cards"
+          },
+          {
+            "const": "c_lovers",
+            "description": "The Lovers: Enhances 1 selected card into a Wild Card"
+          },
+          {
+            "const": "c_chariot",
+            "description": "The Chariot: Enhances 1 selected card into a Steel Card"
+          },
+          {
+            "const": "c_justice",
+            "description": "Justice: Enhances 1 selected card into a Glass Card"
+          },
+          {
+            "const": "c_hermit",
+            "description": "The Hermit: Doubles money (Max of $20)"
+          },
+          {
+            "const": "c_wheel_of_fortune",
+            "description": "The Wheel of Fortune: 1 in 4 chance to add edition to a random Joker"
+          },
+          {
+            "const": "c_strength",
+            "description": "Strength: Increases rank of up to 2 selected cards by 1"
+          },
+          {
+            "const": "c_hanged_man",
+            "description": "The Hanged Man: Destroys up to 2 selected cards"
+          },
+          {
+            "const": "c_death",
+            "description": "Death: Select 2 cards, convert the left card into the right card"
+          },
+          {
+            "const": "c_temperance",
+            "description": "Temperance: Gives the total sell value of all current Jokers (Max $50)"
+          },
+          {
+            "const": "c_devil",
+            "description": "The Devil: Enhances 1 selected card into a Gold Card"
+          },
+          {
+            "const": "c_tower",
+            "description": "The Tower: Enhances 1 selected card into a Stone Card"
+          },
+          {
+            "const": "c_star",
+            "description": "The Star: Converts up to 3 selected cards to Diamonds"
+          },
+          {
+            "const": "c_moon",
+            "description": "The Moon: Converts up to 3 selected cards to Clubs"
+          },
+          {
+            "const": "c_sun",
+            "description": "The Sun: Converts up to 3 selected cards to Hearts"
+          },
+          {
+            "const": "c_judgement",
+            "description": "Judgement: Creates a random Joker card"
+          },
+          {
+            "const": "c_world",
+            "description": "The World: Converts up to 3 selected cards to Spades"
+          }
         ]
       },
       "PlanetKey": {
-        "type": "string",
         "description": "Planet consumable card key",
-        "enum": [
-          "c_mercury",
-          "c_venus",
-          "c_earth",
-          "c_mars",
-          "c_jupiter",
-          "c_saturn",
-          "c_uranus",
-          "c_neptune",
-          "c_pluto",
-          "c_planet_x",
-          "c_ceres",
-          "c_eris"
+        "oneOf": [
+          {
+            "const": "c_mercury",
+            "description": "Mercury: Upgrades Pair (+1 Mult, +15 Chips)"
+          },
+          {
+            "const": "c_venus",
+            "description": "Venus: Upgrades Three of a Kind (+2 Mult, +20 Chips)"
+          },
+          {
+            "const": "c_earth",
+            "description": "Earth: Upgrades Full House (+2 Mult, +25 Chips)"
+          },
+          {
+            "const": "c_mars",
+            "description": "Mars: Upgrades Four of a Kind (+3 Mult, +30 Chips)"
+          },
+          {
+            "const": "c_jupiter",
+            "description": "Jupiter: Upgrades Flush (+2 Mult, +15 Chips)"
+          },
+          {
+            "const": "c_saturn",
+            "description": "Saturn: Upgrades Straight (+3 Mult, +30 Chips)"
+          },
+          {
+            "const": "c_uranus",
+            "description": "Uranus: Upgrades Two Pair (+1 Mult, +20 Chips)"
+          },
+          {
+            "const": "c_neptune",
+            "description": "Neptune: Upgrades Straight Flush (+4 Mult, +40 Chips)"
+          },
+          {
+            "const": "c_pluto",
+            "description": "Pluto: Upgrades High Card (+1 Mult, +10 Chips)"
+          },
+          {
+            "const": "c_planet_x",
+            "description": "Planet X: Upgrades Five of a Kind (+3 Mult, +35 Chips)"
+          },
+          {
+            "const": "c_ceres",
+            "description": "Ceres: Upgrades Flush House (+4 Mult, +40 Chips)"
+          },
+          {
+            "const": "c_eris",
+            "description": "Eris: Upgrades Flush Five (+3 Mult, +50 Chips)"
+          }
         ]
       },
       "SpectralKey": {
-        "type": "string",
         "description": "Spectral consumable card key",
-        "enum": [
-          "c_familiar",
-          "c_grim",
-          "c_incantation",
-          "c_talisman",
-          "c_aura",
-          "c_wraith",
-          "c_sigil",
-          "c_ouija",
-          "c_ectoplasm",
-          "c_immolate",
-          "c_ankh",
-          "c_deja_vu",
-          "c_hex",
-          "c_trance",
-          "c_medium",
-          "c_cryptid",
-          "c_soul",
-          "c_black_hole"
+        "oneOf": [
+          {
+            "const": "c_familiar",
+            "description": "Familiar: Destroy 1 random card, add 3 random Enhanced face cards"
+          },
+          {
+            "const": "c_grim",
+            "description": "Grim: Destroy 1 random card, add 2 random Enhanced Aces"
+          },
+          {
+            "const": "c_incantation",
+            "description": "Incantation: Destroy 1 random card, add 4 random Enhanced numbered cards"
+          },
+          {
+            "const": "c_talisman",
+            "description": "Talisman: Add a Gold Seal to 1 selected card"
+          },
+          {
+            "const": "c_aura",
+            "description": "Aura: Add Foil, Holographic, or Polychrome to 1 selected card"
+          },
+          {
+            "const": "c_wraith",
+            "description": "Wraith: Creates a random Rare Joker, sets money to $0"
+          },
+          {
+            "const": "c_sigil",
+            "description": "Sigil: Converts all cards in hand to a single random suit"
+          },
+          {
+            "const": "c_ouija",
+            "description": "Ouija: Converts all cards in hand to a single random rank, -1 hand size"
+          },
+          {
+            "const": "c_ectoplasm",
+            "description": "Ectoplasm: Add Negative to a random Joker, -1 hand size"
+          },
+          {
+            "const": "c_immolate",
+            "description": "Immolate: Destroys 5 random cards in hand, gain $20"
+          },
+          {
+            "const": "c_ankh",
+            "description": "Ankh: Create a copy of a random Joker, destroy all other Jokers"
+          },
+          {
+            "const": "c_deja_vu",
+            "description": "Deja Vu: Add a Red Seal to 1 selected card"
+          },
+          {
+            "const": "c_hex",
+            "description": "Hex: Add Polychrome to a random Joker, destroy all other Jokers"
+          },
+          {
+            "const": "c_trance",
+            "description": "Trance: Add a Blue Seal to 1 selected card"
+          },
+          {
+            "const": "c_medium",
+            "description": "Medium: Add a Purple Seal to 1 selected card"
+          },
+          {
+            "const": "c_cryptid",
+            "description": "Cryptid: Create 2 copies of 1 selected card"
+          },
+          {
+            "const": "c_soul",
+            "description": "The Soul: Creates a Legendary Joker"
+          },
+          {
+            "const": "c_black_hole",
+            "description": "Black Hole: Upgrade every poker hand by 1 level"
+          }
         ]
       },
       "JokerKey": {
-        "type": "string",
         "description": "Joker card key",
-        "enum": [
-          "j_joker",
-          "j_greedy_joker",
-          "j_lusty_joker",
-          "j_wrathful_joker",
-          "j_gluttenous_joker",
-          "j_jolly",
-          "j_zany",
-          "j_mad",
-          "j_crazy",
-          "j_droll",
-          "j_sly",
-          "j_wily",
-          "j_clever",
-          "j_devious",
-          "j_crafty",
-          "j_half",
-          "j_stencil",
-          "j_four_fingers",
-          "j_mime",
-          "j_credit_card",
-          "j_ceremonial",
-          "j_banner",
-          "j_mystic_summit",
-          "j_marble",
-          "j_loyalty_card",
-          "j_8_ball",
-          "j_misprint",
-          "j_dusk",
-          "j_raised_fist",
-          "j_chaos",
-          "j_fibonacci",
-          "j_steel_joker",
-          "j_scary_face",
-          "j_abstract",
-          "j_delayed_grat",
-          "j_hack",
-          "j_pareidolia",
-          "j_gros_michel",
-          "j_even_steven",
-          "j_odd_todd",
-          "j_scholar",
-          "j_business",
-          "j_supernova",
-          "j_ride_the_bus",
-          "j_space",
-          "j_egg",
-          "j_burglar",
-          "j_blackboard",
-          "j_runner",
-          "j_ice_cream",
-          "j_dna",
-          "j_splash",
-          "j_blue_joker",
-          "j_sixth_sense",
-          "j_constellation",
-          "j_hiker",
-          "j_faceless",
-          "j_green_joker",
-          "j_superposition",
-          "j_todo_list",
-          "j_cavendish",
-          "j_card_sharp",
-          "j_red_card",
-          "j_madness",
-          "j_square",
-          "j_seance",
-          "j_riff_raff",
-          "j_vampire",
-          "j_shortcut",
-          "j_hologram",
-          "j_vagabond",
-          "j_baron",
-          "j_cloud_9",
-          "j_rocket",
-          "j_obelisk",
-          "j_midas_mask",
-          "j_luchador",
-          "j_photograph",
-          "j_gift",
-          "j_turtle_bean",
-          "j_erosion",
-          "j_reserved_parking",
-          "j_mail",
-          "j_to_the_moon",
-          "j_hallucination",
-          "j_fortune_teller",
-          "j_juggler",
-          "j_drunkard",
-          "j_stone",
-          "j_golden",
-          "j_lucky_cat",
-          "j_baseball",
-          "j_bull",
-          "j_diet_cola",
-          "j_trading",
-          "j_flash",
-          "j_popcorn",
-          "j_trousers",
-          "j_ancient",
-          "j_ramen",
-          "j_walkie_talkie",
-          "j_selzer",
-          "j_castle",
-          "j_smiley",
-          "j_campfire",
-          "j_ticket",
-          "j_mr_bones",
-          "j_acrobat",
-          "j_sock_and_buskin",
-          "j_swashbuckler",
-          "j_troubadour",
-          "j_certificate",
-          "j_smeared",
-          "j_throwback",
-          "j_hanging_chad",
-          "j_rough_gem",
-          "j_bloodstone",
-          "j_arrowhead",
-          "j_onyx_agate",
-          "j_glass",
-          "j_ring_master",
-          "j_flower_pot",
-          "j_blueprint",
-          "j_wee",
-          "j_merry_andy",
-          "j_oops",
-          "j_idol",
-          "j_seeing_double",
-          "j_matador",
-          "j_hit_the_road",
-          "j_duo",
-          "j_trio",
-          "j_family",
-          "j_order",
-          "j_tribe",
-          "j_stuntman",
-          "j_invisible",
-          "j_brainstorm",
-          "j_satellite",
-          "j_shoot_the_moon",
-          "j_drivers_license",
-          "j_cartomancer",
-          "j_astronomer",
-          "j_burnt",
-          "j_bootstraps",
-          "j_caino",
-          "j_triboulet",
-          "j_yorick",
-          "j_chicot",
-          "j_perkeo"
+        "oneOf": [
+          {
+            "const": "j_joker",
+            "description": "+4 Mult"
+          },
+          {
+            "const": "j_greedy_joker",
+            "description": "Played Diamond cards give +3 Mult when scored"
+          },
+          {
+            "const": "j_lusty_joker",
+            "description": "Played Heart cards give +3 Mult when scored"
+          },
+          {
+            "const": "j_wrathful_joker",
+            "description": "Played Spade cards give +3 Mult when scored"
+          },
+          {
+            "const": "j_gluttenous_joker",
+            "description": "Played Club cards give +3 Mult when scored"
+          },
+          {
+            "const": "j_jolly",
+            "description": "+8 Mult if played hand contains a Pair"
+          },
+          {
+            "const": "j_zany",
+            "description": "+12 Mult if played hand contains a Three of a Kind"
+          },
+          {
+            "const": "j_mad",
+            "description": "+10 Mult if played hand contains a Two Pair"
+          },
+          {
+            "const": "j_crazy",
+            "description": "+12 Mult if played hand contains a Straight"
+          },
+          {
+            "const": "j_droll",
+            "description": "+10 Mult if played hand contains a Flush"
+          },
+          {
+            "const": "j_sly",
+            "description": "+50 Chips if played hand contains a Pair"
+          },
+          {
+            "const": "j_wily",
+            "description": "+100 Chips if played hand contains a Three of a Kind"
+          },
+          {
+            "const": "j_clever",
+            "description": "+80 Chips if played hand contains a Two Pair"
+          },
+          {
+            "const": "j_devious",
+            "description": "+100 Chips if played hand contains a Straight"
+          },
+          {
+            "const": "j_crafty",
+            "description": "+80 Chips if played hand contains a Flush"
+          },
+          {
+            "const": "j_half",
+            "description": "+20 Mult if played hand contains 3 or fewer cards"
+          },
+          {
+            "const": "j_stencil",
+            "description": "X1 Mult for each empty Joker slot"
+          },
+          {
+            "const": "j_four_fingers",
+            "description": "All Flushes and Straights can be made with 4 cards"
+          },
+          {
+            "const": "j_mime",
+            "description": "Retrigger all card held in hand abilities"
+          },
+          {
+            "const": "j_credit_card",
+            "description": "Go up to -$20 in debt"
+          },
+          {
+            "const": "j_ceremonial",
+            "description": "When Blind selected, destroy Joker to right, add double sell value to Mult"
+          },
+          {
+            "const": "j_banner",
+            "description": "+30 Chips for each remaining discard"
+          },
+          {
+            "const": "j_mystic_summit",
+            "description": "+15 Mult when 0 discards remaining"
+          },
+          {
+            "const": "j_marble",
+            "description": "Adds one Stone card to deck when Blind is selected"
+          },
+          {
+            "const": "j_loyalty_card",
+            "description": "X4 Mult every 6 hands played"
+          },
+          {
+            "const": "j_8_ball",
+            "description": "1 in 4 chance for each played 8 to create a Tarot card"
+          },
+          {
+            "const": "j_misprint",
+            "description": "+0-23 Mult"
+          },
+          {
+            "const": "j_dusk",
+            "description": "Retrigger all played cards in final hand of the round"
+          },
+          {
+            "const": "j_raised_fist",
+            "description": "Adds double the rank of lowest ranked card held in hand to Mult"
+          },
+          {
+            "const": "j_chaos",
+            "description": "1 free Reroll per shop"
+          },
+          {
+            "const": "j_fibonacci",
+            "description": "Each played Ace, 2, 3, 5, or 8 gives +8 Mult when scored"
+          },
+          {
+            "const": "j_steel_joker",
+            "description": "Gives X0.2 Mult for each Steel Card in your full deck"
+          },
+          {
+            "const": "j_scary_face",
+            "description": "Played face cards give +30 Chips when scored"
+          },
+          {
+            "const": "j_abstract",
+            "description": "+3 Mult for each Joker card"
+          },
+          {
+            "const": "j_delayed_grat",
+            "description": "Earn $2 per discard if no discards are used by end of round"
+          },
+          {
+            "const": "j_hack",
+            "description": "Retrigger each played 2, 3, 4, or 5"
+          },
+          {
+            "const": "j_pareidolia",
+            "description": "All cards are considered face cards"
+          },
+          {
+            "const": "j_gros_michel",
+            "description": "+15 Mult, 1 in 6 chance destroyed at end of round"
+          },
+          {
+            "const": "j_even_steven",
+            "description": "Played cards with even rank give +4 Mult when scored"
+          },
+          {
+            "const": "j_odd_todd",
+            "description": "Played cards with odd rank give +31 Chips when scored"
+          },
+          {
+            "const": "j_scholar",
+            "description": "Played Aces give +20 Chips and +4 Mult when scored"
+          },
+          {
+            "const": "j_business",
+            "description": "Played face cards have 1 in 2 chance to give $2 when scored"
+          },
+          {
+            "const": "j_supernova",
+            "description": "Adds times poker hand played this run to Mult"
+          },
+          {
+            "const": "j_ride_the_bus",
+            "description": "Gains +1 Mult per consecutive hand without scoring face card"
+          },
+          {
+            "const": "j_space",
+            "description": "1 in 4 chance to upgrade level of played poker hand"
+          },
+          {
+            "const": "j_egg",
+            "description": "Gains $3 of sell value at end of round"
+          },
+          {
+            "const": "j_burglar",
+            "description": "When Blind selected, gain +3 Hands and lose all discards"
+          },
+          {
+            "const": "j_blackboard",
+            "description": "X3 Mult if all cards held in hand are Spades or Clubs"
+          },
+          {
+            "const": "j_runner",
+            "description": "Gains +15 Chips if played hand contains a Straight"
+          },
+          {
+            "const": "j_ice_cream",
+            "description": "+100 Chips, -5 Chips for every hand played"
+          },
+          {
+            "const": "j_dna",
+            "description": "If first hand has only 1 card, add permanent copy to deck"
+          },
+          {
+            "const": "j_splash",
+            "description": "Every played card counts in scoring"
+          },
+          {
+            "const": "j_blue_joker",
+            "description": "+2 Chips for each remaining card in deck"
+          },
+          {
+            "const": "j_sixth_sense",
+            "description": "If first hand is a single 6, destroy it and create a Spectral card"
+          },
+          {
+            "const": "j_constellation",
+            "description": "Gains X0.1 Mult every time a Planet card is used"
+          },
+          {
+            "const": "j_hiker",
+            "description": "Every played card permanently gains +5 Chips when scored"
+          },
+          {
+            "const": "j_faceless",
+            "description": "Earn $5 if 3 or more face cards are discarded at once"
+          },
+          {
+            "const": "j_green_joker",
+            "description": "+1 Mult per hand played, -1 Mult per discard"
+          },
+          {
+            "const": "j_superposition",
+            "description": "Create a Tarot card if hand contains Ace and Straight"
+          },
+          {
+            "const": "j_todo_list",
+            "description": "Earn $4 if poker hand matches, hand changes at end of round"
+          },
+          {
+            "const": "j_cavendish",
+            "description": "X3 Mult, 1 in 1000 chance destroyed at end of round"
+          },
+          {
+            "const": "j_card_sharp",
+            "description": "X3 Mult if played poker hand already played this round"
+          },
+          {
+            "const": "j_red_card",
+            "description": "Gains +3 Mult when any Booster Pack is skipped"
+          },
+          {
+            "const": "j_madness",
+            "description": "When Small/Big Blind selected, gain X0.5 Mult, destroy random Joker"
+          },
+          {
+            "const": "j_square",
+            "description": "Gains +4 Chips if played hand has exactly 4 cards"
+          },
+          {
+            "const": "j_seance",
+            "description": "If hand is Straight Flush, create a random Spectral card"
+          },
+          {
+            "const": "j_riff_raff",
+            "description": "When Blind selected, create 2 Common Jokers"
+          },
+          {
+            "const": "j_vampire",
+            "description": "Gains X0.1 Mult per scoring Enhanced card, removes Enhancement"
+          },
+          {
+            "const": "j_shortcut",
+            "description": "Allows Straights to be made with gaps of 1 rank"
+          },
+          {
+            "const": "j_hologram",
+            "description": "Gains X0.25 Mult every time a playing card is added to deck"
+          },
+          {
+            "const": "j_vagabond",
+            "description": "Create a Tarot card if hand played with $4 or less"
+          },
+          {
+            "const": "j_baron",
+            "description": "Each King held in hand gives X1.5 Mult"
+          },
+          {
+            "const": "j_cloud_9",
+            "description": "Earn $1 for each 9 in your full deck at end of round"
+          },
+          {
+            "const": "j_rocket",
+            "description": "Earn $1 at end of round, +$2 when Boss Blind defeated"
+          },
+          {
+            "const": "j_obelisk",
+            "description": "Gains X0.2 Mult per hand without playing most played hand"
+          },
+          {
+            "const": "j_midas_mask",
+            "description": "All played face cards become Gold cards when scored"
+          },
+          {
+            "const": "j_luchador",
+            "description": "Sell this card to disable the current Boss Blind"
+          },
+          {
+            "const": "j_photograph",
+            "description": "First played face card gives X2 Mult when scored"
+          },
+          {
+            "const": "j_gift",
+            "description": "Add $1 sell value to every Joker and Consumable at end of round"
+          },
+          {
+            "const": "j_turtle_bean",
+            "description": "+5 hand size, reduces by 1 each round"
+          },
+          {
+            "const": "j_erosion",
+            "description": "+4 Mult for each card below deck's starting size"
+          },
+          {
+            "const": "j_reserved_parking",
+            "description": "Each face card held has 1 in 2 chance to give $1"
+          },
+          {
+            "const": "j_mail",
+            "description": "Earn $5 for each discarded card of specific rank"
+          },
+          {
+            "const": "j_to_the_moon",
+            "description": "Earn extra $1 interest for every $5 at end of round"
+          },
+          {
+            "const": "j_hallucination",
+            "description": "1 in 2 chance to create Tarot when Booster Pack opened"
+          },
+          {
+            "const": "j_fortune_teller",
+            "description": "+1 Mult per Tarot card used this run"
+          },
+          {
+            "const": "j_juggler",
+            "description": "+1 hand size"
+          },
+          {
+            "const": "j_drunkard",
+            "description": "+1 discard each round"
+          },
+          {
+            "const": "j_stone",
+            "description": "Gives +25 Chips for each Stone Card in your full deck"
+          },
+          {
+            "const": "j_golden",
+            "description": "Earn $4 at end of round"
+          },
+          {
+            "const": "j_lucky_cat",
+            "description": "Gains X0.25 Mult every time a Lucky card triggers"
+          },
+          {
+            "const": "j_baseball",
+            "description": "Uncommon Jokers each give X1.5 Mult"
+          },
+          {
+            "const": "j_bull",
+            "description": "+2 Chips for each $1 you have"
+          },
+          {
+            "const": "j_diet_cola",
+            "description": "Sell this card to create a free Double Tag"
+          },
+          {
+            "const": "j_trading",
+            "description": "If first discard has only 1 card, destroy it and earn $3"
+          },
+          {
+            "const": "j_flash",
+            "description": "Gains +2 Mult per reroll in the shop"
+          },
+          {
+            "const": "j_popcorn",
+            "description": "+20 Mult, -4 Mult per round played"
+          },
+          {
+            "const": "j_trousers",
+            "description": "Gains +2 Mult if played hand contains a Two Pair"
+          },
+          {
+            "const": "j_ancient",
+            "description": "Each played card with specific suit gives X1.5 Mult"
+          },
+          {
+            "const": "j_ramen",
+            "description": "X2 Mult, loses X0.01 Mult per card discarded"
+          },
+          {
+            "const": "j_walkie_talkie",
+            "description": "Each played 10 or 4 gives +10 Chips and +4 Mult"
+          },
+          {
+            "const": "j_selzer",
+            "description": "Retrigger all cards played for the next 10 hands"
+          },
+          {
+            "const": "j_castle",
+            "description": "Gains +3 Chips per discarded card of specific suit"
+          },
+          {
+            "const": "j_smiley",
+            "description": "Played face cards give +5 Mult when scored"
+          },
+          {
+            "const": "j_campfire",
+            "description": "Gains X0.25 Mult for each card sold, resets on Boss Blind"
+          },
+          {
+            "const": "j_ticket",
+            "description": "Played Gold cards earn $4 when scored"
+          },
+          {
+            "const": "j_mr_bones",
+            "description": "Prevents Death if chips >= 25% of required, self destructs"
+          },
+          {
+            "const": "j_acrobat",
+            "description": "X3 Mult on final hand of round"
+          },
+          {
+            "const": "j_sock_and_buskin",
+            "description": "Retrigger all played face cards"
+          },
+          {
+            "const": "j_swashbuckler",
+            "description": "Adds sell value of all other Jokers to Mult"
+          },
+          {
+            "const": "j_troubadour",
+            "description": "+2 hand size, -1 hand each round"
+          },
+          {
+            "const": "j_certificate",
+            "description": "When round begins, add random playing card with seal to hand"
+          },
+          {
+            "const": "j_smeared",
+            "description": "Hearts/Diamonds same suit, Spades/Clubs same suit"
+          },
+          {
+            "const": "j_throwback",
+            "description": "X0.25 Mult for each Blind skipped this run"
+          },
+          {
+            "const": "j_hanging_chad",
+            "description": "Retrigger first played card 2 additional times"
+          },
+          {
+            "const": "j_rough_gem",
+            "description": "Played Diamond cards earn $1 when scored"
+          },
+          {
+            "const": "j_bloodstone",
+            "description": "1 in 2 chance for Heart cards to give X1.5 Mult"
+          },
+          {
+            "const": "j_arrowhead",
+            "description": "Played Spade cards give +50 Chips when scored"
+          },
+          {
+            "const": "j_onyx_agate",
+            "description": "Played Club cards give +7 Mult when scored"
+          },
+          {
+            "const": "j_glass",
+            "description": "Gains X0.75 Mult for every Glass Card destroyed"
+          },
+          {
+            "const": "j_ring_master",
+            "description": "Joker, Tarot, Planet, Spectral cards may appear multiple times"
+          },
+          {
+            "const": "j_flower_pot",
+            "description": "X3 Mult if hand contains Diamond, Club, Heart, and Spade"
+          },
+          {
+            "const": "j_blueprint",
+            "description": "Copies ability of Joker to the right"
+          },
+          {
+            "const": "j_wee",
+            "description": "Gains +8 Chips when each played 2 is scored"
+          },
+          {
+            "const": "j_merry_andy",
+            "description": "+3 discards each round, -1 hand size"
+          },
+          {
+            "const": "j_oops",
+            "description": "Doubles all listed probabilities"
+          },
+          {
+            "const": "j_idol",
+            "description": "Each played card of specific rank and suit gives X2 Mult"
+          },
+          {
+            "const": "j_seeing_double",
+            "description": "X2 Mult if hand has scoring Club and card of other suit"
+          },
+          {
+            "const": "j_matador",
+            "description": "Earn $8 if hand triggers Boss Blind ability"
+          },
+          {
+            "const": "j_hit_the_road",
+            "description": "Gains X0.5 Mult for every Jack discarded this round"
+          },
+          {
+            "const": "j_duo",
+            "description": "X2 Mult if played hand contains a Pair"
+          },
+          {
+            "const": "j_trio",
+            "description": "X3 Mult if played hand contains a Three of a Kind"
+          },
+          {
+            "const": "j_family",
+            "description": "X4 Mult if played hand contains a Four of a Kind"
+          },
+          {
+            "const": "j_order",
+            "description": "X3 Mult if played hand contains a Straight"
+          },
+          {
+            "const": "j_tribe",
+            "description": "X2 Mult if played hand contains a Flush"
+          },
+          {
+            "const": "j_stuntman",
+            "description": "+250 Chips, -2 hand size"
+          },
+          {
+            "const": "j_invisible",
+            "description": "After 2 rounds, sell to Duplicate a random Joker"
+          },
+          {
+            "const": "j_brainstorm",
+            "description": "Copies the ability of leftmost Joker"
+          },
+          {
+            "const": "j_satellite",
+            "description": "Earn $1 at end of round per unique Planet card used"
+          },
+          {
+            "const": "j_shoot_the_moon",
+            "description": "Each Queen held in hand gives +13 Mult"
+          },
+          {
+            "const": "j_drivers_license",
+            "description": "X3 Mult if you have at least 16 Enhanced cards in deck"
+          },
+          {
+            "const": "j_cartomancer",
+            "description": "Create a Tarot card when Blind is selected"
+          },
+          {
+            "const": "j_astronomer",
+            "description": "All Planet cards and Celestial Packs in shop are free"
+          },
+          {
+            "const": "j_burnt",
+            "description": "Upgrade the level of first discarded poker hand each round"
+          },
+          {
+            "const": "j_bootstraps",
+            "description": "+2 Mult for every $5 you have"
+          },
+          {
+            "const": "j_caino",
+            "description": "Gains X1 Mult when a face card is destroyed"
+          },
+          {
+            "const": "j_triboulet",
+            "description": "Played Kings and Queens each give X2 Mult when scored"
+          },
+          {
+            "const": "j_yorick",
+            "description": "Gains X1 Mult every 23 cards discarded"
+          },
+          {
+            "const": "j_chicot",
+            "description": "Disables effect of every Boss Blind"
+          },
+          {
+            "const": "j_perkeo",
+            "description": "Creates Negative copy of 1 random consumable at end of shop"
+          }
         ]
       },
       "VoucherKey": {
-        "type": "string",
         "description": "Voucher card key",
-        "enum": [
-          "v_overstock_norm",
-          "v_clearance_sale",
-          "v_hone",
-          "v_reroll_surplus",
-          "v_crystal_ball",
-          "v_telescope",
-          "v_grabber",
-          "v_wasteful",
-          "v_tarot_merchant",
-          "v_planet_merchant",
-          "v_seed_money",
-          "v_blank",
-          "v_magic_trick",
-          "v_hieroglyph",
-          "v_directors_cut",
-          "v_paint_brush",
-          "v_overstock_plus",
-          "v_liquidation",
-          "v_glow_up",
-          "v_reroll_glut",
-          "v_omen_globe",
-          "v_observatory",
-          "v_nacho_tong",
-          "v_recyclomancy",
-          "v_tarot_tycoon",
-          "v_planet_tycoon",
-          "v_money_tree",
-          "v_antimatter",
-          "v_illusion",
-          "v_petroglyph",
-          "v_retcon",
-          "v_palette"
+        "oneOf": [
+          {
+            "const": "v_overstock_norm",
+            "description": "Overstock: +1 card slot in shop (to 3)"
+          },
+          {
+            "const": "v_clearance_sale",
+            "description": "Clearance Sale: All cards and packs 25% off"
+          },
+          {
+            "const": "v_hone",
+            "description": "Hone: Foil, Holo, Polychrome appear 2X more often"
+          },
+          {
+            "const": "v_reroll_surplus",
+            "description": "Reroll Surplus: Rerolls cost $2 less"
+          },
+          {
+            "const": "v_crystal_ball",
+            "description": "Crystal Ball: +1 consumable slot"
+          },
+          {
+            "const": "v_telescope",
+            "description": "Telescope: Celestial Packs contain Planet for most played hand"
+          },
+          {
+            "const": "v_grabber",
+            "description": "Grabber: Permanently gain +1 hand per round"
+          },
+          {
+            "const": "v_wasteful",
+            "description": "Wasteful: Permanently gain +1 discard each round"
+          },
+          {
+            "const": "v_tarot_merchant",
+            "description": "Tarot Merchant: Tarot cards appear 2X more in shop"
+          },
+          {
+            "const": "v_planet_merchant",
+            "description": "Planet Merchant: Planet cards appear 2X more in shop"
+          },
+          {
+            "const": "v_seed_money",
+            "description": "Seed Money: Raise interest cap to $10"
+          },
+          {
+            "const": "v_blank",
+            "description": "Blank: Does nothing?"
+          },
+          {
+            "const": "v_magic_trick",
+            "description": "Magic Trick: Playing cards can be purchased from shop"
+          },
+          {
+            "const": "v_hieroglyph",
+            "description": "Hieroglyph: -1 Ante, -1 hand each round"
+          },
+          {
+            "const": "v_directors_cut",
+            "description": "Director's Cut: Reroll Boss Blind 1 time per Ante, $10"
+          },
+          {
+            "const": "v_paint_brush",
+            "description": "Paint Brush: +1 hand size"
+          },
+          {
+            "const": "v_overstock_plus",
+            "description": "Overstock Plus: +1 card slot in shop (to 4)"
+          },
+          {
+            "const": "v_liquidation",
+            "description": "Liquidation: All cards and packs 50% off"
+          },
+          {
+            "const": "v_glow_up",
+            "description": "Glow Up: Foil, Holo, Polychrome appear 4X more often"
+          },
+          {
+            "const": "v_reroll_glut",
+            "description": "Reroll Glut: Rerolls cost additional $2 less"
+          },
+          {
+            "const": "v_omen_globe",
+            "description": "Omen Globe: Spectral cards may appear in Arcana Packs"
+          },
+          {
+            "const": "v_observatory",
+            "description": "Observatory: Planet cards in consumable area give X1.5 Mult"
+          },
+          {
+            "const": "v_nacho_tong",
+            "description": "Nacho Tong: Permanently gain additional +1 hand per round"
+          },
+          {
+            "const": "v_recyclomancy",
+            "description": "Recyclomancy: Permanently gain additional +1 discard"
+          },
+          {
+            "const": "v_tarot_tycoon",
+            "description": "Tarot Tycoon: Tarot cards appear 4X more in shop"
+          },
+          {
+            "const": "v_planet_tycoon",
+            "description": "Planet Tycoon: Planet cards appear 4X more in shop"
+          },
+          {
+            "const": "v_money_tree",
+            "description": "Money Tree: Raise interest cap to $20"
+          },
+          {
+            "const": "v_antimatter",
+            "description": "Antimatter: +1 Joker slot"
+          },
+          {
+            "const": "v_illusion",
+            "description": "Illusion: Playing cards in shop may have Enhancement/Edition/Seal"
+          },
+          {
+            "const": "v_petroglyph",
+            "description": "Petroglyph: -1 Ante again, -1 discard each round"
+          },
+          {
+            "const": "v_retcon",
+            "description": "Retcon: Reroll Boss Blind unlimited times, $10 per roll"
+          },
+          {
+            "const": "v_palette",
+            "description": "Palette: +1 hand size again"
+          }
         ]
       },
       "PlayingCardKey": {
-        "type": "string",
         "description": "Playing card key in SUIT_RANK format (H=Hearts, D=Diamonds, C=Clubs, S=Spades)",
-        "enum": [
-          "H_2",
-          "H_3",
-          "H_4",
-          "H_5",
-          "H_6",
-          "H_7",
-          "H_8",
-          "H_9",
-          "H_T",
-          "H_J",
-          "H_Q",
-          "H_K",
-          "H_A",
-          "D_2",
-          "D_3",
-          "D_4",
-          "D_5",
-          "D_6",
-          "D_7",
-          "D_8",
-          "D_9",
-          "D_T",
-          "D_J",
-          "D_Q",
-          "D_K",
-          "D_A",
-          "C_2",
-          "C_3",
-          "C_4",
-          "C_5",
-          "C_6",
-          "C_7",
-          "C_8",
-          "C_9",
-          "C_T",
-          "C_J",
-          "C_Q",
-          "C_K",
-          "C_A",
-          "S_2",
-          "S_3",
-          "S_4",
-          "S_5",
-          "S_6",
-          "S_7",
-          "S_8",
-          "S_9",
-          "S_T",
-          "S_J",
-          "S_Q",
-          "S_K",
-          "S_A"
+        "oneOf": [
+          {
+            "const": "H_2",
+            "description": "Two of Hearts"
+          },
+          {
+            "const": "H_3",
+            "description": "Three of Hearts"
+          },
+          {
+            "const": "H_4",
+            "description": "Four of Hearts"
+          },
+          {
+            "const": "H_5",
+            "description": "Five of Hearts"
+          },
+          {
+            "const": "H_6",
+            "description": "Six of Hearts"
+          },
+          {
+            "const": "H_7",
+            "description": "Seven of Hearts"
+          },
+          {
+            "const": "H_8",
+            "description": "Eight of Hearts"
+          },
+          {
+            "const": "H_9",
+            "description": "Nine of Hearts"
+          },
+          {
+            "const": "H_T",
+            "description": "Ten of Hearts"
+          },
+          {
+            "const": "H_J",
+            "description": "Jack of Hearts"
+          },
+          {
+            "const": "H_Q",
+            "description": "Queen of Hearts"
+          },
+          {
+            "const": "H_K",
+            "description": "King of Hearts"
+          },
+          {
+            "const": "H_A",
+            "description": "Ace of Hearts"
+          },
+          {
+            "const": "D_2",
+            "description": "Two of Diamonds"
+          },
+          {
+            "const": "D_3",
+            "description": "Three of Diamonds"
+          },
+          {
+            "const": "D_4",
+            "description": "Four of Diamonds"
+          },
+          {
+            "const": "D_5",
+            "description": "Five of Diamonds"
+          },
+          {
+            "const": "D_6",
+            "description": "Six of Diamonds"
+          },
+          {
+            "const": "D_7",
+            "description": "Seven of Diamonds"
+          },
+          {
+            "const": "D_8",
+            "description": "Eight of Diamonds"
+          },
+          {
+            "const": "D_9",
+            "description": "Nine of Diamonds"
+          },
+          {
+            "const": "D_T",
+            "description": "Ten of Diamonds"
+          },
+          {
+            "const": "D_J",
+            "description": "Jack of Diamonds"
+          },
+          {
+            "const": "D_Q",
+            "description": "Queen of Diamonds"
+          },
+          {
+            "const": "D_K",
+            "description": "King of Diamonds"
+          },
+          {
+            "const": "D_A",
+            "description": "Ace of Diamonds"
+          },
+          {
+            "const": "C_2",
+            "description": "Two of Clubs"
+          },
+          {
+            "const": "C_3",
+            "description": "Three of Clubs"
+          },
+          {
+            "const": "C_4",
+            "description": "Four of Clubs"
+          },
+          {
+            "const": "C_5",
+            "description": "Five of Clubs"
+          },
+          {
+            "const": "C_6",
+            "description": "Six of Clubs"
+          },
+          {
+            "const": "C_7",
+            "description": "Seven of Clubs"
+          },
+          {
+            "const": "C_8",
+            "description": "Eight of Clubs"
+          },
+          {
+            "const": "C_9",
+            "description": "Nine of Clubs"
+          },
+          {
+            "const": "C_T",
+            "description": "Ten of Clubs"
+          },
+          {
+            "const": "C_J",
+            "description": "Jack of Clubs"
+          },
+          {
+            "const": "C_Q",
+            "description": "Queen of Clubs"
+          },
+          {
+            "const": "C_K",
+            "description": "King of Clubs"
+          },
+          {
+            "const": "C_A",
+            "description": "Ace of Clubs"
+          },
+          {
+            "const": "S_2",
+            "description": "Two of Spades"
+          },
+          {
+            "const": "S_3",
+            "description": "Three of Spades"
+          },
+          {
+            "const": "S_4",
+            "description": "Four of Spades"
+          },
+          {
+            "const": "S_5",
+            "description": "Five of Spades"
+          },
+          {
+            "const": "S_6",
+            "description": "Six of Spades"
+          },
+          {
+            "const": "S_7",
+            "description": "Seven of Spades"
+          },
+          {
+            "const": "S_8",
+            "description": "Eight of Spades"
+          },
+          {
+            "const": "S_9",
+            "description": "Nine of Spades"
+          },
+          {
+            "const": "S_T",
+            "description": "Ten of Spades"
+          },
+          {
+            "const": "S_J",
+            "description": "Jack of Spades"
+          },
+          {
+            "const": "S_Q",
+            "description": "Queen of Spades"
+          },
+          {
+            "const": "S_K",
+            "description": "King of Spades"
+          },
+          {
+            "const": "S_A",
+            "description": "Ace of Spades"
+          }
         ]
       },
       "ConsumableKey": {
