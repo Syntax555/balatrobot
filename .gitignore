@@ -5,7 +5,6 @@ __pycache__
 runs/*.jsonl
 src/lua_old
 balatrobot_old.lua
-scripts
 dump
 coverage.xml
 .coverage
@@ -31,3 +30,4 @@ balatro.sh
 OPEN-RPC_SPEC.md
 docs_old
 scripts_old
+smods.wiki
