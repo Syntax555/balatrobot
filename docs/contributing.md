@@ -23,16 +23,19 @@ cd balatrobot
 Instead of copying files, create a symlink for easier development:
 
 **macOS:**
+
 ```bash
 ln -s "$(pwd)" ~/Library/Application\ Support/Balatro/Mods/balatrobot
 ```
 
 **Linux:**
+
 ```bash
 ln -s "$(pwd)" ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/
 ```
 
 **Windows (PowerShell as Admin):**
+
 ```powershell
 New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Balatro\Mods\balatrobot" -Target (Get-Location)
 ```
@@ -89,7 +92,7 @@ src/lua/
 
 ## Adding a New Endpoint
 
-1. Create `src/lua/endpoints/your_endpoint.lua`:
+- Create `src/lua/endpoints/your_endpoint.lua`:
 
 ```lua
 return {
@@ -110,9 +113,13 @@ return {
 }
 ```
 
-2. Add tests in `tests/lua/endpoints/test_your_endpoint.py`
+- Add tests in `tests/lua/endpoints/test_your_endpoint.py`
 
-3. Update `src/lua/utils/openrpc.json` with the new method
+> When writing tests for new endpoints, you can mark the `@pytest.mark.dev` decorator to only run the test you are developing with `make test PYTEST_MARKER=dev`.
+
+- Update `src/lua/utils/openrpc.json` with the new method
+
+- Update `docs/api.md` with the new method
 
 ## Pull Request Guidelines
 
