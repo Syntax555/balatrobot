@@ -110,7 +110,7 @@ If you're using a custom launcher or need to start Balatro manually, set these e
 ```bash
 export BALATROBOT_PORT=12346
 export BALATROBOT_FAST=1
-# Then launch Balatro with the lovely injector
+# Then launch Balatro with the Lovely Injector
 ```
 
 **Example (Windows PowerShell):**

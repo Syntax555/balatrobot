@@ -115,7 +115,7 @@ return {
 
 - Add tests in `tests/lua/endpoints/test_your_endpoint.py`
 
-> When writing tests for new endpoints, you can mark the `@pytest.mark.dev` decorator to only run the test you are developing with `make test PYTEST_MARKER=dev`.
+> When writing tests for new endpoints, you can use the `@pytest.mark.dev` decorator to only run the tests you are developing with `make test PYTEST_MARKER=dev`.
 
 - Update `src/lua/utils/openrpc.json` with the new method
 

@@ -964,7 +964,7 @@ Persistent cards that provide scoring bonuses, triggered abilities, or passive e
 | `j_half`             | +20 Mult if played hand contains 3 or fewer cards                                        |
 | `j_stencil`          | X1 Mult for each empty Joker slot                                                        |
 | `j_four_fingers`     | All Flushes and Straights can be made with 4 cards                                       |
-| `j_mime`             | Retrigger all card held in hand abilities                                                |
+| `j_mime`             | Retrigger all cards held in hand abilities                                               |
 | `j_credit_card`      | Go up to -$20 in debt                                                                    |
 | `j_ceremonial`       | When Blind is selected, destroy Joker to the right and add double its sell value to Mult |
 | `j_banner`           | +30 Chips for each remaining discard                                                     |
