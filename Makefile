@@ -11,6 +11,16 @@ RESET := \033[0m
 # Test variables
 PYTEST_MARKER ?=
 
+# OS detection for balatro launcher script
+UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
+ifeq ($(UNAME_S),Darwin)
+    BALATRO_SCRIPT := python scripts/balatro-macos.py
+else ifeq ($(UNAME_S),Linux)
+    BALATRO_SCRIPT := python scripts/balatro-linux.py
+else
+    BALATRO_SCRIPT := python scripts/balatro-windows.py
+endif
+
 help: ## Show this help message
 	@echo "$(BLUE)BalatroBot Development Makefile$(RESET)"
 	@echo ""
@@ -44,13 +54,13 @@ quality: lint typecheck format ## Run all code quality checks
 
 fixtures: ## Generate fixtures
 	@echo "$(YELLOW)Starting Balatro...$(RESET)"
-	python balatro.py start --fast --debug
+	$(BALATRO_SCRIPT) --fast --debug
 	@echo "$(YELLOW)Generating all fixtures...$(RESET)"
 	python tests/fixtures/generate.py
 
 test: ## Run tests head-less
 	@echo "$(YELLOW)Starting Balatro...$(RESET)"
-	python balatro.py start --fast --debug
+	$(BALATRO_SCRIPT) --fast --debug
 	@echo "$(YELLOW)Running tests...$(RESET)"
 	pytest tests/lua $(if $(PYTEST_MARKER),-m "$(PYTEST_MARKER)") -v -s
 
