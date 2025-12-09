@@ -48,7 +48,7 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     Message formats, game states, methods, schema, enums and errors
 
-    [:octicons-arrow-right-24: API](api.md)
+    [:octicons-arrow-right-24: API Reference](api.md)
 
 - :material-code-tags:{ .lg .middle } __Contributing__
 
