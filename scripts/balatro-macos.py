@@ -96,7 +96,7 @@ def start(args):
         print(f"ERROR: Balatro failed to start. Check {log_file}")
         sys.exit(1)
 
-    print(f"Balatro started successfully!")
+    print("Balatro started successfully!")
     print(f"  Port: {args.port}")
     print(f"  PID: {process.pid}")
     print(f"  Log: {log_file}")
