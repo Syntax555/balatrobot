@@ -16,6 +16,16 @@
 
 BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
+> [!WARNING]
+> **BalatroBot 1.0.0 introduces breaking changes:**
+>
+> - No longer a Python package (no PyPI releases)
+> - New JSON-RPC 2.0 protocol over HTTP/1.1
+> - Updated endpoints and API structure
+> - Removed game state logging functionality
+>
+> BalatroBot is now a Lua mod that exposes an API for programmatic game control.
+
 ## 📚 Documentation
 
 https://coder.github.io/balatrobot/
@@ -29,3 +39,35 @@ This project is a fork of the original [balatrobot](https://github.com/besteon/b
 - [@giewev](https://github.com/giewev)
 
 The original repository provided the initial API and botting framework that this project has evolved from. We appreciate their work in creating the foundation for Balatro bot development.
+
+## 🚀 Related Projects
+
+<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrobot/">
+      <img src="docs/assets/balatrobot.svg" alt="BalatroBot" width="92">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
+      <small>API for developing Balatro bots</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrollm/">
+      <img src="docs/assets/balatrollm.svg" alt="BalatroLLM" width="92">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrollm/">BalatroLLM</a><br>
+      <small>Play Balatro with LLMs</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="https://coder.github.io/balatrobench/">
+      <img src="docs/assets/balatrobench.svg" alt="BalatroBench" width="92">
+    </a>
+    <figcaption>
+      <a href="https://coder.github.io/balatrobench/">BalatroBench</a><br>
+      <small>Benchmark LLMs playing Balatro</small>
+    </figcaption>
+  </figure>
+</div>
