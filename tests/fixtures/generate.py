@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 import json
-import socket
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+import httpx
 from tqdm import tqdm
 
 FIXTURES_DIR = Path(__file__).parent
 HOST = "127.0.0.1"
 PORT = 12346
-BUFFER_SIZE = 65536
+
+# JSON-RPC 2.0 request ID counter
+_request_id: int = 0
 
 
 @dataclass
@@ -20,19 +22,27 @@ class FixtureSpec:
     setup: list[tuple[str, dict]]
 
 
-def api(sock: socket.socket, method: str, params: dict) -> dict:
-    request = {"method": method, "params": params}
-    message = json.dumps(request) + "\n"
-    sock.sendall(message.encode())
+def api(client: httpx.Client, method: str, params: dict) -> dict:
+    """Send a JSON-RPC 2.0 request to BalatroBot."""
+    global _request_id
+    _request_id += 1
 
-    response = sock.recv(BUFFER_SIZE)
-    decoded = response.decode()
-    first_newline = decoded.find("\n")
-    if first_newline != -1:
-        first_message = decoded[:first_newline]
-    else:
-        first_message = decoded.strip()
-    return json.loads(first_message)
+    payload = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params,
+        "id": _request_id,
+    }
+
+    response = client.post("/", json=payload)
+    response.raise_for_status()
+    data = response.json()
+
+    # Handle JSON-RPC 2.0 error responses
+    if "error" in data:
+        return {"error": data["error"]}
+
+    return data.get("result", {})
 
 
 def corrupt_file(path: Path) -> None:
@@ -77,21 +87,23 @@ def aggregate_fixtures(json_data: dict) -> list[FixtureSpec]:
     return fixtures
 
 
-def generate_fixture(sock: socket.socket, spec: FixtureSpec, pbar: tqdm) -> bool:
+def generate_fixture(client: httpx.Client, spec: FixtureSpec, pbar: tqdm) -> bool:
     primary_path = spec.paths[0]
     relative_path = primary_path.relative_to(FIXTURES_DIR)
 
     try:
         for method, params in spec.setup:
-            response = api(sock, method, params)
-            if "error" in response:
-                pbar.write(f"  Error: {relative_path} - {response['error']}")
+            response = api(client, method, params)
+            if isinstance(response, dict) and "error" in response:
+                error_msg = response["error"].get("message", str(response["error"]))
+                pbar.write(f"  Error: {relative_path} - {error_msg}")
                 return False
 
         primary_path.parent.mkdir(parents=True, exist_ok=True)
-        response = api(sock, "save", {"path": str(primary_path)})
-        if "error" in response:
-            pbar.write(f"  Error: {relative_path} - {response['error']}")
+        response = api(client, "save", {"path": str(primary_path)})
+        if isinstance(response, dict) and "error" in response:
+            error_msg = response["error"].get("message", str(response["error"]))
+            pbar.write(f"  Error: {relative_path} - {error_msg}")
             return False
 
         for dest_path in spec.paths[1:]:
@@ -114,10 +126,10 @@ def main() -> int:
     print(f"Loaded {len(fixtures)} unique fixture configurations\n")
 
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((HOST, PORT))
-            sock.settimeout(10)
-
+        with httpx.Client(
+            base_url=f"http://{HOST}:{PORT}",
+            timeout=httpx.Timeout(60.0, read=10.0),
+        ) as client:
             success = 0
             failed = 0
 
@@ -125,13 +137,13 @@ def main() -> int:
                 total=len(fixtures), desc="Generating fixtures", unit="fixture"
             ) as pbar:
                 for spec in fixtures:
-                    if generate_fixture(sock, spec, pbar):
+                    if generate_fixture(client, spec, pbar):
                         success += 1
                     else:
                         failed += 1
                     pbar.update(1)
 
-            api(sock, "menu", {})
+            api(client, "menu", {})
 
             corrupted_path = FIXTURES_DIR / "load" / "corrupted.jkr"
             corrupt_file(corrupted_path)
@@ -140,11 +152,11 @@ def main() -> int:
             print(f"\nSummary: {success} generated, {failed} failed")
             return 1 if failed > 0 else 0
 
-    except ConnectionRefusedError:
+    except httpx.ConnectError:
         print(f"Error: Could not connect to Balatro at {HOST}:{PORT}")
         print("Make sure Balatro is running with BalatroBot mod loaded")
         return 1
-    except socket.timeout:
+    except httpx.TimeoutException:
         print(f"Error: Connection timeout to Balatro at {HOST}:{PORT}")
         return 1
     except Exception as e:
