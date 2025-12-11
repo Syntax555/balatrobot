@@ -1,14 +1,14 @@
 {
-  "$schema": "./fixtures.schema.json",
+  "$schema": "https://gist.githubusercontent.com/S1M0N38/f0fafbc76e1b057820533582276d7fec/raw/a7d0937b79351945022ec3f254355560bb222930/fixtures.schema.json",
   "health": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -19,12 +19,12 @@
   "gamestate": {
     "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -35,12 +35,12 @@
   "save": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -51,12 +51,12 @@
   "load": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -67,68 +67,68 @@
   "set": {
     "state-SELECTING_HAND": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SHOP": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ]
   },
   "menu": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -139,12 +139,12 @@
   "start": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -155,12 +155,12 @@
   "skip": {
     "state-BLIND_SELECT--blinds.small.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -169,54 +169,54 @@
     ],
     "state-BLIND_SELECT--blinds.big.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       }
     ],
     "state-BLIND_SELECT--blinds.boss.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       }
     ]
   },
   "select": {
     "state-BLIND_SELECT--blinds.small.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -225,54 +225,54 @@
     ],
     "state-BLIND_SELECT--blinds.big.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       }
     ],
     "state-BLIND_SELECT--blinds.boss.status-SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       }
     ]
   },
   "play": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -281,42 +281,42 @@
     ],
     "state-SELECTING_HAND": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SELECTING_HAND--round.chips-200": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 200,
           "hands": 1,
           "discards": 0
@@ -325,56 +325,56 @@
     ],
     "state-SELECTING_HAND--round.hands_left-1": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "hands": 1
         }
       }
     ],
     "state-SELECTING_HAND--ante_num-8--blinds.boss.status-CURRENT--round.chips-1000000": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       },
       {
-        "endpoint": "skip",
-        "arguments": {}
+        "method": "skip",
+        "params": {}
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "ante": 8,
           "chips": 1000000
         }
@@ -384,12 +384,12 @@
   "discard": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -398,42 +398,42 @@
     ],
     "state-SELECTING_HAND": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SELECTING_HAND--round.discards_left-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "discards": 0
         }
       }
@@ -442,12 +442,12 @@
   "cash_out": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -456,30 +456,30 @@
     ],
     "state-ROUND_EVAL": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
@@ -490,12 +490,12 @@
   "next_round": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -504,50 +504,50 @@
     ],
     "state-SHOP": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ]
   },
   "reroll": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -556,78 +556,78 @@
     ],
     "state-SHOP": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ],
     "state-SHOP--money-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "money": 0
         }
       }
@@ -636,12 +636,12 @@
   "buy": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -650,460 +650,460 @@
     ],
     "state-SHOP--shop.cards[0].set-JOKER": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ],
     "state-SHOP--shop.cards[1].set-PLANET": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ],
     "state-SHOP--voucher.cards[0].set-VOUCHER": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ],
     "state-SHOP--packs.cards[0].label-Buffoon+Pack--packs.cards[1].label-Standard+Pack": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       }
     ],
     "state-SHOP--voucher.count-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "voucher": 0
         }
       }
     ],
     "state-SHOP--shop.cards[1].set-TAROT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       }
     ],
     "state-SHOP--shop.count-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       }
     ],
     "state-SHOP--jokers.count-5--shop.cards[0].set-JOKER": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       }
     ],
     "state-SHOP--consumables.count-2--shop.cards[1].set-PLANET": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 1
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 1
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       }
     ],
     "state-SHOP--money-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "money": 0
         }
       }
@@ -1112,12 +1112,12 @@
   "rearrange": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -1126,99 +1126,99 @@
     ],
     "state-SELECTING_HAND--hand.count-8": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SHOP--jokers.count-4--consumables.count-2": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       }
@@ -1227,12 +1227,12 @@
   "sell": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -1241,30 +1241,30 @@
     ],
     "state-ROUND_EVAL": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
@@ -1273,138 +1273,138 @@
     ],
     "state-SELECTING_HAND--jokers.count-0--consumables.count-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SHOP--jokers.count-1--consumables.count-1": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       }
     ],
     "state-SELECTING_HAND--jokers.count-1--consumables.count-1": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 0
         }
       },
       {
-        "endpoint": "next_round",
-        "arguments": {}
+        "method": "next_round",
+        "params": {}
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ]
   },
   "add": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -1413,60 +1413,60 @@
     ],
     "state-SELECTING_HAND--jokers.count-0--consumables.count-0--hand.count-8": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SHOP--jokers.count-0--consumables.count-0--vouchers.count-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "voucher": 0
         }
       }
@@ -1475,12 +1475,12 @@
   "use": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
@@ -1489,31 +1489,31 @@
     ],
     "state-ROUND_EVAL": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
@@ -1522,339 +1522,339 @@
     ],
     "state-SELECTING_HAND--money-12--consumables.cards[0]-key-c_hermit": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "money": 12
         }
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_hermit"
         }
       }
     ],
     "state-SELECTING_HAND--consumables.cards[0]-key-c_familiar": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_familiar"
         }
       }
     ],
     "state-SHOP--consumables.cards[0]-key-c_familiar": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_familiar"
         }
       }
     ],
     "state-SELECTING_HAND--consumables.cards[0]-key-c_temperance--jokers.count-0": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_temperance"
         }
       }
     ],
     "state-SHOP--money-12--consumables.cards[0]-key-c_hermit": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "money": 12
         }
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_hermit"
         }
       }
     ],
     "state-SELECTING_HAND--consumables.cards[0].key-c_pluto--consumables.cards[1].key-c_magician": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 1
         }
       },
       {
-        "endpoint": "reroll",
-        "arguments": {}
+        "method": "reroll",
+        "params": {}
       },
       {
-        "endpoint": "buy",
-        "arguments": {
+        "method": "buy",
+        "params": {
           "card": 1
         }
       },
       {
-        "endpoint": "next_round",
-        "arguments": {}
+        "method": "next_round",
+        "params": {}
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       }
     ],
     "state-SELECTING_HAND--consumables.cards[0].key-c_death": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_death"
         }
       }
     ],
     "state-SHOP--consumables.cards[0].key-c_magician": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_magician"
         }
       }
     ],
     "state-SHOP--consumables.cards[0].key-c_strength": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
         }
       },
       {
-        "endpoint": "select",
-        "arguments": {}
+        "method": "select",
+        "params": {}
       },
       {
-        "endpoint": "set",
-        "arguments": {
+        "method": "set",
+        "params": {
           "chips": 1000,
           "money": 1000
         }
       },
       {
-        "endpoint": "play",
-        "arguments": {
+        "method": "play",
+        "params": {
           "cards": [
             0
           ]
         }
       },
       {
-        "endpoint": "cash_out",
-        "arguments": {}
+        "method": "cash_out",
+        "params": {}
       },
       {
-        "endpoint": "add",
-        "arguments": {
+        "method": "add",
+        "params": {
           "key": "c_strength"
         }
       }
@@ -1863,12 +1863,12 @@
   "screenshot": {
     "state-BLIND_SELECT": [
       {
-        "endpoint": "menu",
-        "arguments": {}
+        "method": "menu",
+        "params": {}
       },
       {
-        "endpoint": "start",
-        "arguments": {
+        "method": "start",
+        "params": {
           "deck": "RED",
           "stake": "WHITE",
           "seed": "TEST123"
