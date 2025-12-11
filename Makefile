@@ -47,7 +47,7 @@ format: ## Run ruff and mdformat formatters
 
 typecheck: ## Run type checker
 	@echo "$(YELLOW)Running type checker...$(RESET)"
-	basedpyright src/balatrobot
+	basedpyright tests/
 
 quality: lint typecheck format ## Run all code quality checks
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
