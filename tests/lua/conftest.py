@@ -182,15 +182,15 @@ def load_fixture(
 
         # Execute each setup step
         for step in setup_steps:
-            step_endpoint = step["endpoint"]
-            step_arguments = step.get("arguments", {})
-            response = api(client, step_endpoint, step_arguments)
+            step_method = step["method"]
+            step_params = step.get("params", {})
+            response = api(client, step_method, step_params)
 
             # Check for errors during generation
             if "error" in response:
                 error_msg = response["error"]["message"]
                 raise AssertionError(
-                    f"Fixture generation failed at step {step_endpoint}: {error_msg}"
+                    f"Fixture generation failed at step {step_method}: {error_msg}"
                 )
 
         # Save the fixture

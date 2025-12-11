@@ -20,8 +20,8 @@ class FixtureSpec:
     setup: list[tuple[str, dict]]
 
 
-def api(sock: socket.socket, name: str, arguments: dict) -> dict:
-    request = {"name": name, "arguments": arguments}
+def api(sock: socket.socket, method: str, params: dict) -> dict:
+    request = {"method": method, "params": params}
     message = json.dumps(request) + "\n"
     sock.sendall(message.encode())
 
@@ -46,7 +46,7 @@ def load_fixtures_json() -> dict:
 
 
 def steps_to_setup(steps: list[dict]) -> list[tuple[str, dict]]:
-    return [(step["endpoint"], step["arguments"]) for step in steps]
+    return [(step["method"], step["params"]) for step in steps]
 
 
 def steps_to_key(steps: list[dict]) -> str:
@@ -82,8 +82,8 @@ def generate_fixture(sock: socket.socket, spec: FixtureSpec, pbar: tqdm) -> bool
     relative_path = primary_path.relative_to(FIXTURES_DIR)
 
     try:
-        for endpoint, arguments in spec.setup:
-            response = api(sock, endpoint, arguments)
+        for method, params in spec.setup:
+            response = api(sock, method, params)
             if "error" in response:
                 pbar.write(f"  Error: {relative_path} - {response['error']}")
                 return False
