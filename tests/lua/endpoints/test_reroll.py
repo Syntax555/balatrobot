@@ -1,6 +1,7 @@
 """Tests for src/lua/endpoints/reroll.lua"""
 
 import httpx
+import pytest
 
 from tests.lua.conftest import (
     api,
@@ -31,6 +32,24 @@ class TestRerollEndpoint:
             "NOT_ALLOWED",
             "Not enough dollars to reroll",
         )
+
+    def test_reroll_with_credit_card_joker(self, client: httpx.Client) -> None:
+        """Test rerolling when player has Credit Card joker (can go negative)."""
+        # Get to shop state with $0
+        gamestate = load_fixture(client, "reroll", "state-SHOP--money-0")
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["money"] == 0
+
+        # Add Credit Card joker (gives +$20 credit)
+        response = api(client, "add", {"key": "j_credit_card"})
+        gamestate = assert_gamestate_response(response)
+        assert any(j["key"] == "j_credit_card" for j in gamestate["jokers"]["cards"])
+
+        # Should be able to reroll (costs $5 by default) even with $0
+        response = api(client, "reroll", {})
+        gamestate = assert_gamestate_response(response)
+        # Money should be negative now
+        assert gamestate["money"] < 0
 
 
 class TestRerollEndpointStateRequirements:

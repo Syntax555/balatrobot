@@ -68,7 +68,7 @@ class TestBuyEndpoint:
         assert_error_response(
             api(client, "buy", {"card": 0}),
             "BAD_REQUEST",
-            "Card is not affordable. Cost: 5, Current money: 0",
+            "Card is not affordable. Cost: 5, Available money: 0",
         )
 
     def test_buy_joker_slots_full(self, client: httpx.Client) -> None:
@@ -170,6 +170,27 @@ class TestBuyEndpoint:
         gamestate = assert_gamestate_response(response)
         assert gamestate["pack"] is not None
         assert len(gamestate["pack"]["cards"]) > 0
+
+    def test_buy_with_credit_card_joker(self, client: httpx.Client) -> None:
+        """Test buying when player has Credit Card joker (can go negative)."""
+        # Get to shop state with $0
+        gamestate = load_fixture(client, "buy", "state-SHOP--money-0")
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["money"] == 0
+
+        # Add Credit Card joker (gives +$20 credit, can go to -$20)
+        response = api(client, "add", {"key": "j_credit_card"})
+        gamestate = assert_gamestate_response(response)
+        assert any(j["key"] == "j_credit_card" for j in gamestate["jokers"]["cards"])
+
+        # Should be able to buy a card costing <= $20 even with $0 (due to credit)
+        card_cost = gamestate["shop"]["cards"][0]["cost"]["buy"]
+        assert card_cost <= 20  # Credit Card gives $20 credit
+
+        response = api(client, "buy", {"card": 0})
+        gamestate = assert_gamestate_response(response)
+        # Money should be negative now
+        assert gamestate["money"] < 0
 
 
 class TestBuyEndpointValidation:
