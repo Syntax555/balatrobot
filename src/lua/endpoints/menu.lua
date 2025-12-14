@@ -25,7 +25,9 @@ return {
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init menu()", "BB.ENDPOINTS")
-    G.FUNCS.go_to_menu({})
+    if G.STATE ~= G.STATES.MENU then
+      G.FUNCS.go_to_menu({})
+    end
 
     -- Wait for menu state using Balatro's Event Manager
     G.E_MANAGER:add_event(Event({
