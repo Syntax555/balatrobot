@@ -178,9 +178,6 @@ return {
     -- Execution
     sendDebugMessage("Executing use() for consumable: " .. consumable_card.ability.name, "BB.ENDPOINTS")
 
-    -- Track initial count for completion detection
-    local initial_consumable_count = G.consumeables.config.card_count
-
     -- Create mock UI element for game function
     local mock_element = {
       config = {
@@ -196,19 +193,16 @@ return {
       trigger = "condition",
       blocking = false,
       func = function()
-        -- Condition 1: Card was removed
-        local card_removed = (G.consumeables.config.card_count < initial_consumable_count)
+        -- Condition 1: State restored
+        local state_restored = G.STATE == G.STATES.SELECTING_HAND or G.STATE == G.STATES.SHOP
 
-        -- Condition 2: State restored (not PLAY_TAROT anymore)
-        local state_restored = (G.STATE ~= G.STATES.PLAY_TAROT)
-
-        -- Condition 3: Controller unlocked
+        -- Condition 2: Controller unlocked
         local controller_unlocked = not G.CONTROLLER.locks.use
 
-        -- Condition 4: no stop use
+        -- Condition 3: no stop use
         local no_stop_use = not (G.GAME.STOP_USE and G.GAME.STOP_USE > 0)
 
-        if card_removed and state_restored and controller_unlocked and no_stop_use then
+        if state_restored and controller_unlocked and no_stop_use then
           sendDebugMessage("Return use()", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
           return true
