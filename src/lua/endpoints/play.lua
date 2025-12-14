@@ -108,20 +108,37 @@ return {
         --   return true
         -- end
 
-        if G.STATE == G.STATES.ROUND_EVAL and G.round_eval then
-          -- Go to the cash out stage
-          for _, b in ipairs(G.I.UIBOX) do
-            if b:get_UIE_by_ID("cash_out_button") then
-              local state_data = BB_GAMESTATE.get_gamestate()
-              sendDebugMessage("Return play() - cash out", "BB.ENDPOINTS")
-              send_response(state_data)
-              return true
-            end
+        if G.STATE == G.STATES.ROUND_EVAL then
+          -- Early exit if basic conditions not met
+          if not G.round_eval or not G.STATE_COMPLETE or G.CONTROLLER.locked then
+            return false
           end
+
           -- Game is won
           if G.GAME.won then
             sendDebugMessage("Return play() - won", "BB.ENDPOINTS")
             local state_data = BB_GAMESTATE.get_gamestate()
+            send_response(state_data)
+            return true
+          end
+
+          -- Wait for first scoring row (blind1) to be added to the UI
+          -- This ensures the main scoring events have started processing
+          local has_blind1 = G.round_eval:get_UIE_by_ID("dollar_blind1") ~= nil
+
+          -- Wait for cash_out_button to ensure the last scoring row (bottom) has been processed
+          local has_cash_out_button = false
+          for _, b in ipairs(G.I.UIBOX) do
+            if b:get_UIE_by_ID("cash_out_button") then
+              has_cash_out_button = true
+              break
+            end
+          end
+
+          -- Both first and last scoring rows must be present
+          if has_blind1 and has_cash_out_button then
+            local state_data = BB_GAMESTATE.get_gamestate()
+            sendDebugMessage("Return play() - cash out", "BB.ENDPOINTS")
             send_response(state_data)
             return true
           end
