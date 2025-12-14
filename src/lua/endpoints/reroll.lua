@@ -24,12 +24,13 @@ return {
   ---@param _ Request.Endpoint.Reroll.Params
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
-    -- Check affordability
+    -- Check affordability (accounting for Credit Card joker via bankrupt_at)
     local reroll_cost = G.GAME.current_round and G.GAME.current_round.reroll_cost or 0
+    local available_money = G.GAME.dollars - G.GAME.bankrupt_at
 
-    if G.GAME.dollars < reroll_cost then
+    if reroll_cost > 0 and available_money < reroll_cost then
       send_response({
-        message = "Not enough dollars to reroll. Current: " .. G.GAME.dollars .. ", Required: " .. reroll_cost,
+        message = "Not enough dollars to reroll. Available: " .. available_money .. ", Required: " .. reroll_cost,
         name = BB_ERROR_NAMES.NOT_ALLOWED,
       })
       return

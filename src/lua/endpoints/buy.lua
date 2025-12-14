@@ -116,10 +116,11 @@ return {
     -- Get the card
     local card = area.cards[pos]
 
-    -- Check if the card can be afforded
-    if card.cost.buy > G.GAME.dollars then
+    -- Check if the card can be afforded (accounting for Credit Card joker via bankrupt_at)
+    local available_money = G.GAME.dollars - G.GAME.bankrupt_at
+    if card.cost.buy > 0 and card.cost.buy > available_money then
       send_response({
-        message = "Card is not affordable. Cost: " .. card.cost.buy .. ", Current money: " .. gamestate.money,
+        message = "Card is not affordable. Cost: " .. card.cost.buy .. ", Available money: " .. available_money,
         name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
