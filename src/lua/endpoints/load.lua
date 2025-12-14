@@ -88,7 +88,22 @@ return {
     end
 
     G.SAVED_GAME = STR_UNPACK(G.SAVED_GAME)
+
+    -- Temporarily suppress "Card area not instantiated" warnings during load
+    -- These are expected when loading a save from shop state (shop CardAreas
+    -- are created later when the shop UI renders, and the game handles this)
+    local original_print = print
+    print = function(msg)
+      if type(msg) == "string" and msg:find("ERROR LOADING GAME: Card area") then
+        return -- suppress expected warning
+      end
+      original_print(msg)
+    end
+
     G:start_run({ savetext = G.SAVED_GAME })
+
+    -- Restore original print
+    print = original_print
 
     -- Clean up
     love.filesystem.remove(temp_filename)
