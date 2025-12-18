@@ -37,6 +37,7 @@ return {
   ---@param args Request.Endpoint.Load.Params
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
+    sendDebugMessage("Init load()", "BB.ENDPOINTS")
     local path = args.path
 
     -- Check if file exists
@@ -61,7 +62,7 @@ return {
     end
 
     -- Write to temp location for get_compressed to read
-    local temp_filename = "balatrobot_temp_load.jkr"
+    local temp_filename = "balatrobot_temp_load_" .. BB_SETTINGS.port .. ".jkr"
     local save_dir = love.filesystem.getSaveDirectory()
     local temp_path = save_dir .. "/" .. temp_filename
 
@@ -154,6 +155,7 @@ return {
         end
 
         if done then
+          sendDebugMessage("Return load() - loaded from " .. path, "BB.ENDPOINTS")
           send_response({
             success = true,
             path = path,
