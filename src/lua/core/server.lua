@@ -111,6 +111,7 @@ function BB_SERVER.init()
   local listen_success, listen_err = server:listen(1)
   if not listen_success then
     sendErrorMessage("Failed to listen: " .. tostring(listen_err), "BB.SERVER")
+    server:close()
     return false
   end
 
