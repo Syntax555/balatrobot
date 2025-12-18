@@ -119,16 +119,16 @@ BB_DEBUG = {
 BB_DEBUG.setup = function()
   local success, dpAPI = pcall(require, "debugplus.api")
   if not success or not dpAPI then
-    sendDebugMessage("DebugPlus API not found", "BALATROBOT")
+    sendDebugMessage("DebugPlus API not found", "BB.DEBUGGER")
     return
   end
   if not dpAPI.isVersionCompatible(1) then
-    sendDebugMessage("DebugPlus API version is not compatible", "BALATROBOT")
+    sendDebugMessage("DebugPlus API version is not compatible", "BB.DEBUGGER")
     return
   end
   local dp = dpAPI.registerID("BalatroBot")
   if not dp then
-    sendDebugMessage("Failed to register with DebugPlus", "BALATROBOT")
+    sendDebugMessage("Failed to register with DebugPlus", "BB.DEBUGGER")
     return
   end
 
