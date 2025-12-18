@@ -179,9 +179,12 @@
 -- ==========================================================================
 -- Endpoint Response Types
 --
--- The execute function terminates with the excecution of the callback function
--- `send_response`. The `send_respnose` function takes as input a
--- Response.Endpoint (which is not JSON-RPC 2.0 compliant).
+-- The execute function terminates by calling the `send_response` callback.
+-- Endpoints send simplified Response.Endpoint (not JSON-RPC 2.0 compliant).
+-- The server automatically converts these to JSON-RPC 2.0 Response.Server:
+--   - Success: Response.Endpoint → Response.Server.Success with result field
+--   - Error: { message, name } → Response.Server.Error with error.code/message/data
+--   - Auto-converts name (e.g., "BAD_REQUEST") to numeric code (e.g., -32001)
 -- ==========================================================================
 
 ---@class Response.Endpoint.Path
@@ -201,7 +204,7 @@
 
 ---@class Response.Endpoint.Error
 ---@field message string Human-readable error message
----@field name ErrorName Error name (BAD_REQUEST, INVALID_STATE, etc.)
+---@field name ErrorName Error name (e.g., "BAD_REQUEST") - auto-converted to numeric code by server
 
 ---@alias Response.Endpoint
 ---| Response.Endpoint.Health
@@ -213,8 +216,10 @@
 -- ==========================================================================
 -- Server Response Types
 --
--- The `send_response` transforms the Response.Endpoint into a JSON-RPC 2.0
--- compliant response returning to the client a Response.Server
+-- The server's `send_response` transforms Response.Endpoint into JSON-RPC 2.0
+-- compliant Response.Server returned to the client. For errors, it converts:
+--   Response.Endpoint.Error.name → Response.Server.Error.error.code (numeric)
+--   Response.Endpoint.Error.name → Response.Server.Error.error.data.name (string)
 -- ==========================================================================
 
 ---@class Response.Server.Success
