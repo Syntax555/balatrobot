@@ -45,11 +45,6 @@ return {
   execute = function(args, send_response)
     sendDebugMessage("Init buy()", "BB.ENDPOINTS")
     local gamestate = BB_GAMESTATE.get_gamestate()
-    sendDebugMessage("Gamestate is : " .. gamestate.state, "BB.ENDPOINTS")
-    sendDebugMessage(
-      "Gamestate native is : " .. (G.consumeables and G.consumeables.config and G.consumeables.config.card_count or 0),
-      "BB.ENDPOINTS"
-    )
     local area
     local pos
     local set = 0
@@ -237,7 +232,7 @@ return {
         end
 
         if done then
-          sendDebugMessage("Buy completed successfully", "BB.ENDPOINTS")
+          sendDebugMessage("Return buy()", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
           return true
         end

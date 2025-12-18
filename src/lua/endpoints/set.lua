@@ -105,7 +105,6 @@ return {
         return
       end
       G.GAME.dollars = args.money
-      sendDebugMessage("Set money to " .. G.GAME.dollars, "BB.ENDPOINTS")
     end
 
     -- Set chips
@@ -118,7 +117,6 @@ return {
         return
       end
       G.GAME.chips = args.chips
-      sendDebugMessage("Set chips to " .. G.GAME.chips, "BB.ENDPOINTS")
     end
 
     -- Set ante
@@ -131,7 +129,6 @@ return {
         return
       end
       G.GAME.round_resets.ante = args.ante
-      sendDebugMessage("Set ante to " .. G.GAME.round_resets.ante, "BB.ENDPOINTS")
     end
 
     -- Set round
@@ -144,7 +141,6 @@ return {
         return
       end
       G.GAME.round = args.round
-      sendDebugMessage("Set round to " .. G.GAME.round, "BB.ENDPOINTS")
     end
 
     -- Set hands
@@ -157,7 +153,6 @@ return {
         return
       end
       G.GAME.current_round.hands_left = args.hands
-      sendDebugMessage("Set hands to " .. G.GAME.current_round.hands_left, "BB.ENDPOINTS")
     end
 
     -- Set discards
@@ -170,7 +165,6 @@ return {
         return
       end
       G.GAME.current_round.discards_left = args.discards
-      sendDebugMessage("Set discards to " .. G.GAME.current_round.discards_left, "BB.ENDPOINTS")
     end
 
     if args.shop then

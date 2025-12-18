@@ -46,6 +46,7 @@ return {
   ---@param args Request.Endpoint.Rearrange.Params
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
+    sendDebugMessage("Init rearrange()", "BB.ENDPOINTS")
     -- Validate exactly one parameter is provided
     local param_count = (args.hand and 1 or 0) + (args.jokers and 1 or 0) + (args.consumables and 1 or 0)
     if param_count == 0 then

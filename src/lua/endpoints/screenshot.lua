@@ -37,6 +37,7 @@ return {
   ---@param args Request.Endpoint.Screenshot.Params
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(args, send_response)
+    sendDebugMessage("Init screenshot()", "BB.ENDPOINTS")
     local path = args.path
 
     love.graphics.captureScreenshot(function(imagedata)
@@ -64,6 +65,7 @@ return {
         return
       end
 
+      sendDebugMessage("Return screenshot() - saved to " .. path, "BB.ENDPOINTS")
       send_response({
         success = true,
         path = path,
