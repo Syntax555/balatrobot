@@ -52,7 +52,7 @@ jobs:
       - name: Run pyright
         run: |
           source .venv/bin/activate
-          basedpyright
+          ty check
   stylua:
     name: StyLua
     runs-on: ubuntu-latest

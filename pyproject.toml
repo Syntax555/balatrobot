@@ -49,4 +49,5 @@ dev = [
   "pytest-xdist[psutil]>=3.8.0",
   "ruff>=0.12.2",
   "tqdm>=4.67.0",
+  "ty>=0.0.2",
 ]

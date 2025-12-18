@@ -4,18 +4,17 @@
       "Bash(pytest:*)",
       "Bash(ruff check:*)",
       "Bash(ruff format:*)",
-      "Bash(basedpyright:*)"
+      "Bash(ty check:*)"
     ],
     "deny": [
       "Edit(CHANGELOG.md)",
-      "MultiEdit(CHANGELOG.md)",
       "Write(CHANGELOG.md)"
     ]
   },
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
