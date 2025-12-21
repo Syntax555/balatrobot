@@ -57,5 +57,5 @@ async def start_instance(
     session_dir.mkdir(parents=True, exist_ok=True)
 
     launcher = get_launcher()
-    process, _log_path = await launcher.start(config, session_dir)
+    process = await launcher.start(config, session_dir)
     return process

@@ -20,4 +20,3 @@ def detect_lovely_path() -> Path | None:
         if candidate.is_file():
             return candidate
     return None
-
