@@ -1,8 +1,10 @@
 """Tests for src/lua/endpoints/screenshot.lua"""
 
+import os
 from pathlib import Path
 
 import httpx
+import pytest
 
 from tests.lua.conftest import (
     api,
@@ -12,7 +14,10 @@ from tests.lua.conftest import (
     load_fixture,
 )
 
+HEADLESS = os.getenv("BALATROBOT_HEADLESS") == "1"
 
+
+@pytest.mark.skipif(HEADLESS, reason="Screenshot endpoint does not work in headless mode")
 class TestScreenshotEndpoint:
     """Test basic screenshot endpoint functionality."""
 
@@ -57,7 +62,7 @@ class TestScreenshotValidation:
 
     def test_invalid_path_type(self, client: httpx.Client) -> None:
         """Test that screenshot fails when path is not a string."""
-        response = api(client, "save", {"path": 123})
+        response = api(client, "screenshot", {"path": 123})
         assert_error_response(
             response,
             "BAD_REQUEST",
