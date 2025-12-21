@@ -4,7 +4,6 @@ import asyncio
 import os
 import random
 import time
-from dataclasses import replace
 
 import pytest
 
@@ -49,14 +48,7 @@ def pytest_configure(config):
 
     async def start_all():
         tasks = []
-        for i, port in enumerate(ports):
-            instance_config = replace(
-                base_config,
-                port=port,
-                identity=f"gw{i}" if parallel > 1 else None,
-                fast=True,
-                debug=True,
-            )
+        for port in ports:
             tasks.append(manager.start(port))
 
         await asyncio.gather(*tasks)
