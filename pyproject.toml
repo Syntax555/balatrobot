@@ -11,7 +11,7 @@ authors = [
   { name = "phughesion" },
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = ["httpx>=0.28.1"]
 classifiers = [
   "Framework :: Pytest",
   "Intended Audience :: Developers",
@@ -19,11 +19,18 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 
+[project.scripts]
+balatrobot = "balatrobot.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/coder/balatrobot"
 Issues = "https://github.com/coder/balatrobot/issues"
 Repository = "https://github.com/coder/balatrobot"
 Changelog = "https://github.com/coder/balatrobot/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 lint.extend-select = ["I"]
@@ -33,17 +40,22 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
-markers = ["dev: marks tests that are currently developed"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+addopts = "--dist loadfile"
+markers = [
+    "dev: marks tests that are currently developed",
+    "integration: marks integration tests that actually start Balatro (deselect with '-m \"not integration\"')"
+]
 
 [dependency-groups]
 dev = [
-  "basedpyright>=1.29.5",
-  "httpx>=0.28.1",
   "mdformat-mkdocs>=4.3.0",
   "mdformat-simple-breaks>=0.0.1",
   "mkdocs-llmstxt>=0.3.0",
   "mkdocs-material>=9.6.15",
   "pytest>=8.4.1",
+  "pytest-asyncio>=0.23.0",
   "pytest-cov>=6.2.1",
   "pytest-rerunfailures>=16.1",
   "pytest-xdist[psutil]>=3.8.0",
