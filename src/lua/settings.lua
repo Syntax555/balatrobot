@@ -136,6 +136,30 @@ local function configure_headless()
       return false
     end
 
+    love.window.setPosition = function()
+      -- Do nothing
+    end
+
+    love.window.minimize = function()
+      -- Do nothing
+    end
+
+    love.window.maximize = function()
+      -- Do nothing
+    end
+
+    love.window.restore = function()
+      -- Do nothing
+    end
+
+    love.window.requestAttention = function()
+      -- Do nothing
+    end
+
+    love.window.setFullscreen = function()
+      return false
+    end
+
     love.graphics.isCreated = function()
       return false
     end
