@@ -40,13 +40,9 @@ def get_launcher(platform: str | None = None) -> "BaseLauncher":
 
             return MacOSLauncher()
         case "linux":
-            from balatrobot.platforms.linux import LinuxLauncher
-
-            return LinuxLauncher()
+            raise NotImplementedError("Linux launcher not yet implemented")
         case "windows":
-            from balatrobot.platforms.windows import WindowsLauncher
-
-            return WindowsLauncher()
+            raise NotImplementedError("Windows launcher not yet implemented")
         case "native":
             from balatrobot.platforms.native import NativeLauncher
 
