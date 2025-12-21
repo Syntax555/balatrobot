@@ -1,0 +1,121 @@
+"""Native LOVE launcher for Linux environments."""
+
+import os
+import platform
+from pathlib import Path
+
+from balatrobot.config import Config
+from balatrobot.paths import (
+    detect_love_path,
+    detect_lovely_path,
+    detect_mods_path,
+    detect_settings_path,
+)
+from balatrobot.platforms.base import BaseLauncher
+
+
+class NativeLauncher(BaseLauncher):
+    """Native LOVE launcher using LD_PRELOAD injection (Linux only).
+
+    This launcher is designed for:
+    - Docker containers with LOVE installed
+    - Linux development environments with native LOVE
+
+    Requirements:
+    - Linux operating system
+    - `love` executable in PATH or specified via --love-path
+    - liblovely.so specified via --lovely-path
+    - Game directory specified via --balatro-path
+    """
+
+    def validate_paths(self, config: Config) -> None:
+        """Validate and auto-detect paths for native Linux launcher."""
+        if platform.system().lower() != "linux":
+            raise RuntimeError("Native launcher is only supported on Linux")
+
+        errors: list[str] = []
+
+        # balatro_path (required, no auto-detect)
+        if config.balatro_path is None:
+            errors.append(
+                "Game directory is required.\n"
+                "  Set via: --balatro-path or BALATROBOT_BALATRO_PATH"
+            )
+        else:
+            balatro = Path(config.balatro_path)
+            if not balatro.is_dir():
+                errors.append(f"Game directory not found: {balatro}")
+
+        # lovely_path (required, auto-detect)
+        if config.lovely_path is None:
+            detected = detect_lovely_path()
+            if detected:
+                config.lovely_path = str(detected)
+            else:
+                errors.append(
+                    "Lovely library is required.\n"
+                    "  Set via: --lovely-path or BALATROBOT_LOVELY_PATH\n"
+                    "  Expected: /usr/local/lib/liblovely.so"
+                )
+        if config.lovely_path:
+            lovely = Path(config.lovely_path)
+            if not lovely.is_file():
+                errors.append(f"Lovely library not found: {lovely}")
+            elif lovely.suffix != ".so":
+                errors.append(f"Lovely library has wrong extension: {lovely}")
+
+        # love_path (required, auto-detect via PATH)
+        if config.love_path is None:
+            detected = detect_love_path()
+            if detected:
+                config.love_path = str(detected)
+            else:
+                errors.append(
+                    "LOVE executable is required.\n"
+                    "  Set via: --love-path or BALATROBOT_LOVE_PATH\n"
+                    "  Or install love and ensure it's in PATH"
+                )
+        if config.love_path:
+            love = Path(config.love_path)
+            if not love.is_file():
+                errors.append(f"LOVE executable not found: {love}")
+
+        # mods_path (optional, auto-detect)
+        if config.mods_path is None:
+            detected = detect_mods_path()
+            if detected:
+                config.mods_path = str(detected)
+        if config.mods_path:
+            mods = Path(config.mods_path)
+            if not mods.is_dir():
+                errors.append(f"Mods directory not found: {mods}")
+
+        # settings_path (optional, auto-detect)
+        if config.settings_path is None:
+            detected = detect_settings_path()
+            if detected:
+                config.settings_path = str(detected)
+        if config.settings_path:
+            settings = Path(config.settings_path)
+            if not settings.is_dir():
+                errors.append(f"Settings directory not found: {settings}")
+
+        if errors:
+            raise RuntimeError("Path validation failed:\n\n" + "\n\n".join(errors))
+
+    def build_env(self, config: Config) -> dict[str, str]:
+        """Build environment with LD_PRELOAD."""
+        assert config.lovely_path is not None
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = config.lovely_path
+        env.update(config.to_env())
+        return env
+
+    def build_cmd(self, config: Config) -> list[str]:
+        """Build native LOVE launch command."""
+        assert config.love_path is not None
+        assert config.balatro_path is not None
+        cmd = [config.love_path, config.balatro_path]
+        if config.identity:
+            cmd.extend(["-i", config.identity])
+        return cmd
