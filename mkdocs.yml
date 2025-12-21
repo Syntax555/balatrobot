@@ -39,6 +39,7 @@ plugins:
       sections:
         Documentation:
           - installation.md
+          - cli.md
           - api.md
           - contributing.md
       full_output: llms-full.txt
@@ -46,6 +47,7 @@ plugins:
 nav:
   - BalatroBot: index.md
   - Installation: installation.md
+  - CLI Reference: cli.md
   - API Reference: api.md
   - Contributing: contributing.md
 markdown_extensions:
