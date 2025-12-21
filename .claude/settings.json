@@ -18,15 +18,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "stylua src/lua"
+            "command": "stylua .",
+            "timeout": 5
           },
           {
             "type": "command",
-            "command": "ruff check --select I --fix . && ruff format -s ."
+            "command": "ruff format",
+            "timeout": 5
           },
           {
             "type": "command",
-            "command": "mdformat ."
+            "command": "ruff check --select I --fix",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "ty check",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "mdformat .",
+            "timeout": 5
           }
         ]
       }
