@@ -129,6 +129,11 @@ end
 
 ---@param request Request.Server
 function BB_DISPATCHER.dispatch(request)
+  -- Trigger render for this frame if render_on_api mode is enabled
+  if BB_RENDER ~= nil then
+    BB_RENDER = true
+  end
+
   -- TIER 1: Protocol Validation (jsonrpc version checked in server.receive())
   if not request.method or type(request.method) ~= "string" then
     BB_DISPATCHER.send_error("Request missing 'method' field", BB_ERROR_NAMES.BAD_REQUEST)
