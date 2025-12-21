@@ -17,8 +17,6 @@ balatro_oldish.sh
 smods
 
 # old python balatrobot implementation
-tests/balatrobot
-src/balatrobot
 REFACTOR.md
 OLD_ENDPOINTS.md
 GAMESTATE.md
