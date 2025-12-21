@@ -30,8 +30,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--balatro-path", help="Path to Balatro executable")
     parser.add_argument("--lovely-path", help="Path to lovely library")
     parser.add_argument("--love-path", help="Path to LOVE executable")
-    parser.add_argument("--mods-path", help="Path to Mods directory")
-    parser.add_argument("--settings-path", help="Path to game settings directory")
     parser.add_argument("--platform", choices=["darwin", "linux", "windows", "native"])
     # fmt: on
 

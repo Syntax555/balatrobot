@@ -21,14 +21,3 @@ def detect_lovely_path() -> Path | None:
             return candidate
     return None
 
-
-def detect_mods_path() -> Path | None:
-    """Detect Mods directory in standard location."""
-    mods = Path.home() / ".config/love/Mods"
-    return mods if mods.is_dir() else None
-
-
-def detect_settings_path() -> Path | None:
-    """Detect game settings directory in standard location."""
-    settings = Path.home() / ".local/share/love/balatro"
-    return settings if settings.is_dir() else None

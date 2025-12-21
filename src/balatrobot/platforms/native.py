@@ -5,12 +5,7 @@ import platform
 from pathlib import Path
 
 from balatrobot.config import Config
-from balatrobot.paths import (
-    detect_love_path,
-    detect_lovely_path,
-    detect_mods_path,
-    detect_settings_path,
-)
+from balatrobot.paths import detect_love_path, detect_lovely_path
 from balatrobot.platforms.base import BaseLauncher
 
 
@@ -79,26 +74,6 @@ class NativeLauncher(BaseLauncher):
             love = Path(config.love_path)
             if not love.is_file():
                 errors.append(f"LOVE executable not found: {love}")
-
-        # mods_path (optional, auto-detect)
-        if config.mods_path is None:
-            detected = detect_mods_path()
-            if detected:
-                config.mods_path = str(detected)
-        if config.mods_path:
-            mods = Path(config.mods_path)
-            if not mods.is_dir():
-                errors.append(f"Mods directory not found: {mods}")
-
-        # settings_path (optional, auto-detect)
-        if config.settings_path is None:
-            detected = detect_settings_path()
-            if detected:
-                config.settings_path = str(detected)
-        if config.settings_path:
-            settings = Path(config.settings_path)
-            if not settings.is_dir():
-                errors.append(f"Settings directory not found: {settings}")
 
         if errors:
             raise RuntimeError("Path validation failed:\n\n" + "\n\n".join(errors))

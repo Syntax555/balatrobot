@@ -19,8 +19,6 @@ ENV_MAP: dict[str, str] = {
     "balatro_path": "BALATROBOT_BALATRO_PATH",
     "lovely_path": "BALATROBOT_LOVELY_PATH",
     "love_path": "BALATROBOT_LOVE_PATH",
-    "mods_path": "BALATROBOT_MODS_PATH",
-    "settings_path": "BALATROBOT_SETTINGS_PATH",
     "platform": "BALATROBOT_PLATFORM",
     "parallel": "BALATROBOT_PARALLEL",
     "logs_path": "BALATROBOT_LOGS_PATH",
@@ -61,8 +59,6 @@ class Config:
     balatro_path: str | None = None
     lovely_path: str | None = None
     love_path: str | None = None
-    mods_path: str | None = None
-    settings_path: str | None = None
 
     # Instance
     platform: str | None = None
