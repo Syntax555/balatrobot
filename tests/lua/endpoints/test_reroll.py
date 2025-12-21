@@ -1,7 +1,6 @@
 """Tests for src/lua/endpoints/reroll.lua"""
 
 import httpx
-import pytest
 
 from tests.lua.conftest import (
     api,
