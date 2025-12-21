@@ -14,12 +14,23 @@ import pytest
 # ============================================================================
 
 HOST: str = "127.0.0.1"  # Default host for Balatro server
-PORT: int = 12346  # Default port for Balatro server
 CONNECTION_TIMEOUT: float = 60.0  # Connection timeout in seconds
 REQUEST_TIMEOUT: float = 5.0  # Default per-request timeout in seconds
 
 # JSON-RPC 2.0 request ID counter
 _request_id_counter: int = 0
+
+
+def pytest_collection_modifyitems(items):
+    """Mark all tests in this directory as integration tests."""
+    from pathlib import Path
+
+    current_dir = Path(__file__).parent
+
+    for item in items:
+        # Check if the test file is within the current directory
+        if current_dir in Path(item.path).parents:
+            item.add_marker(pytest.mark.integration)
 
 
 @pytest.fixture(scope="session")
@@ -29,7 +40,7 @@ def host() -> str:
 
 
 @pytest.fixture
-def client(host: str, port: int) -> Generator[httpx.Client, None, None]:
+def client(host: str, port: int, balatro_server) -> Generator[httpx.Client, None, None]:
     """Create an HTTP client connected to Balatro game instance.
 
     Args:
@@ -44,12 +55,6 @@ def client(host: str, port: int) -> Generator[httpx.Client, None, None]:
         timeout=httpx.Timeout(CONNECTION_TIMEOUT, read=REQUEST_TIMEOUT),
     ) as http_client:
         yield http_client
-
-
-@pytest.fixture(scope="session")
-def port() -> int:
-    """Return the default Balatro server port."""
-    return PORT
 
 
 # ============================================================================
