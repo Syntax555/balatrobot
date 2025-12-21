@@ -35,6 +35,14 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     [:octicons-arrow-right-24: Installation](installation.md)
 
+- :material-console:{ .lg .middle } __CLI Reference__
+
+    ---
+
+    Command-line interface for launching Balatro with BalatroBot.
+
+    [:octicons-arrow-right-24: CLI Reference](cli.md)
+
 - :material-robot:{ .lg .middle } __BalatroBot API__
 
     ---

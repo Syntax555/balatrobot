@@ -40,18 +40,17 @@ ln -s "$(pwd)" ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/use
 New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Balatro\Mods\balatrobot" -Target (Get-Location)
 ```
 
-### 3. Set Environment Variables
+### 3. Launch Balatro
+
+Start with debug and fast mode for development:
 
 ```bash
-export BALATROBOT_DEBUG=1
-export BALATROBOT_FAST=1
+balatrobot --debug --fast
 ```
 
-### 4. Launch Balatro
+For detailed CLI options, see the [CLI Reference](cli.md).
 
-Start the game normally. Check logs for "BalatroBot API initialized" to confirm the mod loaded.
-
-## Running Tests
+### 4. Running Tests
 
 Tests use Python + pytest to communicate with the Lua API:
 
@@ -59,14 +58,20 @@ Tests use Python + pytest to communicate with the Lua API:
 # Install all dependencies
 make install
 
-# Run all tests (restarts game automatically)
-make test
+# Run all tests
+pytest
+
+# Run tests in parallel (recommended)
+pytest -n 6
 
 # Run specific test file
 pytest tests/lua/endpoints/test_health.py -v
 
-# Run tests with dev marker
-make test PYTEST_MARKER=dev
+# Run tests with dev marker only
+pytest -m dev
+
+# Run tests in parallel with dev marker
+pytest -n 6 -m dev
 ```
 
 ## Code Structure
@@ -115,7 +120,7 @@ return {
 
 - Add tests in `tests/lua/endpoints/test_your_endpoint.py`
 
-> When writing tests for new endpoints, you can use the `@pytest.mark.dev` decorator to only run the tests you are developing with `make test PYTEST_MARKER=dev`.
+> When writing tests for new endpoints, you can use the `@pytest.mark.dev` decorator to only run the tests you are developing with `pytest -m dev`.
 
 - Update `src/lua/utils/openrpc.json` with the new method
 
@@ -127,4 +132,4 @@ return {
 2. **Add tests** - New endpoints need test coverage
 3. **Update docs** - Update api.md and openrpc.json for API changes
 4. **Follow conventions** - Match existing code style
-5. **Test locally** - Ensure `make test` passes
+5. **Test locally** - Ensure `pytest -n 6` passes

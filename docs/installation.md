@@ -35,38 +35,13 @@ balatrobot/
 
 ### 3. Launch Balatro
 
-Use the platform-specific launcher script from the `scripts/` directory:
+Start Balatro with the BalatroBot CLI:
 
 ```bash
-# macOS
-python scripts/balatro-macos.py --fast --debug
-
-# Linux (via Proton)
-python scripts/balatro-linux.py --fast --debug
-
-# Windows
-python scripts/balatro-windows.py --fast --debug
+balatrobot --fast --debug
 ```
 
-**Available options:**
-
-| Flag              | Description                                |
-| ----------------- | ------------------------------------------ |
-| `--host HOST`     | Server hostname (default: 127.0.0.1)       |
-| `--port PORT`     | Server port (default: 12346)               |
-| `--fast`          | Fast mode (skip animations)                |
-| `--headless`      | Headless mode (no window)                  |
-| `--render-on-api` | Render only on API calls                   |
-| `--audio`         | Enable audio (disabled by default)         |
-| `--debug`         | Debug mode (requires DebugPlus mod)        |
-| `--no-shaders`    | Disable all shaders for better performance |
-
-The scripts automatically:
-
-- Kill any existing Balatro instances
-- Kill processes using the specified port
-- Set up the correct environment variables
-- Log output to `logs/balatro_{port}.log`
+For detailed CLI options and usage, see the [CLI Reference](cli.md).
 
 ### 4. Verify Installation
 
@@ -88,35 +63,6 @@ Expected response:
 
 - **Connection refused**: Ensure Balatro is running and the mod loaded successfully
 - **Mod not loading**: Check that Lovely and Steamodded are installed correctly
-- **Port in use**: Change `BALATROBOT_PORT` to a different value
+- **Port in use**: Use `balatrobot --port PORT` to specify a different port
 
-## Custom Launchers
-
-If you're using a custom launcher or need to start Balatro manually, set these environment variables before launching:
-
-| Variable                   | Default     | Description                                |
-| -------------------------- | ----------- | ------------------------------------------ |
-| `BALATROBOT_HOST`          | `127.0.0.1` | Server hostname                            |
-| `BALATROBOT_PORT`          | `12346`     | Server port                                |
-| `BALATROBOT_FAST`          | `0`         | Fast mode (1=enabled)                      |
-| `BALATROBOT_HEADLESS`      | `0`         | Headless mode (1=enabled)                  |
-| `BALATROBOT_RENDER_ON_API` | `0`         | Render only on API calls (1=enabled)       |
-| `BALATROBOT_AUDIO`         | `0`         | Audio (1=enabled)                          |
-| `BALATROBOT_DEBUG`         | `0`         | Debug mode (1=enabled, requires DebugPlus) |
-| `BALATROBOT_NO_SHADERS`    | `0`         | Disable all shaders (1=enabled)            |
-
-**Example (bash):**
-
-```bash
-export BALATROBOT_PORT=12346
-export BALATROBOT_FAST=1
-# Then launch Balatro with the Lovely Injector
-```
-
-**Example (Windows PowerShell):**
-
-```powershell
-$env:BALATROBOT_PORT = "12346"
-$env:BALATROBOT_FAST = "1"
-# Then launch Balatro.exe
-```
+For more troubleshooting help, see the [CLI Reference](cli.md).
