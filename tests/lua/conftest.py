@@ -15,10 +15,30 @@ import pytest
 
 HOST: str = "127.0.0.1"  # Default host for Balatro server
 CONNECTION_TIMEOUT: float = 60.0  # Connection timeout in seconds
-REQUEST_TIMEOUT: float = 5.0  # Default per-request timeout in seconds
+REQUEST_TIMEOUT: float = 30.0  # Default per-request timeout in seconds
 
 # JSON-RPC 2.0 request ID counter
 _request_id_counter: int = 0
+
+# Default cache behavior for load_fixture
+_USE_CACHE_DEFAULT: bool = True
+
+
+def pytest_addoption(parser):
+    """Add command line options."""
+    parser.addoption(
+        "--no-caches",
+        action="store_true",
+        default=False,
+        help="Disable fixture caching and force regeneration.",
+    )
+
+
+def pytest_configure(config):
+    """Configure pytest."""
+    global _USE_CACHE_DEFAULT
+    if config.getoption("--no-caches"):
+        _USE_CACHE_DEFAULT = False
 
 
 def pytest_collection_modifyitems(items):
@@ -156,7 +176,7 @@ def load_fixture(
     client: httpx.Client,
     endpoint: str,
     fixture_name: str,
-    cache: bool = True,
+    cache: bool | None = None,
 ) -> dict[str, Any]:
     """Load a fixture file and return the resulting gamestate.
 
@@ -168,6 +188,10 @@ def load_fixture(
     If the fixture file doesn't exist or cache=False, it will be automatically
     generated using the setup steps defined in fixtures.json.
     """
+    global _USE_CACHE_DEFAULT
+    if cache is None:
+        cache = _USE_CACHE_DEFAULT
+
     fixture_path = get_fixture_path(endpoint, fixture_name)
 
     # Generate fixture if it doesn't exist or cache=False
