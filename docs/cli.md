@@ -132,6 +132,32 @@ cp -r /path/to/balatro/settings/* ~/.local/share/love/balatro/
 balatrobot --platform native --balatro-path /path/to/balatro/source
 ```
 
+??? tip "Hyprland Configuration"
+
+    If you are using Hyprland, you can configure the window manager with the following rules to spawn the Balatro window in an organized way:
+
+    ```ini
+    #################################################################################
+    # Balatro window rules
+    ################################################################################
+
+    # 1. Open on Workspace 9 SILENTLY
+    windowrulev2 = workspace 9 silent, class:^(love)$, title:^(Balatro)$
+
+    # 2. Float the window
+    windowrulev2 = float, class:^(love)$, title:^(Balatro)$
+
+    # 3. Set size to 640x360 (Tiny)
+    windowrulev2 = size 640 360, class:^(love)$, title:^(Balatro)$
+
+    # 4. Center it
+    windowrulev2 = center, class:^(love)$, title:^(Balatro)$
+
+    # 5. BLOCK FOCUS STEALING (Crucial for "Silent" to work)
+    windowrulev2 = noinitialfocus, class:^(love)$, title:^(Balatro)$
+    windowrulev2 = suppressevent activate, class:^(love)$, title:^(Balatro)$
+    ```
+
 ## Troubleshooting
 
 **Connection refused**: Ensure Balatro is running and the mod loaded successfully. Check logs in `logs/{timestamp}/{port}.log` for errors.
