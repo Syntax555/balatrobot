@@ -3,7 +3,7 @@
 import httpx
 
 
-def check_health(host: str, port: int, timeout: float = 5.0) -> bool:
+def check_health(host: str, port: int, timeout: float = 10.0) -> bool:
     """Check API health via HTTP POST using JSON-RPC 2.0.
 
     Args:
