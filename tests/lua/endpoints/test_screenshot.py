@@ -17,7 +17,9 @@ from tests.lua.conftest import (
 HEADLESS = os.getenv("BALATROBOT_HEADLESS") == "1"
 
 
-@pytest.mark.skipif(HEADLESS, reason="Screenshot endpoint does not work in headless mode")
+@pytest.mark.skipif(
+    HEADLESS, reason="Screenshot endpoint does not work in headless mode"
+)
 class TestScreenshotEndpoint:
     """Test basic screenshot endpoint functionality."""
 
