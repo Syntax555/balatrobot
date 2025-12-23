@@ -4,127 +4,138 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-BalatroBot is a framework for Balatro bot development. This repository contains a Lua-based API that communicates with the Balatro game via a TCP server. The API allows external clients (primarily Python-based bots) to control the game, query game state, and execute actions.
+BalatroBot is a framework for Balatro bot development. It consists of two main parts:
 
-**Important**: Focus on the Lua API code in `src/lua/` and `tests/lua/`. Ignore the Python package `src/balatrobot/` and `tests/balatrobot/`.
+1. **Python Package** (`src/balatrobot/`): A CLI and library to manage the Balatro game process, inject the mod, and handle communication.
+2. **Lua API** (`src/lua/`): The mod code running inside Balatro (Love2D) that exposes a HTTP JSON-RPC 2.0 API.
 
 ### Testing
 
-```bash
-# Start Balatro game instance (if you need to restart the game)
-python balatro.py start --fast --debug
+Integration tests (`tests/lua`) automatically start and stop Balatro instances on random ports.
 
-# Run all Lua tests (it automatically restarts the game)
+```bash
+# Run all tests (CLI and Lua suites)
 make test
 
-# Run tests with specific marker (it automatically restarts the game)
-make test PYTEST_MARKER=dev
+# Run Lua integration tests in parallel
+pytest -n 6 tests/lua
 
-# Run a single test file (we need to restart the game with `python balatro.py start --fast --debug` if the lua code was changed before running the test)
+# Run CLI tests
+pytest tests/cli
+
+# Run specific tests
 pytest tests/lua/endpoints/test_health.py -v
-
-# Run a specific test (we need to restart the game with `python balatro.py start --fast --debug` if the lua code was changed before running the test)
 pytest tests/lua/endpoints/test_health.py::TestHealthEndpoint::test_health_from_MENU -v
-```
 
-**Tip**: When we are focused on a specific test/group of tests (e.g. implementation of tests, understand why a test fails, etc.), we can mark the tests with `@pytest.mark.dev` and run them with `make test PYTEST_MARKER=dev` (so the game is restarted and relevant tests are run). So te `dev` pytest tag is reserved for test we are actually working on.
+# Run only integration tests
+pytest tests/cli -m integration
+
+# Run non-integration tests (no Balatro instance required)
+pytest tests/cli -m "not integration"
+
+# Manual launch for dev/debugging
+balatrobot --fast --debug
+```
 
 ## Architecture
 
-### Core Components
+### 1. Python Layer (`src/balatrobot/`)
 
-The Lua API is structured around three core layers:
+Controls the game lifecycle and provides the CLI.
 
-1. **TCP Server** (`src/lua/core/server.lua`)
+- **CLI** (`cli.py`): Entry point (`balatrobot`). Handles arguments like `--fast`, `--debug`, `--headless`.
+- **Manager** (`manager.py`): `BalatroInstance` context manager. Starts the game process, handles logging, and waits for the API to be healthy.
+- **Config** (`config.py`): Configuration management using `dataclasses` and environment variables.
 
-    - Single-client TCP server on port 12346 (default)
-    - Non-blocking socket I/O
-    - JSON-only protocol: `{"name": "endpoint", "arguments": {...}}\n`
-    - Max message size: 256 bytes
-    - Ultra-simple: JSON object + newline delimiter
+### 2. Lua Layer (`src/lua/`)
 
-2. **Dispatcher** (`src/lua/core/dispatcher.lua`)
+Runs inside the game engine and exposes an API.
 
-    - Routes requests to endpoints with 4-tier validation:
-        1. Protocol validation (has name, arguments)
-        2. Schema validation (via Validator)
-        3. Game state validation (requires_state check)
-        4. Endpoint execution (with error handling)
-    - Auto-discovers and registers endpoints at startup (fail-fast)
-    - Converts numeric state values to human-readable names for error messages
+- **HTTP Server** (`src/lua/core/server.lua`)
 
-3. **Validator** (`src/lua/core/validator.lua`)
+    - Single-client HTTP/1.1 server on port 12346 (default)
+    - **Protocol**: JSON-RPC 2.0 over HTTP POST to `/`
+    - **Request**: `{"jsonrpc": "2.0", "method": "endpoint", "params": {...}, "id": 1}`
+    - **Response**: `{"jsonrpc": "2.0", "result": {...}, "id": 1}`
+    - Max body size: 64KB
 
-    - Schema-based validation for endpoint arguments
-    - Fail-fast: returns first error encountered
-    - Type-strict: no implicit conversions
-    - Supported types: string, integer, boolean, array, table
-    - **Important**: No automatic defaults or range validation (endpoints handle this)
+- **Dispatcher** (`src/lua/core/dispatcher.lua`)
 
-### Endpoint Structure
+    - Routes requests based on the `method` field.
+    - Validates:
+        1. Protocol (JSON-RPC 2.0, valid ID)
+        2. Schema (via `validator.lua`)
+        3. Game State (`requires_state`)
+        4. Endpoint execution
 
-All endpoints follow this pattern (`src/lua/endpoints/*.lua`):
+- **Endpoints** (`src/lua/endpoints/*.lua`)
 
-```lua
-return {
-  name = "endpoint_name",
-  description = "Brief description",
-  schema = {
-    field_name = {
-      type = "string" | "integer" | "boolean" | "array" | "table",
-      required = true | false,
-      items = "integer",  -- For array types only
-      description = "Field description",
-    },
-  },
-  requires_state = { G.STATES.SELECTING_HAND },  -- Optional state requirement
-  execute = function(args, send_response)
-    -- Endpoint implementation
-    -- Call send_response() with result or error
-  end,
-}
-```
+    - Stateless modules defining `schema` and `execute` functions.
+    - 0-based indexing in API vs 1-based in Lua.
 
-**Key patterns**:
+    **Core Endpoints:**
 
-- Endpoints are stateless modules that return a table
-- Use `send_response()` callback to send results (synchronous or async)
-- For async operations, use `G.E_MANAGER:add_event()` to wait for state transitions
-- Card indices are **0-based** in the API (but Lua uses 1-based indexing internally)
-- Always convert between API (0-based) and internal (1-based) indexing
+    - `add.lua`: Add a new card (joker, consumable, voucher, or playing card).
+    - `buy.lua`: Buy a card from the shop.
+    - `cash_out.lua`: Cash out and collect round rewards.
+    - `discard.lua`: Discard cards from the hand.
+    - `gamestate.lua`: Get current game state.
+    - `health.lua`: Health check endpoint for connection testing.
+    - `load.lua`: Load a saved run state from a file.
+    - `menu.lua`: Return to the main menu from any game state.
+    - `next_round.lua`: Leave the shop and advance to blind selection.
+    - `play.lua`: Play a card from the hand.
+    - `rearrange.lua`: Rearrange cards in hand, jokers, or consumables.
+    - `reroll.lua`: Reroll to update the cards in the shop area.
+    - `save.lua`: Save the current run state to a file.
+    - `screenshot.lua`: Take a screenshot of the current game state.
+    - `select.lua`: Select the current blind.
+    - `sell.lua`: Sell a joker or consumable from player inventory.
+    - `set.lua`: Set a in-game value (money, chips, ante, etc.).
+    - `skip.lua`: Skip the current blind (Small or Big only).
+    - `start.lua`: Start a new game run with specified deck and stake.
+    - `use.lua`: Use a consumable card with optional target cards.
 
-### Error Handling
+    **Test Endpoints (`src/lua/endpoints/tests/*.lua`):**
 
-Error codes are defined in `src/lua/utils/errors.lua`:
-
-- `BAD_REQUEST`: Client sent invalid data (protocol/parameter errors)
-- `INVALID_STATE`: Action not allowed in current game state
-- `NOT_ALLOWED`: Game rules prevent this action
-- `INTERNAL_ERROR`: Server-side failure (runtime/execution errors)
-
-Endpoints send errors via:
-
-```lua
-send_response({
-  error = "Human-readable message",
-  error_code = BB_ERROR_NAMES.BAD_REQUEST,
-})
-```
-
-### Game State Management
-
-The `src/lua/utils/gamestate.lua` module provides:
-
-- `BB_GAMESTATE.get_gamestate()`: Extract complete game state
-- State conversion utilities (deck names, stake names, card data)
-- Special GAME_OVER callback support for async endpoints
+    - `echo.lua`: Test endpoint for dispatcher testing.
+    - `endpoint.lua`: Test endpoint with schema for dispatcher testing.
+    - `error.lua`: Test endpoint that throws runtime errors.
+    - `state.lua`: Test endpoint that requires specific game states.
+    - `validation.lua`: Comprehensive validation test endpoint.
 
 ## Key Files
 
-- `balatrobot.lua`: Entry point that loads all modules and initializes the API
-- `src/lua/core/`: Core infrastructure (server, dispatcher, validator)
-- `src/lua/endpoints/`: API endpoint implementations
-- `src/lua/utils/`: Utilities (gamestate extraction, error definitions, types)
-- `tests/lua/conftest.py`: Test fixtures and helpers
-- `Makefile`: Common development commands
-- `balatro.py`: Game launcher with environment variable setup
+- **Python**:
+    - `src/balatrobot/cli.py`: Main entry point.
+    - `src/balatrobot/manager.py`: Game process logic.
+- **Lua**:
+    - `balatrobot.lua`: Mod entry point.
+    - `src/lua/core/server.lua`: HTTP/TCP handling.
+    - `src/lua/endpoints/`: All API commands.
+- **Configuration**:
+    - `pyproject.toml`: Python dependencies and tools config.
+    - `balatrobot.json` / `balatrobot.lua`: SMODS mod metadata.
+
+### Error Handling
+
+Error codes are mapped to JSON-RPC standard and custom ranges:
+
+- `INTERNAL_ERROR` (-32000): Runtime errors
+- `BAD_REQUEST` (-32001): Invalid schema or parameters
+- `INVALID_STATE` (-32002): Action not allowed in current game state
+- `NOT_ALLOWED` (-32003): Action prevented by game rules
+
+Error responses follow JSON-RPC 2.0 format:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32001,
+    "message": "Human readable error",
+    "data": { "name": "BAD_REQUEST" }
+  },
+  "id": 1
+}
+```
