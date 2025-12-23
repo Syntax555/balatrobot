@@ -26,7 +26,7 @@ jobs:
         with:
           version: latest
           args: format --check
-  pyright:
+  ty:
     name: Type Check & Markdown Format
     runs-on: ubuntu-latest
     needs: ruff
@@ -44,12 +44,12 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv
-          uv sync --dev
+          uv sync --group dev --group test
       - name: Check markdown formatting
         run: |
           source .venv/bin/activate
           mdformat --check .
-      - name: Run pyright
+      - name: Run ty
         run: |
           source .venv/bin/activate
           ty check
