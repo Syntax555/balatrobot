@@ -18,7 +18,7 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     **BalatroBot 1.0.0 introduces breaking changes:**
 
-    - No longer a Python package (no PyPI releases)
+    - Now a CLI to start Balatro (no longer a Python client)
     - New JSON-RPC 2.0 protocol over HTTP/1.1
     - Updated endpoints and API structure
     - Removed game state logging functionality
