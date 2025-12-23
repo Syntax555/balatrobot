@@ -5,8 +5,8 @@ This guide covers installing the BalatroBot mod for Balatro.
 ## Prerequisites
 
 1. **Balatro** (v1.0.1+) - Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
-2. **Lovely Injector** - Follow the [installation guide](https://github.com/ethangreen-dev/lovely-injector#manual-installation)
-3. **Steamodded** - Follow the [installation guide](https://github.com/Steamodded/smods/wiki)
+2. **Lovely Injector** (v0.8.0+) - Follow the [installation guide](https://github.com/ethangreen-dev/lovely-injector#manual-installation)
+3. **Steamodded** (v1.0.0-beta-1221a+) - Follow the [installation guide](https://github.com/Steamodded/smods/wiki)
 
 ## Mod Installation
 
