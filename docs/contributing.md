@@ -2,6 +2,15 @@
 
 Guide for contributing to BalatroBot development.
 
+!!! warning "Help Needed: Windows & Linux (Proton) Support"
+
+    We currently lack CLI support for **Windows** and **Linux (Proton)**. Contributions to implement these platforms are highly welcome!
+
+    Please refer to the existing implementations for guidance:
+
+    - **macOS:** `src/balatrobot/platforms/macos.py`
+    - **Linux (Native):** `src/balatrobot/platforms/native.py`
+
 ## Prerequisites
 
 - **Balatro** (v1.0.1+)
@@ -54,7 +63,7 @@ For detailed CLI options, see the [CLI Reference](cli.md).
 
 Tests use Python + pytest to communicate with the Lua API.
 
-!!! important
+!!! info "Separate Lua and CLI test suites"
 
     The Lua and CLI test suites **must be run separately**. Running them together (e.g., `pytest tests`) is not supported.
 
