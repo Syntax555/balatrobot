@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install lint format typecheck quality fixtures all
+.PHONY: help install lint format typecheck quality fixtures test all
 
 # Colors for output
 YELLOW := \033[33m
@@ -45,5 +45,11 @@ fixtures: ## Generate fixtures
 	@echo "$(YELLOW)Generating all fixtures...$(RESET)"
 	python tests/fixtures/generate.py
 
-all: lint format typecheck ## Run all code quality checks
+test: ## Run all tests
+	@echo "$(YELLOW)Running tests/cli...$(RESET)"
+	pytest tests/cli
+	@echo "$(YELLOW)Running tests/lua...$(RESET)"
+	pytest -n 6 tests/lua
+
+all: lint format typecheck test ## Run all code quality checks and tests
 	@echo "$(GREEN)✓ All checks completed$(RESET)"
