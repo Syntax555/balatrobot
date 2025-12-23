@@ -42,32 +42,6 @@ The original repository provided the initial API and botting framework that this
 
 ## 🚀 Related Projects
 
-<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
-  <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrobot/">
-      <img src="docs/assets/balatrobot.svg" alt="BalatroBot" width="92">
-    </a>
-    <figcaption>
-      <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
-      <small>API for developing Balatro bots</small>
-    </figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrollm/">
-      <img src="docs/assets/balatrollm.svg" alt="BalatroLLM" width="92">
-    </a>
-    <figcaption>
-      <a href="https://coder.github.io/balatrollm/">BalatroLLM</a><br>
-      <small>Play Balatro with LLMs</small>
-    </figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrobench/">
-      <img src="docs/assets/balatrobench.svg" alt="BalatroBench" width="92">
-    </a>
-    <figcaption>
-      <a href="https://coder.github.io/balatrobench/">BalatroBench</a><br>
-      <small>Benchmark LLMs playing Balatro</small>
-    </figcaption>
-  </figure>
-</div>
+- [**BalatroBot**](https://github.com/coder/balatrobot): API for developing Balatro bots
+- [**BalatroLLM**](https://github.com/coder/balatrollm): Play Balatro with LLMs (coming soon)
+- [**BalatroBench**](https://github.com/coder/balatrobench): Benchmark LLMs playing Balatro (coming soon)
