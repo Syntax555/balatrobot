@@ -1,13 +1,19 @@
 """Lua API test-specific configuration and fixtures."""
 
+import asyncio
 import json
+import os
+import random
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, AsyncGenerator, Generator
 
 import httpx
 import pytest
+
+from balatrobot.config import Config
+from balatrobot.manager import BalatroInstance
 
 # ============================================================================
 # Constants
@@ -24,6 +30,19 @@ _request_id_counter: int = 0
 _USE_CACHE_DEFAULT: bool = True
 
 
+def _check_health(host: str, port: int, timeout: float = 2.0) -> bool:
+    """Sync health check for test fixtures."""
+    url = f"http://{host}:{port}"
+    payload = {"jsonrpc": "2.0", "method": "health", "params": {}, "id": 1}
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.post(url, json=payload)
+            data = response.json()
+            return "result" in data and data["result"].get("status") == "ok"
+    except (httpx.ConnectError, httpx.TimeoutException):
+        return False
+
+
 def pytest_addoption(parser):
     """Add command line options."""
     parser.addoption(
@@ -35,10 +54,67 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    """Configure pytest."""
+    """Configure pytest and start Balatro instances."""
     global _USE_CACHE_DEFAULT
-    if config.getoption("--no-caches"):
+    if config.getoption("--no-caches", default=False):
         _USE_CACHE_DEFAULT = False
+
+    # Skip if running as xdist worker (master handles startup)
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker_id is not None:
+        return
+
+    # Determine parallelism
+    numprocesses = getattr(config.option, "numprocesses", None)
+    parallel = numprocesses if numprocesses and numprocesses > 0 else 1
+
+    # Allocate random ports
+    port_range_start = 12346
+    port_range_end = 23456
+    ports = random.sample(range(port_range_start, port_range_end), parallel)
+
+    os.environ["BALATROBOT_PORTS"] = ",".join(str(p) for p in ports)
+
+    config._balatro_ports = ports
+    config._balatro_parallel = parallel
+
+    # Start instances
+    base_config = Config.from_env()
+    instances: list[BalatroInstance] = []
+
+    async def start_all():
+        for port in ports:
+            instances.append(BalatroInstance(base_config, port=port))
+        await asyncio.gather(*[inst.start() for inst in instances])
+        print(f"All {parallel} Balatro instance(s) started on ports: {ports}")
+
+    try:
+        asyncio.run(start_all())
+        config._balatro_instances = instances
+    except Exception as e:
+
+        async def cleanup():
+            for instance in instances:
+                await instance.stop()
+
+        asyncio.run(cleanup())
+        raise pytest.UsageError(f"Could not start Balatro instances: {e}") from e
+
+
+def pytest_unconfigure(config):
+    """Stop Balatro instances after tests complete."""
+    instances = getattr(config, "_balatro_instances", None)
+    if instances is None:
+        return
+
+    async def stop_all():
+        for instance in instances:
+            await instance.stop()
+
+    try:
+        asyncio.run(stop_all())
+    except Exception as e:
+        print(f"Error stopping Balatro instances: {e}")
 
 
 def pytest_collection_modifyitems(items):
@@ -57,6 +133,35 @@ def pytest_collection_modifyitems(items):
 def host() -> str:
     """Return the default Balatro server host."""
     return HOST
+
+
+@pytest.fixture(scope="session")
+def port(worker_id) -> int:
+    """Get assigned port for this worker from env var."""
+    ports_str = os.environ.get("BALATROBOT_PORTS", "12346")
+    ports = [int(p) for p in ports_str.split(",")]
+
+    if worker_id == "master":
+        return ports[0]
+
+    worker_num = int(worker_id.replace("gw", ""))
+    return ports[worker_num]
+
+
+@pytest.fixture(scope="session")
+async def balatro_server(port: int, worker_id) -> AsyncGenerator[None, None]:
+    """Wait for pre-started Balatro instance to be healthy."""
+    timeout = 10.0
+    elapsed = 0.0
+    while elapsed < timeout:
+        if _check_health(HOST, port):
+            print(f"[{worker_id}] Connected to Balatro on port {port}")
+            yield None
+            return
+        await asyncio.sleep(0.5)
+        elapsed += 0.5
+
+    pytest.fail(f"Balatro instance on port {port} not responding")
 
 
 @pytest.fixture
