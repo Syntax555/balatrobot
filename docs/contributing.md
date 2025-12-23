@@ -5,9 +5,9 @@ Guide for contributing to BalatroBot development.
 ## Prerequisites
 
 - **Balatro** (v1.0.1+)
-- **Lovely Injector** - [Installation](https://github.com/ethangreen-dev/lovely-injector)
-- **Steamodded** - [Installation](https://github.com/Steamopollys/Steamodded)
-- **DebugPlus** (optional) - Required for test endpoints
+- **Lovely Injector** (v0.8.0+) - [Installation](https://github.com/ethangreen-dev/lovely-injector)
+- **Steamodded** (v1.0.0-beta-1221a+) - [Installation](https://github.com/Steamopollys/Steamodded)
+- **DebugPlus** (v1.5.1+) (optional) - Required for test endpoints
 
 ## Development Setup
 
@@ -52,26 +52,37 @@ For detailed CLI options, see the [CLI Reference](cli.md).
 
 ### 4. Running Tests
 
-Tests use Python + pytest to communicate with the Lua API:
+Tests use Python + pytest to communicate with the Lua API.
+
+!!! important
+
+    The Lua and CLI test suites **must be run separately**. Running them together (e.g., `pytest tests`) is not supported.
 
 ```bash
 # Install all dependencies
 make install
 
-# Run all tests
-pytest
+# Run all tests (runs CLI and Lua suites separately)
+make test
 
-# Run tests in parallel (recommended)
-pytest -n 6
+# Run Lua tests (parallel execution recommended)
+# Use -n 6 (or lower if your system is resource constrained)
+pytest -n 6 tests/lua
+
+# Run CLI tests (must be run separately)
+pytest tests/cli
 
 # Run specific test file
 pytest tests/lua/endpoints/test_health.py -v
 
 # Run tests with dev marker only
-pytest -m dev
+pytest -n 6 tests/lua -m dev
 
-# Run tests in parallel with dev marker
-pytest -n 6 -m dev
+# Run only integration tests (starts Balatro)
+pytest tests/lua -m integration
+
+# Run tests that do not require Balatro instance
+pytest tests/lua -m "not integration"
 ```
 
 ## Code Structure
@@ -120,7 +131,7 @@ return {
 
 - Add tests in `tests/lua/endpoints/test_your_endpoint.py`
 
-> When writing tests for new endpoints, you can use the `@pytest.mark.dev` decorator to only run the tests you are developing with `pytest -m dev`.
+> When writing tests for new endpoints, you can use the `@pytest.mark.dev` decorator to only run the tests you are developing with `pytest -n 6 tests/lua -m dev`.
 
 - Update `src/lua/utils/openrpc.json` with the new method
 
@@ -132,4 +143,4 @@ return {
 2. **Add tests** - New endpoints need test coverage
 3. **Update docs** - Update api.md and openrpc.json for API changes
 4. **Follow conventions** - Match existing code style
-5. **Test locally** - Ensure `pytest -n 6` passes
+5. **Test locally** - Ensure both `pytest -n 6 tests/lua` and `pytest tests/cli` pass
