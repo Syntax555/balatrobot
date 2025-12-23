@@ -4,9 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Self
 
-VALID_PLATFORMS = frozenset({"darwin", "linux", "windows", "native"})
-
-# Mapping: config field -> env var (identity excluded - not a config)
+# Mapping: config field -> env var
 ENV_MAP: dict[str, str] = {
     "host": "BALATROBOT_HOST",
     "port": "BALATROBOT_PORT",
@@ -20,14 +18,13 @@ ENV_MAP: dict[str, str] = {
     "lovely_path": "BALATROBOT_LOVELY_PATH",
     "love_path": "BALATROBOT_LOVE_PATH",
     "platform": "BALATROBOT_PLATFORM",
-    "parallel": "BALATROBOT_PARALLEL",
     "logs_path": "BALATROBOT_LOGS_PATH",
 }
 
 BOOL_FIELDS = frozenset(
     {"fast", "headless", "render_on_api", "audio", "debug", "no_shaders"}
 )
-INT_FIELDS = frozenset({"port", "parallel"})
+INT_FIELDS = frozenset({"port"})
 
 
 def _parse_env_value(field: str, value: str) -> str | int | bool:
@@ -62,8 +59,6 @@ class Config:
 
     # Instance
     platform: str | None = None
-    parallel: int = 1
-    identity: str | None = None  # Not in ENV_MAP - set programmatically
     logs_path: str = "logs"
 
     @classmethod
@@ -78,12 +73,6 @@ class Config:
             elif (env_val := os.environ.get(env_var)) is not None:
                 kwargs[field] = _parse_env_value(field, env_val)
 
-        if kwargs.get("platform") and kwargs["platform"] not in VALID_PLATFORMS:
-            raise ValueError(
-                f"Invalid platform '{kwargs['platform']}'. "
-                f"Must be one of: {', '.join(sorted(VALID_PLATFORMS))}"
-            )
-
         return cls(**kwargs)
 
     @classmethod
@@ -94,12 +83,6 @@ class Config:
         for field, env_var in ENV_MAP.items():
             if (env_val := os.environ.get(env_var)) is not None:
                 kwargs[field] = _parse_env_value(field, env_val)
-
-        if kwargs.get("platform") and kwargs["platform"] not in VALID_PLATFORMS:
-            raise ValueError(
-                f"Invalid platform '{kwargs['platform']}'. "
-                f"Must be one of: {', '.join(sorted(VALID_PLATFORMS))}"
-            )
 
         return cls(**kwargs)
 

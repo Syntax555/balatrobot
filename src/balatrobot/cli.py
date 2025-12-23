@@ -4,7 +4,7 @@ import argparse
 import asyncio
 
 from balatrobot.config import Config
-from balatrobot.manager import InstanceManager
+from balatrobot.manager import BalatroInstance
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -15,7 +15,6 @@ def create_parser() -> argparse.ArgumentParser:
     # No defaults - env vars and dataclass defaults handle it
     parser.add_argument("--host", help="Server hostname (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, help="Server port (default: 12346)")
-    parser.add_argument( "--parallel", type=int, help="Number of parallel instances (default: 1)")
     parser.add_argument("--logs-path", help="Directory for log files (default: logs)")
 
     # Boolean flags - store_const so None means "not provided" -> check env var
@@ -41,29 +40,17 @@ async def async_main(argv: list[str] | None = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
     config = Config.from_args(args)
-    manager = InstanceManager(config)
-    try:
-        tasks = []
-        for i in range(config.parallel):
-            port = config.port + i
-            tasks.append(manager.start(port))
 
-        await asyncio.gather(*tasks)
-        print(f"Started {config.parallel} instance(s). Press Ctrl+C to stop.")
-
+    async with BalatroInstance(config) as instance:
+        print(f"Balatro running on port {instance.port}. Press Ctrl+C to stop.")
         while True:
-            await manager.check_all()
             await asyncio.sleep(5)
-
-    finally:
-        await manager.stop_all()
-
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for balatrobot CLI."""
     try:
-        return asyncio.run(async_main(argv))
+        asyncio.run(async_main(argv))
+        return 0
     except KeyboardInterrupt:
         return 0

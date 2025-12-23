@@ -44,7 +44,4 @@ class MacOSLauncher(BaseLauncher):
     def build_cmd(self, config: Config) -> list[str]:
         """Build macOS launch command."""
         assert config.love_path is not None
-        cmd = [config.love_path]
-        if config.identity:
-            cmd.extend(["-i", config.identity])
-        return cmd
+        return [config.love_path]

@@ -2,11 +2,29 @@
 
 import os
 import platform
+import shutil
 from pathlib import Path
 
 from balatrobot.config import Config
-from balatrobot.paths import detect_love_path, detect_lovely_path
 from balatrobot.platforms.base import BaseLauncher
+
+
+def _detect_love_path() -> Path | None:
+    """Detect LOVE executable in PATH."""
+    found = shutil.which("love")
+    return Path(found) if found else None
+
+
+def _detect_lovely_path() -> Path | None:
+    """Detect liblovely.so in standard locations."""
+    candidates = [
+        Path("/usr/local/lib/liblovely.so"),
+        Path.home() / ".local/lib/liblovely.so",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 class NativeLauncher(BaseLauncher):
@@ -43,7 +61,7 @@ class NativeLauncher(BaseLauncher):
 
         # lovely_path (required, auto-detect)
         if config.lovely_path is None:
-            detected = detect_lovely_path()
+            detected = _detect_lovely_path()
             if detected:
                 config.lovely_path = str(detected)
             else:
@@ -61,7 +79,7 @@ class NativeLauncher(BaseLauncher):
 
         # love_path (required, auto-detect via PATH)
         if config.love_path is None:
-            detected = detect_love_path()
+            detected = _detect_love_path()
             if detected:
                 config.love_path = str(detected)
             else:
@@ -90,7 +108,4 @@ class NativeLauncher(BaseLauncher):
         """Build native LOVE launch command."""
         assert config.love_path is not None
         assert config.balatro_path is not None
-        cmd = [config.love_path, config.balatro_path]
-        if config.identity:
-            cmd.extend(["-i", config.identity])
-        return cmd
+        return [config.love_path, config.balatro_path]
