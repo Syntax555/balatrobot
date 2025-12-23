@@ -82,21 +82,21 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
     </figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrollm/">
+    <a href="...">
       <img src="assets/balatrollm.svg" alt="BalatroLLM" width="92">
     </a>
     <figcaption>
-      <a href="https://coder.github.io/balatrollm/">BalatroLLM</a><br>
-      <small>Play Balatro with LLMs</small>
+      <a href="...">BalatroLLM</a><br>
+      <small>Play Balatro with LLMs (coming soon)</small>
     </figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrobench/">
+    <a href="...">
       <img src="assets/balatrobench.svg" alt="BalatroBench" width="92">
     </a>
     <figcaption>
-      <a href="https://coder.github.io/balatrobench/">BalatroBench</a><br>
-      <small>Benchmark LLMs playing Balatro</small>
+      <a href="...">BalatroBench</a><br>
+      <small>Benchmark LLMs playing Balatro (coming soon)</small>
     </figcaption>
   </figure>
 </div>
