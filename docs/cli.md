@@ -18,7 +18,6 @@ All options can be set via CLI flags or environment variables. CLI flags overrid
 | ----------------------------- | -------------------------- | ------------- | ------------------------------------------ |
 | `--host HOST`                 | `BALATROBOT_HOST`          | `127.0.0.1`   | Server hostname                            |
 | `--port PORT`                 | `BALATROBOT_PORT`          | `12346`       | Server port                                |
-| `--parallel PARALLEL`         | `BALATROBOT_PARALLEL`      | `1`           | Number of parallel instances to start      |
 | `--fast`                      | `BALATROBOT_FAST`          | `0`           | Enable fast mode (10x game speed)          |
 | `--headless`                  | `BALATROBOT_HEADLESS`      | `0`           | Enable headless mode (minimal rendering)   |
 | `--render-on-api`             | `BALATROBOT_RENDER_ON_API` | `0`           | Render only on API calls                   |
@@ -58,9 +57,6 @@ balatrobot --headless --fast
 # Use a different port
 balatrobot --port 8080
 
-# Start multiple instances on different ports
-balatrobot --parallel 4
-
 # Custom Balatro installation
 balatrobot --balatro-path /path/to/Balatro.exe
 ```
@@ -89,25 +85,13 @@ $env:BALATROBOT_FAST = "1"
 balatrobot
 ```
 
-## Parallel Instances
-
-The `--parallel` option starts multiple Balatro instances on sequential ports:
-
-```bash
-# Start 4 instances on ports 12346, 12347, 12348, 12349
-balatrobot --parallel 4 --fast --headless
-```
-
-This is useful for running multiple bots simultaneously or parallel testing.
-
 ## Process Management
 
 The CLI automatically:
 
-- Kills any existing Balatro instances before starting
-- Kills processes using the specified port(s)
 - Logs output to `logs/{timestamp}/{port}.log`
 - Sets up the correct environment variables
+- Gracefully shuts down on Ctrl+C
 
 ## Native Platform (Linux Only)
 
