@@ -132,7 +132,7 @@ The `darwin` platform launches Balatro via Steam on macOS. The CLI auto-detects 
 **Requirements:**
 
 - Balatro installed via Steam
-- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) `liblovely.dylib` and `run_lovely_macos.sh` in the Balatro game directory
+- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) `liblovely.dylib` in the Balatro game directory
 - Mods directory: `~/Library/Application Support/Balatro/Mods`
 
 **Note:** You cannot run the game through Steam on macOS due to a Steam client bug. The CLI handles this by directly executing the LOVE runtime with proper environment variables.
