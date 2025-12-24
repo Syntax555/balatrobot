@@ -16,7 +16,7 @@ help: ## Show this help message
 
 install: ## Install balatrobot and all dependencies (including dev)
 	@echo "$(YELLOW)Installing all dependencies...$(RESET)"
-	uv sync --all-extras
+	uv sync --group dev --group test
 
 lint: ## Run ruff linter (check only)
 	@echo "$(YELLOW)Running ruff linter...$(RESET)"
