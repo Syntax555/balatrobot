@@ -19,6 +19,67 @@ Guide for contributing to BalatroBot development.
 - **Steamodded** (v1.0.0-beta-1221a+) - [Installation](https://github.com/Steamopollys/Steamodded)
 - **DebugPlus** (v1.5.1+) (optional) - Required for test endpoints
 
+## Development Environment Setup
+
+### direnv (Recommended)
+
+We use [direnv](https://direnv.net/) to automatically manage environment variables and virtual environment activation. When you `cd` into the project directory, direnv automatically loads settings from `.envrc`.
+
+!!! warning "Contains Secrets"
+
+    The `.envrc` file may contain API keys and tokens. **Never commit this file**.
+
+**Example `.envrc` configuration:**
+
+```bash
+# Load the virtual environment
+source .venv/bin/activate
+
+# Python-specific variables
+export PYTHONUNBUFFERED="1"
+export PYTHONPATH="${PWD}/src:${PYTHONPATH}"
+export PYTHONPATH="${PWD}/tests:${PYTHONPATH}"
+
+# BALATROBOT env vars
+export BALATROBOT_FAST=1
+export BALATROBOT_DEBUG=1
+export BALATROBOT_LOVE_PATH='/path/to/Balatro/love'
+export BALATROBOT_LOVELY_PATH='/path/to/liblovely.dylib'
+export BALATROBOT_PARALLEL=1
+export BALATROBOT_RENDER_ON_API=0
+export BALATROBOT_HEADLESS=1
+export BALATROBOT_AUDIO=0
+```
+
+**Setup:** Install [direnv](https://direnv.net/), then create `.envrc` in the project root with the above configuration, updating paths for your system.
+
+### Lua LSP Configuration
+
+The `.luarc.json` file should be placed at the root of the balatrobot repository. It configures the Lua Language Server for IDE support (autocomplete, diagnostics, type checking).
+
+!!! info "Update Library Paths"
+
+    You **must** update the `workspace.library` paths in `.luarc.json` to match your system:
+
+    - Steamodded LSP definitions: `path/to/Mods/smods/lsp_def`
+    - Love2D library: `path/to/love2d/library` (clone locally: [LuaCATS/love2d](https://github.com/LuaCATS/love2d))
+    - LuaSocket library: `path/to/luasocket/library` (clone locally: [LuaCATS/luasocket](https://github.com/LuaCATS/luasocket))
+
+**Example `.luarc.json`:**
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": [
+    "/path/to/Balatro/Mods/smods/lsp_def",
+    "/path/to/love2d/library",
+    "/path/to/luasocket/library"
+  ],
+  "diagnostics.disable": ["lowercase-global"],
+  "diagnostics.globals": ["G"]
+}
+```
+
 ## Development Setup
 
 ### 1. Clone the Repository
@@ -78,7 +139,7 @@ For detailed CLI options, see the [CLI Reference](cli.md).
 
 ### 5. Running Tests
 
-Tests use Python + pytest to communicate with the Lua API.
+Tests use Python + pytest to communicate with the Lua API. You don't need to have balatrobot running—the tests automatically start the required Balatro instances.
 
 !!! info "Separate Lua and CLI test suites"
 
@@ -111,6 +172,26 @@ pytest tests/lua -m integration
 pytest tests/lua -m "not integration"
 ```
 
+## Available Make Commands
+
+The project includes a Makefile with convenient targets for common development tasks. Run `make help` to see all available commands.
+
+```bash
+make help      # Show all available commands with descriptions
+make install   # Install all dependencies (dev + test groups)
+make lint      # Run ruff linter with auto-fix
+make format    # Format code (Python, Markdown, Lua)
+make typecheck # Run type checker (ty)
+make quality   # Run all code quality checks
+make fixtures  # Generate test fixtures (starts Balatro)
+make test      # Run all tests (CLI + Lua suites)
+make all       # Run quality checks + tests
+```
+
+!!! note "Test Fixtures"
+
+    The `make fixtures` command is only required if you need to explicitly generate fixtures. When running tests, missing fixtures are automatically generated if required.
+
 ## Code Structure
 
 ```
@@ -120,6 +201,7 @@ src/lua/
 │   ├── dispatcher.lua   # Request routing
 │   └── validator.lua    # Schema validation
 ├── endpoints/           # API endpoints
+│   ├── tests/           # Test-only endpoints
 │   ├── health.lua
 │   ├── gamestate.lua
 │   ├── play.lua
@@ -163,10 +245,44 @@ return {
 
 - Update `docs/api.md` with the new method
 
+## Code Quality
+
+Before committing, always run:
+
+```bash
+make quality  # Runs lint, typecheck, and format
+```
+
+**Test markers:**
+
+- `@pytest.mark.dev`: Run only tests under development with `-m dev`
+- `@pytest.mark.integration`: Tests that start Balatro (skip with `-m "not integration"`)
+
 ## Pull Request Guidelines
 
 1. **One feature per PR** - Keep changes focused
 2. **Add tests** - New endpoints need test coverage
 3. **Update docs** - Update api.md and openrpc.json for API changes
-4. **Follow conventions** - Match existing code style
+4. **Run code quality checks** - Execute `make quality` before committing (see [Code Quality Tools](#code-quality-tools))
 5. **Test locally** - Ensure both `pytest -n 6 tests/lua` and `pytest tests/cli` pass
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+### Workflows
+
+- **code_quality.yml**: Runs linting, type checking, and formatting on every PR (equivalent to `make quality`)
+- **deploy_docs.yml**: Deploys documentation to GitHub Pages when a release is published
+- **release_please.yml**: Automated version management and changelog generation
+- **release_pypi.yml**: Publishes the package to PyPI on release
+
+### For Contributors
+
+You don't need to worry about most CI/CD workflows—just ensure your PR passes the **code quality checks**:
+
+```bash
+make quality  # Run this before pushing
+```
+
+If CI fails on your PR, check the workflow logs on GitHub for details. Most issues can be fixed by running `make quality` locally.
