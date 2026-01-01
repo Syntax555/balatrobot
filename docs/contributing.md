@@ -70,13 +70,28 @@ The `.luarc.json` file should be placed at the root of the balatrobot repository
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
-  "workspace.library": [
-    "/path/to/Balatro/Mods/smods/lsp_def",
-    "/path/to/love2d/library",
-    "/path/to/luasocket/library"
-  ],
-  "diagnostics.disable": ["lowercase-global"],
-  "diagnostics.globals": ["G"]
+  "workspace": {
+    "library": [
+      "/path/to/Balatro/Mods/smods/lsp_def",
+      "/path/to/love2d/library",
+      "/path/to/luasocket/library",
+      "src/lua"
+    ]
+  },
+  "diagnostics": {
+    "disable": [
+      "lowercase-global"
+    ],
+    "globals": [
+      "G",
+      "BB_GAMESTATE",
+      "BB_ERROR_NAMES",
+      "BB_ENDPOINTS"
+    ]
+  },
+  "type": {
+    "weakUnionCheck": true
+  }
 }
 ```
 
