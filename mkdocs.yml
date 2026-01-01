@@ -8,7 +8,7 @@ docs_dir: docs/
 theme:
   name: material
   favicon: assets/balatrobot.svg
-  logo: assets/balatrobot.svg
+  logo: assets/balatrobot-white.svg
   icon:
     repo: fontawesome/brands/github
   features:
