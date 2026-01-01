@@ -57,8 +57,10 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "commitizen" },
+    { name = "mdformat" },
     { name = "mdformat-mkdocs" },
     { name = "mdformat-simple-breaks" },
+    { name = "mkdocs" },
     { name = "mkdocs-llmstxt" },
     { name = "mkdocs-material" },
     { name = "ruff" },
@@ -79,8 +81,10 @@ requires-dist = [{ name = "httpx", specifier = ">=0.28.1" }]
 [package.metadata.requires-dev]
 dev = [
     { name = "commitizen", specifier = ">=4.11.0" },
+    { name = "mdformat", specifier = ">=0.7.22" },
     { name = "mdformat-mkdocs", specifier = ">=5.1.1" },
     { name = "mdformat-simple-breaks", specifier = ">=0.0.1" },
+    { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-llmstxt", specifier = ">=0.5.0" },
     { name = "mkdocs-material", specifier = ">=9.7.1" },
     { name = "ruff", specifier = ">=0.14.10" },
