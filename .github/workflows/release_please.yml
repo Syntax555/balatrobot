@@ -43,6 +43,12 @@ jobs:
           # Update version in balatrobot.json
           jq --arg version "${{ steps.release.outputs.version }}" '.version = $version' balatrobot.json > balatrobot.json.tmp
           mv balatrobot.json.tmp balatrobot.json
+      - name: Update openrpc.json version
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          # Update version in openrpc.json
+          jq --arg version "${{ steps.release.outputs.version }}" '.info.version = $version' src/lua/utils/openrpc.json > src/lua/utils/openrpc.json.tmp
+          mv src/lua/utils/openrpc.json.tmp src/lua/utils/openrpc.json
       - name: Commit and push updated lock file
         if: ${{ steps.release.outputs.release_created }}
         run: |
@@ -53,15 +59,15 @@ jobs:
           else
             echo "No changes to uv.lock"
           fi
-      - name: Commit and push updated balatrobot.json
+      - name: Commit and push updated version files
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          if [[ -n $(git status --porcelain balatrobot.json) ]]; then
-            git add balatrobot.json
-            git commit -m "chore(release): update balatrobot.json version to ${{ steps.release.outputs.version }}"
+          if [[ -n $(git status --porcelain balatrobot.json src/lua/utils/openrpc.json) ]]; then
+            git add balatrobot.json src/lua/utils/openrpc.json
+            git commit -m "chore(release): update version files to ${{ steps.release.outputs.version }}"
             git push
           else
-            echo "No changes to balatrobot.json"
+            echo "No changes to version files"
           fi
       - name: Notify consumer repo of new balatrobot release
         if: ${{ steps.release.outputs.release_created }}
