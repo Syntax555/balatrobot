@@ -47,6 +47,7 @@ plugins:
 nav:
   - BalatroBot: index.md
   - Installation: installation.md
+  - Example Bot: example-bot.md
   - CLI Reference: cli.md
   - API Reference: api.md
   - Contributing: contributing.md
