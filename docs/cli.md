@@ -5,7 +5,7 @@ Command-line interface for launching Balatro with the BalatroBot mod.
 ## Usage
 
 ```bash
-balatrobot [OPTIONS]
+uvx balatrobot [OPTIONS]
 ```
 
 Start Balatro with the BalatroBot mod loaded and API server running.
@@ -39,26 +39,26 @@ All options can be set via CLI flags or environment variables. CLI flags overrid
 
 ```bash
 # Start with default settings
-balatrobot
+uvx balatrobot
 
 # Start with fast mode for development
-balatrobot --fast
+uvx balatrobot --fast
 
 # Start with debug mode (requires DebugPlus mod)
-balatrobot --fast --debug
+uvx balatrobot --fast --debug
 
 # Start headless for automated testing
-balatrobot --headless --fast
+uvx balatrobot --headless --fast
 ```
 
 ### Custom Configuration
 
 ```bash
 # Use a different port
-balatrobot --port 8080
+uvx balatrobot --port 8080
 
 # Custom Balatro installation
-balatrobot --balatro-path /path/to/Balatro.exe
+uvx balatrobot --balatro-path /path/to/Balatro.exe
 ```
 
 ## Examples with Environment Variables
@@ -71,10 +71,10 @@ export BALATROBOT_PORT=8080
 export BALATROBOT_FAST=1
 
 # Launch with defaults from env vars
-balatrobot
+uvx balatrobot
 
 # CLI flags override env vars
-balatrobot --port 9000  # Uses port 9000, not 8080
+uvx balatrobot --port 9000  # Uses port 9000, not 8080
 ```
 
 **Windows PowerShell:**
@@ -82,7 +82,7 @@ balatrobot --port 9000  # Uses port 9000, not 8080
 ```powershell
 $env:BALATROBOT_PORT = "8080"
 $env:BALATROBOT_FAST = "1"
-balatrobot
+uvx balatrobot
 ```
 
 ## Process Management
@@ -114,10 +114,10 @@ The `windows` platform launches Balatro via Steam on Windows. The CLI auto-detec
 
 ```powershell
 # Auto-detects paths
-balatrobot --fast
+uvx balatrobot --fast
 
 # Or specify custom paths
-balatrobot --love-path "C:\Custom\Path\Balatro.exe" --lovely-path "C:\Custom\Path\version.dll"
+uvx balatrobot --love-path "C:\Custom\Path\Balatro.exe" --lovely-path "C:\Custom\Path\version.dll"
 ```
 
 ### macOS Platform
@@ -141,10 +141,10 @@ The `darwin` platform launches Balatro via Steam on macOS. The CLI auto-detects 
 
 ```bash
 # Auto-detects paths
-balatrobot --fast
+uvx balatrobot --fast
 
 # Or specify custom paths
-balatrobot --love-path "/path/to/love" --lovely-path "/path/to/liblovely.dylib"
+uvx balatrobot --love-path "/path/to/love" --lovely-path "/path/to/liblovely.dylib"
 ```
 
 ### Native Platform (Linux Only)
@@ -167,7 +167,7 @@ mkdir -p ~/.local/share/love/balatro
 cp -r /path/to/balatro/settings/* ~/.local/share/love/balatro/
 
 # Launch with native platform
-balatrobot --platform native --balatro-path /path/to/balatro/source
+uvx balatrobot --platform native --balatro-path /path/to/balatro/source
 ```
 
 ??? tip "Hyprland Configuration"
