@@ -45,7 +45,6 @@ export BALATROBOT_FAST=1
 export BALATROBOT_DEBUG=1
 export BALATROBOT_LOVE_PATH='/path/to/Balatro/love'
 export BALATROBOT_LOVELY_PATH='/path/to/liblovely.dylib'
-export BALATROBOT_PARALLEL=1
 export BALATROBOT_RENDER_ON_API=0
 export BALATROBOT_HEADLESS=1
 export BALATROBOT_AUDIO=0
@@ -114,10 +113,16 @@ Instead of copying files, create a symlink for easier development:
 ln -s "$(pwd)" ~/Library/Application\ Support/Balatro/Mods/balatrobot
 ```
 
-**Linux:**
+**Linux (Proton):**
 
 ```bash
 ln -s "$(pwd)" ~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/
+```
+
+**Linux (native):**
+
+```bash
+ln -s "$(pwd)" ~/.config/love/Mods/balatrobot/
 ```
 
 **Windows (PowerShell as Admin):**
