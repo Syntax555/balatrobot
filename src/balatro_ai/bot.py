@@ -5,66 +5,50 @@
 # ]
 # ///
 
-import requests
+from __future__ import annotations
 
-# BalatroBot API endpoint
-URL = "http://127.0.0.1:12346"
+import argparse
+import sys
+from pathlib import Path
+from typing import Sequence
 
-def rpc(method: str, params: dict = {}) -> dict:
-    """Send a JSON-RPC 2.0 request to the BalatroBot API."""
-    response = requests.post(URL, json={
-        "jsonrpc": "2.0",
-        "method": method,
-        "params": params,
-        "id": 1,
-    })
-    data = response.json()
-    # Raise if error, otherwise return result (contains game state)
-    if "error" in data:
-        raise Exception(data["error"]["message"])
-    return data["result"]
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from balatro_ai.logging_utils import configure_logging
+from balatro_ai.runner import BotConfig, BotRunner
 
 
-def play_game():
-    """Play a complete game of Balatro."""
-    # Return to menu and start a new game
-    rpc("menu")
-    state = rpc("start", {"deck": "RED", "stake": "WHITE"})
-    print(f"Started game with seed: {state['seed']}")
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser for the bot."""
+    parser = argparse.ArgumentParser(description="Run a BalatroBot client.")
+    parser.add_argument("--host", default="127.0.0.1", help="BalatroBot host")
+    parser.add_argument("--port", default=12346, type=int, help="BalatroBot port")
+    parser.add_argument("--deck", default="RED", help="Deck to use")
+    parser.add_argument("--stake", default="WHITE", help="Stake level to use")
+    parser.add_argument("--seed", default=None, help="Optional seed for the run")
+    parser.add_argument("--max-steps", default=1000, type=int, help="Max steps to run")
+    parser.add_argument("--timeout", default=10.0, type=float, help="HTTP timeout seconds")
+    parser.add_argument("--log-level", default="INFO", help="Logging level")
+    return parser
 
-    # Main game loop
-    while state["state"] != "GAME_OVER":
-        match state["state"]:
-            case "BLIND_SELECT":
-                # Always select the current blind
-                state = rpc("select")
 
-            case "SELECTING_HAND":
-                # Play the first 5 cards (simple strategy)
-                num_cards = min(5, len(state["hand"]["cards"]))
-                cards = list(range(num_cards))
-                state = rpc("play", {"cards": cards})
-
-            case "ROUND_EVAL":
-                # Collect rewards and go to shop
-                state = rpc("cash_out")
-
-            case "SHOP":
-                # Skip the shop and proceed to next round
-                state = rpc("next_round")
-
-            case _:
-                # Handle any transitional states
-                state = rpc("gamestate")
-
-    # Game ended
-    if state["won"]:
-        print(f"Victory! Final ante: {state['ante_num']}")
-    else:
-        print(f"Game over at ante {state['ante_num']}, round {state['round_num']}")
-
-    return state["won"]
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the bot with CLI-provided configuration."""
+    args = build_parser().parse_args(argv)
+    configure_logging(args.log_level)
+    base_url = f"http://{args.host}:{args.port}"
+    config = BotConfig(
+        base_url=base_url,
+        deck=args.deck,
+        stake=args.stake,
+        seed=args.seed,
+        max_steps=args.max_steps,
+        timeout=args.timeout,
+    )
+    runner = BotRunner(config)
+    return runner.run()
 
 
 if __name__ == "__main__":
-    play_game()
+    raise SystemExit(main())
