@@ -4,6 +4,7 @@ import logging
 from typing import Any, Mapping
 
 from balatro_ai.actions import Action
+from balatro_ai.build_intent import infer_intent
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_ante,
@@ -206,6 +207,21 @@ class BotRunner:
         if last_round != round_num:
             self._context.round_memory.clear()
             self._context.run_memory["round_num"] = round_num
+            intent, confidence = infer_intent(gs)
+            self._context.run_memory["intent"] = intent
+            self._context.run_memory["intent_confidence"] = confidence
+            self._logger.info(
+                "Intent %s (%.2f)",
+                intent.value,
+                confidence,
+                extra={
+                    "state": gs_state(gs),
+                    "ante": gs_ante(gs),
+                    "round": gs_round_num(gs),
+                    "money": gs_money(gs),
+                    "action_kind": "intent",
+                },
+            )
 
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(

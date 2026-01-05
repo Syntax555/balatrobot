@@ -93,9 +93,20 @@ class Policy:
 
     def _intent(self, ctx: PolicyContext) -> str:
         intent = ctx.round_memory.get("intent")
-        if isinstance(intent, str) and intent:
-            return intent
+        intent_text = _intent_to_text(intent)
+        if intent_text:
+            return intent_text
         intent = ctx.run_memory.get("intent")
-        if isinstance(intent, str):
-            return intent
+        intent_text = _intent_to_text(intent)
+        if intent_text:
+            return intent_text
         return ""
+
+
+def _intent_to_text(intent: Any) -> str:
+    if isinstance(intent, str):
+        return intent
+    value = getattr(intent, "value", None)
+    if isinstance(value, str):
+        return value
+    return ""
