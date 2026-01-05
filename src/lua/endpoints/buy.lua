@@ -183,6 +183,11 @@ return {
       return
     end
 
+    -- Log what we're buying
+    local item_name = card.name or (card.ability and card.ability.name) or card.label or "Unknown"
+    local item_type = args.voucher and "Voucher" or args.pack and "Booster" or card.set or "item"
+    sendDebugMessage(string.format("Buying %s '%s' for $%d", item_type, item_name, card.cost.buy), "BB.ENDPOINTS")
+
     -- Use appropriate function: use_card for vouchers, buy_from_shop for others
     if args.voucher or args.pack then
       G.FUNCS.use_card(btn)

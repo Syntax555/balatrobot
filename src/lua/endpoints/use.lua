@@ -1,5 +1,8 @@
 -- src/lua/endpoints/use.lua
 
+---@type BB_LOGGER
+local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
+
 -- ==========================================================================
 -- Use Endpoint Params
 -- ==========================================================================
@@ -150,11 +153,15 @@ return {
         local hand_card = G.hand.cards[card_idx + 1] -- Convert 0-based to 1-based
         G.hand:add_to_highlighted(hand_card, true) -- silent=true
       end
+    end
 
-      sendDebugMessage(
-        string.format("Selected %d cards for '%s'", #args.cards, consumable_card.ability.name),
-        "BB.ENDPOINTS"
-      )
+    -- Log what we're using with target cards
+    local cons_name = consumable_card.ability.name
+    if args.cards and #args.cards > 0 then
+      local targets = BB_LOGGER.format_playing_cards(G.hand.cards, args.cards)
+      sendDebugMessage(string.format("Using '%s' on: %s", cons_name, targets), "BB.ENDPOINTS")
+    else
+      sendDebugMessage(string.format("Using '%s' (no targets)", cons_name), "BB.ENDPOINTS")
     end
 
     -- Step 7: Game-Level Validation (e.g. try to use Familiar Spectral when G.hand is not available)
@@ -174,9 +181,6 @@ return {
       })
       return
     end
-
-    -- Execution
-    sendDebugMessage("Executing use() for consumable: " .. consumable_card.ability.name, "BB.ENDPOINTS")
 
     -- Create mock UI element for game function
     local mock_element = {

@@ -1,5 +1,8 @@
 -- src/lua/endpoints/pack.lua
 
+---@type BB_LOGGER
+local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
+
 -- ==========================================================================
 -- Pack Select Endpoint Params
 -- ==========================================================================
@@ -215,6 +218,19 @@ return {
         end
       end
 
+      -- Log what we're selecting
+      local card_name = card.ability and card.ability.name or "Unknown"
+      local card_set = card.ability and card.ability.set or card.set or "card"
+      if args.targets and #args.targets > 0 then
+        local targets = BB_LOGGER.format_playing_cards(G.hand.cards, args.targets)
+        sendDebugMessage(
+          string.format("Pack: selecting %s '%s' targeting: %s", card_set, card_name, targets),
+          "BB.ENDPOINTS"
+        )
+      else
+        sendDebugMessage(string.format("Pack: selecting %s '%s'", card_set, card_name), "BB.ENDPOINTS")
+      end
+
       -- Select the card by calling use_card
       local btn = {
         config = {
@@ -264,6 +280,8 @@ return {
 
     -- Handle skip
     if args.skip then
+      local pack_count = G.pack_cards.config and G.pack_cards.config.card_count or 0
+      sendDebugMessage(string.format("Pack: skipping (%d cards remaining)", pack_count), "BB.ENDPOINTS")
       G.FUNCS.skip_booster({})
 
       -- Wait for pack to close and return to shop

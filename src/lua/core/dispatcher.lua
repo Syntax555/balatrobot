@@ -6,6 +6,9 @@
 
 ---@type Validator
 local Validator = assert(SMODS.load_file("src/lua/core/validator.lua"))()
+---@type BB_LOGGER
+local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
+local socket = require("socket")
 
 ---@type table<integer, string>?
 local STATE_NAME_CACHE = nil
@@ -162,11 +165,15 @@ function BB_DISPATCHER.dispatch(request)
     BB_DISPATCHER.send_error("Unknown method: " .. request.method, BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
-  sendDebugMessage("Dispatching: " .. request.method, "BB.DISPATCHER")
+
+  -- Log incoming request with params
+  local start_time = socket.gettime()
+  sendDebugMessage(request.method .. BB_LOGGER.serialize_params(params), "BB.REQUEST")
 
   -- TIER 2: Schema Validation
   local valid, err_msg, err_code = Validator.validate(params, endpoint.schema)
   if not valid then
+    sendWarnMessage(request.method .. ": " .. (err_msg or "Validation failed"), "BB.VALIDATION")
     BB_DISPATCHER.send_error(err_msg or "Validation failed", err_code or BB_ERROR_NAMES.BAD_REQUEST)
     return
   end
@@ -186,6 +193,11 @@ function BB_DISPATCHER.dispatch(request)
       for _, state in ipairs(endpoint.requires_state) do
         table.insert(state_names, get_state_name(state))
       end
+      local current_state_name = get_state_name(current_state)
+      sendWarnMessage(
+        string.format("%s: requires %s, current=%s", request.method, table.concat(state_names, "|"), current_state_name),
+        "BB.STATE"
+      )
       BB_DISPATCHER.send_error(
         "Method '" .. request.method .. "' requires one of these states: " .. table.concat(state_names, ", "),
         BB_ERROR_NAMES.INVALID_STATE
@@ -197,6 +209,14 @@ function BB_DISPATCHER.dispatch(request)
   -- TIER 4: Execute Endpoint
   local function send_response(response)
     if BB_DISPATCHER.Server then
+      -- Log response with timing
+      local duration_ms = (socket.gettime() - start_time) * 1000
+      local is_error = response.message ~= nil
+      if is_error then
+        sendDebugMessage(string.format("%s ERR (%.0fms)", request.method, duration_ms), "BB.RESPONSE")
+      else
+        sendDebugMessage(string.format("%s OK (%.0fms)", request.method, duration_ms), "BB.RESPONSE")
+      end
       BB_DISPATCHER.Server.send_response(response)
     else
       sendDebugMessage("Cannot send response - Server not initialized", "BB.DISPATCHER")
@@ -206,6 +226,7 @@ function BB_DISPATCHER.dispatch(request)
     endpoint.execute(params, send_response)
   end)
   if not exec_success then
+    sendErrorMessage(request.method .. ": " .. tostring(exec_error), "BB.EXEC")
     BB_DISPATCHER.send_error(tostring(exec_error), BB_ERROR_NAMES.INTERNAL_ERROR)
   end
 end

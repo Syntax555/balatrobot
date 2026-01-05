@@ -36,7 +36,8 @@ return {
       return
     end
 
-    sendDebugMessage("Init reroll()", "BB.ENDPOINTS")
+    -- Log reroll with cost and money
+    sendDebugMessage(string.format("Rerolling shop (cost=$%d, money=$%d)", reroll_cost, G.GAME.dollars), "BB.ENDPOINTS")
     G.FUNCS.reroll_shop(nil)
 
     -- Wait for shop state to confirm reroll completed
@@ -46,7 +47,7 @@ return {
       func = function()
         local done = G.STATE == G.STATES.SHOP
         if done then
-          sendDebugMessage("Return reroll() - shop rerolled", "BB.ENDPOINTS")
+          sendDebugMessage(string.format("Return reroll() money=$%d", G.GAME.dollars), "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
         end
         return done

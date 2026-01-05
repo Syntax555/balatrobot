@@ -130,6 +130,13 @@ return {
 
     assert(type(indices) == "table", "indices must be a table")
 
+    -- Log what we're rearranging
+    local order_str = "[" .. table.concat(indices, ",") .. "]"
+    sendDebugMessage(
+      string.format("Rearranging %s (%d cards): %s", type_name, #source_array, order_str),
+      "BB.ENDPOINTS"
+    )
+
     -- Validate permutation: correct length, no duplicates, all indices present
     -- Check length matches
     if #indices ~= #source_array then
