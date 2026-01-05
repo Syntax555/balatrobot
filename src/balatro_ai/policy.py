@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from balatro_ai.actions import Action
-from balatro_ai.config import BotConfig
+from balatro_ai.config import Config
 from balatro_ai.gs import gs_hand_cards, gs_state
 
 JsonObject = dict[str, Any]
@@ -14,7 +14,7 @@ JsonObject = dict[str, Any]
 class PolicyContext:
     """Context for policy decisions."""
 
-    config: BotConfig
+    config: Config
     run_memory: dict[str, Any]
     round_memory: dict[str, Any]
 

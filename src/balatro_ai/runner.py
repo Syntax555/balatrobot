@@ -4,7 +4,7 @@ import logging
 from typing import Any, Mapping
 
 from balatro_ai.actions import Action
-from balatro_ai.config import BotConfig
+from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_ante,
     gs_hand_cards,
@@ -22,11 +22,11 @@ GameState = dict[str, Any]
 class BotRunner:
     """Runs a BalatroBot loop until game over or step limit."""
 
-    def __init__(self, config: BotConfig) -> None:
+    def __init__(self, config: Config, base_url: str) -> None:
         self._config = config
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger("balatro_ai")
         self._client = BalatroRPC(
-            base_url=config.base_url,
+            base_url=base_url,
             timeout=config.timeout,
         )
         self._policy = Policy()
@@ -177,13 +177,14 @@ class BotRunner:
 
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(
-            "State=%s ante=%s round=%s money=%s action=%s params=%s",
-            gs_state(state),
-            gs_ante(state),
-            gs_round_num(state),
-            gs_money(state),
-            action.kind,
-            action.params,
+            "Action",
+            extra={
+                "state": gs_state(state),
+                "ante": gs_ante(state),
+                "round": gs_round_num(state),
+                "money": gs_money(state),
+                "action_kind": action.kind,
+            },
         )
 
     def _exit_code(self, state: Mapping[str, Any], steps: int) -> int:

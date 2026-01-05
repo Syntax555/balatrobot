@@ -4,12 +4,18 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class BotConfig:
+class Config:
     """Configuration for running the bot."""
 
-    base_url: str
     deck: str
     stake: str
     seed: str | None
     max_steps: int
     timeout: float
+    log_level: str
+    rollout_k: int = 30
+    discard_m: int = 12
+    reserve_early: int = 10
+    reserve_mid: int = 20
+    reserve_late: int = 25
+    max_rerolls_per_shop: int = 1

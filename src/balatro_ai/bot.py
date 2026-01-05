@@ -15,7 +15,7 @@ from typing import Sequence
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from balatro_ai.config import BotConfig
+from balatro_ai.config import Config
 from balatro_ai.logging_utils import configure_logging
 from balatro_ai.runner import BotRunner
 
@@ -31,23 +31,40 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-steps", default=1000, type=int, help="Max steps to run")
     parser.add_argument("--timeout", default=10.0, type=float, help="HTTP timeout seconds")
     parser.add_argument("--log-level", default="INFO", help="Logging level")
+    parser.add_argument("--rollout-k", default=30, type=int, help="Rollout depth")
+    parser.add_argument("--discard-m", default=12, type=int, help="Discard candidates")
+    parser.add_argument("--reserve-early", default=10, type=int, help="Early reserve")
+    parser.add_argument("--reserve-mid", default=20, type=int, help="Mid reserve")
+    parser.add_argument("--reserve-late", default=25, type=int, help="Late reserve")
+    parser.add_argument(
+        "--max-rerolls-per-shop",
+        default=1,
+        type=int,
+        help="Maximum rerolls per shop",
+    )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the bot with CLI-provided configuration."""
     args = build_parser().parse_args(argv)
-    configure_logging(args.log_level)
     base_url = f"http://{args.host}:{args.port}"
-    config = BotConfig(
-        base_url=base_url,
+    config = Config(
         deck=args.deck,
         stake=args.stake,
         seed=args.seed,
         max_steps=args.max_steps,
         timeout=args.timeout,
+        log_level=args.log_level,
+        rollout_k=args.rollout_k,
+        discard_m=args.discard_m,
+        reserve_early=args.reserve_early,
+        reserve_mid=args.reserve_mid,
+        reserve_late=args.reserve_late,
+        max_rerolls_per_shop=args.max_rerolls_per_shop,
     )
-    runner = BotRunner(config)
+    configure_logging(config.log_level)
+    runner = BotRunner(config=config, base_url=base_url)
     return runner.run()
 
 
