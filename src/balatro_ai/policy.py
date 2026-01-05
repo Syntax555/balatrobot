@@ -10,9 +10,6 @@ from balatro_ai.joker_order import maybe_reorder_jokers
 from balatro_ai.pack_policy import PackPolicy
 from balatro_ai.shop_policy import ShopPolicy
 
-JsonObject = dict[str, Any]
-
-
 @dataclass
 class PolicyContext:
     """Context for policy decisions."""
@@ -46,9 +43,8 @@ class Policy:
                 ctx.run_memory["last_state"] = state
                 return reorder_action
         if state == "MENU":
-            action = self._menu_action(ctx)
             ctx.run_memory["last_state"] = state
-            return action
+            return Action(kind="gamestate", params={})
         if state == "BLIND_SELECT":
             ctx.run_memory["last_state"] = state
             return Action(kind="select", params={})
@@ -72,15 +68,6 @@ class Policy:
             return self._pack_policy.choose_action(gs, ctx.config, ctx, intent)
         ctx.run_memory["last_state"] = state
         return Action(kind="gamestate", params={})
-
-    def _menu_action(self, ctx: PolicyContext) -> Action:
-        if not ctx.run_memory.get("menu_sent"):
-            ctx.run_memory["menu_sent"] = True
-            return Action(kind="menu", params={})
-        params: JsonObject = {"deck": ctx.config.deck, "stake": ctx.config.stake}
-        if ctx.config.seed is not None:
-            params["seed"] = ctx.config.seed
-        return Action(kind="start", params=params)
 
     def _intent(self, ctx: PolicyContext) -> str:
         intent = ctx.round_memory.get("intent")

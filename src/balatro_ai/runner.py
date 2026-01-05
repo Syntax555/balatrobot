@@ -14,15 +14,22 @@ from balatro_ai.gs import (
     gs_state,
     gs_won,
 )
+from balatro_ai.pacing import BackoffPacer
 from balatro_ai.policy import Policy, PolicyContext
 from balatro_ai.rollout import rollout_step
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 GameState = dict[str, Any]
 
+_IDLE_STATES = {"MENU", "GAME_OVER"}
+_PACE_RESET = "reset"
+_PACE_BUMP = "bump"
+_PACE_BUMP_HARD = "bump_hard"
+_HARD_BACKOFF_FACTOR = 2.5
+
 
 class BotRunner:
-    """Runs a BalatroBot loop until game over or step limit."""
+    """Runs a BalatroBot loop with adaptive pacing."""
 
     def __init__(self, config: Config, base_url: str) -> None:
         self._config = config
@@ -37,52 +44,81 @@ class BotRunner:
             run_memory={},
             round_memory={},
         )
+        self._pacer = BackoffPacer(
+            min_delay=0.1,
+            max_delay=2.0,
+            factor=1.5,
+            jitter=0.05,
+        )
 
     def run(self) -> int:
-        """Run the bot loop and return an exit code."""
+        """Run the bot loop indefinitely."""
         steps = 0
+        limit_logged = False
         try:
             state = self._client.gamestate()
             self._sync_round_context(state)
-            while steps < self._config.max_steps and gs_state(state) != "GAME_OVER":
-                state, steps = self._step(state, steps)
-            return self._exit_code(state, steps)
+            while True:
+                state_name = gs_state(state)
+                if state_name in _IDLE_STATES or steps >= self._config.max_steps:
+                    if steps >= self._config.max_steps and not limit_logged:
+                        self._logger.warning(
+                            "Reached max steps (%s). Pausing actions.",
+                            steps,
+                        )
+                        limit_logged = True
+                    state, changed = self._idle_tick(state)
+                    if changed:
+                        self._pacer.reset()
+                    else:
+                        self._pacer.bump()
+                    self._pacer.sleep()
+                    continue
+                limit_logged = False
+                state, steps, pace = self._step(state, steps)
+                self._apply_pace(pace)
+            return 0
         finally:
             self._client.close()
 
-    def _step(self, state: Mapping[str, Any], steps: int) -> tuple[GameState, int]:
-        if steps >= self._config.max_steps:
-            return dict(state), steps
+    def _idle_tick(self, state: Mapping[str, Any]) -> tuple[GameState, bool]:
+        refreshed = self._client.gamestate()
+        self._sync_round_context(refreshed)
+        return dict(refreshed), gs_state(refreshed) != gs_state(state)
+
+    def _apply_pace(self, pace: str) -> None:
+        if pace == _PACE_RESET:
+            self._pacer.reset()
+        elif pace == _PACE_BUMP:
+            self._pacer.bump()
+        elif pace == _PACE_BUMP_HARD:
+            self._pacer.bump(factor=_HARD_BACKOFF_FACTOR)
+        else:
+            self._pacer.reset()
+        self._pacer.sleep()
+
+    def _step(self, state: Mapping[str, Any], steps: int) -> tuple[GameState, int, str]:
         action = self._policy.decide(state, self._context)
         action = self._ensure_legal_action(action, state)
         try:
             new_state = self.execute_action(action, state)
-            steps += 1
+            if action.kind != "gamestate":
+                steps += 1
         except BalatroRPCError as exc:
             self._log_rpc_error(state, exc)
             error_name = self._error_name(exc)
-            if error_name == "INVALID_STATE":
-                self._logger.warning("Invalid state. Refreshing and retrying decision.")
+            if error_name in {"INVALID_STATE", "NOT_ALLOWED"}:
+                self._logger.warning(
+                    "RPC %s. Backing off before retrying.",
+                    error_name or "UNKNOWN",
+                )
                 refreshed = self._client.gamestate()
                 self._sync_round_context(refreshed)
-                action = self._policy.decide(refreshed, self._context)
-                action = self._ensure_legal_action(action, refreshed)
-                if steps >= self._config.max_steps:
-                    return dict(refreshed), steps
-                new_state = self.execute_action(action, refreshed)
-                steps += 1
-            elif error_name == "NOT_ALLOWED":
-                self._logger.warning("Action not allowed. Falling back to safe action.")
-                fallback = self._fallback_not_allowed(state)
-                fallback = self._ensure_legal_action(fallback, state)
-                if steps >= self._config.max_steps:
-                    return dict(state), steps
-                new_state = self.execute_action(fallback, state)
-                steps += 1
-            else:
-                raise
+                return dict(refreshed), steps, _PACE_BUMP_HARD
+            raise
         self._sync_round_context(new_state)
-        return dict(new_state), steps
+        pace = _PACE_RESET if gs_state(new_state) != gs_state(state) else _PACE_BUMP
+        return dict(new_state), steps, pace
 
     def execute_action(self, action: Action, gs: Mapping[str, Any]) -> GameState:
         """Execute a single action and return the new game state."""
@@ -190,7 +226,7 @@ class BotRunner:
     def _fallback_not_allowed(self, gs: Mapping[str, Any]) -> Action:
         state = gs_state(gs)
         if state == "MENU":
-            return Action(kind="menu", params={})
+            return Action(kind="gamestate", params={})
         if state == "BLIND_SELECT":
             return Action(kind="select", params={})
         if state == "SELECTING_HAND":
