@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
 _MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
 _XMULT_TOKENS = {"xmult", "times"}
-_TARGET_TOKENS = {"target", "select", "enhance", "convert", "destroy", "copy"}
+_TARGET_TOKENS = {"target", "targets"}
+_TARGET_ACTION_TOKENS = {"enhance", "convert", "destroy", "copy"}
+_TARGET_CARD_TOKENS = {"card", "cards", "hand"}
 
 
 @dataclass(frozen=True)
@@ -42,8 +44,8 @@ class PackPolicy:
         if not pack_cards:
             return Action(kind="pack", params={"skip": True})
         index = pick_pack_card(pack_cards, intent)
-        text = pack_card_text(pack_cards[index])
-        if needs_targets(text):
+        card = pack_cards[index]
+        if needs_targets(card):
             targets = choose_targets(gs, intent)
             if not targets:
                 return Action(kind="pack", params={"skip": True})
@@ -90,11 +92,22 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
     return best_index
 
 
-def needs_targets(card_text: str) -> bool:
+def needs_targets(card: Mapping[str, Any]) -> bool:
     """Return True if the card likely needs target selection."""
-    if not card_text:
+    structured = _structured_targets(card)
+    if structured is not None:
+        return structured
+    text = pack_card_text(card)
+    if not text:
         return False
-    return bool(card_tokens(card_text) & _TARGET_TOKENS)
+    tokens = card_tokens(text)
+    if tokens & _TARGET_TOKENS:
+        return True
+    if "select" in tokens and tokens & _TARGET_CARD_TOKENS:
+        return True
+    if tokens & _TARGET_ACTION_TOKENS and tokens & _TARGET_CARD_TOKENS:
+        return True
+    return False
 
 
 def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
@@ -132,6 +145,31 @@ def _has_x_token(tokens: set[str]) -> bool:
         if token.startswith("x") and token[1:].isdigit():
             return True
     return False
+
+
+def _structured_targets(card: Mapping[str, Any]) -> bool | None:
+    for key in (
+        "requires_target",
+        "requires_targets",
+        "needs_targets",
+        "target_required",
+    ):
+        value = card.get(key)
+        if isinstance(value, bool):
+            return value
+    for key in ("target_count", "target_min", "target_max", "targets_required"):
+        value = card.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value > 0
+    if "targets" in card:
+        value = card.get("targets")
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value > 0
+        if isinstance(value, list):
+            return len(value) > 0
+    return None
 
 
 def _score_from_category(category: str) -> int:

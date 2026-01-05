@@ -390,6 +390,14 @@ class BalatroRPC:
         if not values and not allow_empty:
             raise self._invalid_params(f"{name} must be non-empty", {name: values})
         indices: list[int] = []
+        seen: set[int] = set()
         for value in values:
-            indices.append(self._validate_index(name, value))
+            index = self._validate_index(name, value)
+            if index in seen:
+                raise self._invalid_params(
+                    f"{name} must not contain duplicates",
+                    {name: values},
+                )
+            seen.add(index)
+            indices.append(index)
         return indices

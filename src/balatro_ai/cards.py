@@ -111,8 +111,6 @@ def _parse_rank_value(value: Any) -> int:
 
 def _rank_from_text(text: str) -> int:
     lowered = text.lower()
-    if "10" in lowered:
-        return 10
     tokens = _TOKEN_RE.findall(lowered)
     for token in tokens:
         if token in _RANK_MAP:

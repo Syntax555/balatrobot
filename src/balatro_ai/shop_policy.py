@@ -262,7 +262,13 @@ def _score_joker(joker: Mapping[str, Any], ante: int) -> int:
     if rule is not None:
         score = _score_from_category(rule.category)
         if rule.category == "econ" and ante >= 6:
-            score -= 20
+            text = _item_text(joker)
+            tokens = _tokens(text)
+            xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
+            mult = bool(tokens & _MULT_TOKENS)
+            chips = bool(tokens & _CHIPS_TOKENS)
+            if not (xmult or mult or chips):
+                score -= 20
         return score
     text = _item_text(joker)
     tokens = _tokens(text)

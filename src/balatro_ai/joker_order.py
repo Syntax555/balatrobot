@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
-_MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
+_MULT_TOKENS = {"mult", "multiplier", "mults"}
 _XMULT_TOKENS = {"xmult", "times", "retrigger", "again"}
 
 

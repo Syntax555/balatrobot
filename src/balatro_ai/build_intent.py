@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from typing import Any, Mapping
 
-from balatro_ai.cards import card_rank, card_suit
+from balatro_ai.cards import card_rank, card_suit, card_tokens
 from balatro_ai.gs import gs_hand_cards, gs_jokers
 from balatro_ai.joker_order import joker_text
 
@@ -33,15 +33,26 @@ def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
 
 
 def _intent_from_jokers(gs: Mapping[str, Any]) -> tuple[BuildIntent, float] | None:
+    counts = {
+        BuildIntent.FLUSH: 0,
+        BuildIntent.STRAIGHT: 0,
+        BuildIntent.PAIRS: 0,
+    }
     for joker in gs_jokers(gs):
-        text = joker_text(joker)
-        if "flush" in text:
-            return BuildIntent.FLUSH, 0.9
-        if "straight" in text:
-            return BuildIntent.STRAIGHT, 0.9
-        if "two pair" in text or "pair" in text or "kind" in text:
-            return BuildIntent.PAIRS, 0.9
-    return None
+        tokens = card_tokens(joker_text(joker))
+        if not tokens:
+            continue
+        if "flush" in tokens:
+            counts[BuildIntent.FLUSH] += 1
+        if "straight" in tokens:
+            counts[BuildIntent.STRAIGHT] += 1
+        if _matches_pairs(tokens):
+            counts[BuildIntent.PAIRS] += 1
+    best_intent = max(counts.items(), key=lambda item: (item[1], _intent_priority(item[0])))
+    if best_intent[1] <= 0:
+        return None
+    confidence = _joker_confidence(best_intent[1])
+    return best_intent[0], confidence
 
 
 def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
@@ -119,3 +130,13 @@ def _intent_priority(intent: BuildIntent) -> int:
     if intent == BuildIntent.PAIRS:
         return 1
     return 0
+
+
+def _matches_pairs(tokens: set[str]) -> bool:
+    if tokens & {"pair", "pairs", "kind"}:
+        return True
+    return "full" in tokens and "house" in tokens
+
+
+def _joker_confidence(count: int) -> float:
+    return min(0.9, 0.6 + 0.1 * max(0, count - 1))
