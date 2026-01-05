@@ -15,8 +15,9 @@ from typing import Sequence
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from balatro_ai.config import BotConfig
 from balatro_ai.logging_utils import configure_logging
-from balatro_ai.runner import BotConfig, BotRunner
+from balatro_ai.runner import BotRunner
 
 
 def build_parser() -> argparse.ArgumentParser:

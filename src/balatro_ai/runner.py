@@ -1,26 +1,22 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import Any, Mapping
 
-from balatro_ai.gs import gs_ante, gs_money, gs_round_num, gs_state, gs_won
+from balatro_ai.actions import Action
+from balatro_ai.config import BotConfig
+from balatro_ai.gs import (
+    gs_ante,
+    gs_hand_cards,
+    gs_money,
+    gs_round_num,
+    gs_state,
+    gs_won,
+)
+from balatro_ai.policy import Policy, PolicyContext
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
-from balatro_ai.policy import Action, SimplePolicy
 
 GameState = dict[str, Any]
-
-
-@dataclass(frozen=True)
-class BotConfig:
-    """Configuration for running the bot."""
-
-    base_url: str
-    deck: str
-    stake: str
-    seed: str | None
-    max_steps: int
-    timeout: float
 
 
 class BotRunner:
@@ -33,10 +29,11 @@ class BotRunner:
             base_url=config.base_url,
             timeout=config.timeout,
         )
-        self._policy = SimplePolicy(
-            deck=config.deck,
-            stake=config.stake,
-            seed=config.seed,
+        self._policy = Policy()
+        self._context = PolicyContext(
+            config=config,
+            run_memory={},
+            round_memory={},
         )
 
     def run(self) -> int:
@@ -44,80 +41,79 @@ class BotRunner:
         steps = 0
         try:
             state = self._client.gamestate()
+            self._sync_round_context(state)
             while steps < self._config.max_steps and gs_state(state) != "GAME_OVER":
-                actions = self._policy.next_actions(state)
-                state, steps = self._execute_actions_with_fallback(state, actions, steps)
+                state, steps = self._step(state, steps)
             return self._exit_code(state, steps)
         finally:
             self._client.close()
 
-    def _execute_actions_with_fallback(
-        self,
-        state: Mapping[str, Any],
-        actions: list[Action],
-        steps: int,
-    ) -> tuple[GameState, int]:
-        current_state: GameState = dict(state)
-        for action in actions:
-            if steps >= self._config.max_steps:
-                break
-            try:
-                self._log_action(current_state, action)
-                current_state = self._dispatch_action(action)
-                steps += 1
-            except BalatroRPCError as exc:
-                self._logger.warning("Action failed: %s. Applying fallback.", exc)
-                refreshed = self._client.gamestate()
-                fallback_actions = self._policy.fallback_actions(refreshed)
-                return self._execute_actions(refreshed, fallback_actions, steps)
-        return current_state, steps
-
-    def _execute_actions(
-        self,
-        state: Mapping[str, Any],
-        actions: list[Action],
-        steps: int,
-    ) -> tuple[GameState, int]:
-        current_state: GameState = dict(state)
-        for action in actions:
-            if steps >= self._config.max_steps:
-                break
-            self._log_action(current_state, action)
-            current_state = self._dispatch_action(action)
+    def _step(self, state: Mapping[str, Any], steps: int) -> tuple[GameState, int]:
+        if steps >= self._config.max_steps:
+            return dict(state), steps
+        action = self._policy.decide(state, self._context)
+        try:
+            new_state = self.execute_action(action, state)
             steps += 1
-        return current_state, steps
+        except BalatroRPCError as exc:
+            error_name = self._error_name(exc)
+            if error_name == "INVALID_STATE":
+                self._logger.warning("Invalid state. Refreshing and retrying decision.")
+                refreshed = self._client.gamestate()
+                self._sync_round_context(refreshed)
+                action = self._policy.decide(refreshed, self._context)
+                if steps >= self._config.max_steps:
+                    return dict(refreshed), steps
+                new_state = self.execute_action(action, refreshed)
+                steps += 1
+            elif error_name == "NOT_ALLOWED":
+                self._logger.warning("Action not allowed. Falling back to safe action.")
+                fallback = self._safe_action(state)
+                if steps >= self._config.max_steps:
+                    return dict(state), steps
+                new_state = self.execute_action(fallback, state)
+                steps += 1
+            else:
+                raise
+        self._sync_round_context(new_state)
+        return dict(new_state), steps
+
+    def execute_action(self, action: Action, gs: Mapping[str, Any]) -> GameState:
+        """Execute a single action and return the new game state."""
+        self._log_action(gs, action)
+        return self._dispatch_action(action)
 
     def _dispatch_action(self, action: Action) -> GameState:
-        params = action.params or {}
-        if action.method == "menu":
+        params = action.params
+        if action.kind == "menu":
             return self._client.menu()
-        if action.method == "start":
+        if action.kind == "start":
             return self._client.start(
                 deck=self._require_param(params, "deck"),
                 stake=self._require_param(params, "stake"),
                 seed=params.get("seed"),
             )
-        if action.method == "select":
+        if action.kind == "select":
             return self._client.select()
-        if action.method == "play":
+        if action.kind == "play":
             return self._client.play(cards=self._require_list(params, "cards"))
-        if action.method == "cash_out":
+        if action.kind == "cash_out":
             return self._client.cash_out()
-        if action.method == "next_round":
+        if action.kind == "next_round":
             return self._client.next_round()
-        if action.method == "pack":
+        if action.kind == "pack":
             return self._client.pack(
                 card=params.get("card"),
                 targets=params.get("targets"),
                 skip=params.get("skip"),
             )
-        if action.method == "gamestate":
+        if action.kind == "gamestate":
             return self._client.gamestate()
         raise BalatroRPCError(
             code=-32601,
             message="Method not found",
-            data={"method": action.method},
-            method=action.method,
+            data={"method": action.kind},
+            method=action.kind,
             params=params,
         )
 
@@ -144,6 +140,41 @@ class BotRunner:
             )
         return value
 
+    def _error_name(self, exc: BalatroRPCError) -> str | None:
+        data = exc.data or {}
+        if isinstance(data, Mapping):
+            name = data.get("name")
+            return str(name) if name is not None else None
+        return None
+
+    def _safe_action(self, gs: Mapping[str, Any]) -> Action:
+        state = gs_state(gs)
+        if state == "MENU":
+            return Action(kind="menu", params={})
+        if state == "BLIND_SELECT":
+            return Action(kind="select", params={})
+        if state == "SELECTING_HAND":
+            cards = gs_hand_cards(gs)
+            count = min(5, len(cards))
+            if count == 0:
+                return Action(kind="gamestate", params={})
+            indices = list(range(count))
+            return Action(kind="play", params={"cards": indices})
+        if state == "ROUND_EVAL":
+            return Action(kind="cash_out", params={})
+        if state == "SHOP":
+            return Action(kind="next_round", params={})
+        if state == "SMODS_BOOSTER_OPENED":
+            return Action(kind="pack", params={"card": 0})
+        return Action(kind="gamestate", params={})
+
+    def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
+        round_num = gs_round_num(gs)
+        last_round = self._context.run_memory.get("round_num")
+        if last_round != round_num:
+            self._context.round_memory.clear()
+            self._context.run_memory["round_num"] = round_num
+
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(
             "State=%s ante=%s round=%s money=%s action=%s params=%s",
@@ -151,7 +182,7 @@ class BotRunner:
             gs_ante(state),
             gs_round_num(state),
             gs_money(state),
-            action.method,
+            action.kind,
             action.params,
         )
 

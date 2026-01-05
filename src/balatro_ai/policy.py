@@ -3,62 +3,55 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from balatro_ai.actions import Action
+from balatro_ai.config import BotConfig
+from balatro_ai.gs import gs_hand_cards, gs_state
+
 JsonObject = dict[str, Any]
 
 
-@dataclass(frozen=True)
-class Action:
-    """Represents a JSON-RPC action to execute."""
+@dataclass
+class PolicyContext:
+    """Context for policy decisions."""
 
-    method: str
-    params: JsonObject | None = None
+    config: BotConfig
+    run_memory: dict[str, Any]
+    round_memory: dict[str, Any]
 
 
-class SimplePolicy:
+class Policy:
     """Policy that mirrors the temporary baseline behavior."""
 
-    def __init__(self, deck: str, stake: str, seed: str | None) -> None:
-        self._deck = deck
-        self._stake = stake
-        self._seed = seed
+    def decide(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        """Decide the next action based on the current game state."""
+        state = gs_state(gs)
+        if state == "MENU":
+            return self._menu_action(ctx)
+        if state == "BLIND_SELECT":
+            return Action(kind="select", params={})
+        if state == "SELECTING_HAND":
+            return self._hand_action(gs)
+        if state == "ROUND_EVAL":
+            return Action(kind="cash_out", params={})
+        if state == "SHOP":
+            return Action(kind="next_round", params={})
+        if state == "SMODS_BOOSTER_OPENED":
+            return Action(kind="pack", params={"card": 0})
+        return Action(kind="gamestate", params={})
 
-    def next_actions(self, state: Mapping[str, Any]) -> list[Action]:
-        """Return the next action(s) to take for the current state."""
-        game_state = state.get("state")
-        if game_state == "MENU":
-            return [
-                Action(method="menu"),
-                Action(method="start", params=self._start_params()),
-            ]
-        if game_state == "BLIND_SELECT":
-            return [Action(method="select")]
-        if game_state == "SELECTING_HAND":
-            return [self._hand_action(state)]
-        if game_state == "ROUND_EVAL":
-            return [Action(method="cash_out")]
-        if game_state == "SHOP":
-            return [Action(method="next_round")]
-        if game_state == "SMODS_BOOSTER_OPENED":
-            return [Action(method="pack", params={"card": 0})]
-        return [Action(method="gamestate")]
+    def _menu_action(self, ctx: PolicyContext) -> Action:
+        if not ctx.run_memory.get("menu_sent"):
+            ctx.run_memory["menu_sent"] = True
+            return Action(kind="menu", params={})
+        params: JsonObject = {"deck": ctx.config.deck, "stake": ctx.config.stake}
+        if ctx.config.seed is not None:
+            params["seed"] = ctx.config.seed
+        return Action(kind="start", params=params)
 
-    def fallback_actions(self, state: Mapping[str, Any]) -> list[Action]:
-        """Return a deterministic safe fallback action for the current state."""
-        return self.next_actions(state)
-
-    def _start_params(self) -> JsonObject:
-        params: JsonObject = {"deck": self._deck, "stake": self._stake}
-        if self._seed:
-            params["seed"] = self._seed
-        return params
-
-    def _hand_action(self, state: Mapping[str, Any]) -> Action:
-        hand = state.get("hand")
-        cards = hand.get("cards", []) if isinstance(hand, Mapping) else []
-        if not isinstance(cards, list):
-            return Action(method="gamestate")
+    def _hand_action(self, gs: Mapping[str, Any]) -> Action:
+        cards = gs_hand_cards(gs)
         count = min(5, len(cards))
         if count == 0:
-            return Action(method="gamestate")
+            return Action(kind="gamestate", params={})
         indices = list(range(count))
-        return Action(method="play", params={"cards": indices})
+        return Action(kind="play", params={"cards": indices})
