@@ -53,23 +53,27 @@ class BotRunner:
         if steps >= self._config.max_steps:
             return dict(state), steps
         action = self._policy.decide(state, self._context)
+        action = self._ensure_legal_action(action, state)
         try:
             new_state = self.execute_action(action, state)
             steps += 1
         except BalatroRPCError as exc:
+            self._log_rpc_error(state, exc)
             error_name = self._error_name(exc)
             if error_name == "INVALID_STATE":
                 self._logger.warning("Invalid state. Refreshing and retrying decision.")
                 refreshed = self._client.gamestate()
                 self._sync_round_context(refreshed)
                 action = self._policy.decide(refreshed, self._context)
+                action = self._ensure_legal_action(action, refreshed)
                 if steps >= self._config.max_steps:
                     return dict(refreshed), steps
                 new_state = self.execute_action(action, refreshed)
                 steps += 1
             elif error_name == "NOT_ALLOWED":
                 self._logger.warning("Action not allowed. Falling back to safe action.")
-                fallback = self._safe_action(state)
+                fallback = self._fallback_not_allowed(state)
+                fallback = self._ensure_legal_action(fallback, state)
                 if steps >= self._config.max_steps:
                     return dict(state), steps
                 new_state = self.execute_action(fallback, state)
@@ -180,7 +184,7 @@ class BotRunner:
             return str(name) if name is not None else None
         return None
 
-    def _safe_action(self, gs: Mapping[str, Any]) -> Action:
+    def _fallback_not_allowed(self, gs: Mapping[str, Any]) -> Action:
         state = gs_state(gs)
         if state == "MENU":
             return Action(kind="menu", params={})
@@ -198,8 +202,52 @@ class BotRunner:
         if state == "SHOP":
             return Action(kind="next_round", params={})
         if state == "SMODS_BOOSTER_OPENED":
-            return Action(kind="pack", params={"card": 0})
+            return Action(kind="pack", params={"skip": True})
         return Action(kind="gamestate", params={})
+
+    def _ensure_legal_action(self, action: Action, gs: Mapping[str, Any]) -> Action:
+        state = gs_state(gs)
+        if self._is_action_legal(action, state):
+            return action
+        self._logger.warning(
+            "Illegal action %s in state %s. Using gamestate.",
+            action.kind,
+            state or "UNKNOWN",
+            extra={
+                "state": state,
+                "ante": gs_ante(gs),
+                "round": gs_round_num(gs),
+                "money": gs_money(gs),
+                "action_kind": "illegal",
+            },
+        )
+        return Action(kind="gamestate", params={})
+
+    def _is_action_legal(self, action: Action, state: str) -> bool:
+        if action.kind in {"menu", "start", "gamestate"}:
+            return True
+        required = _REQUIRED_STATES.get(action.kind)
+        if required is not None:
+            return state in required
+        if action.kind == "rearrange":
+            return self._rearrange_allowed(action, state)
+        return False
+
+    def _rearrange_allowed(self, action: Action, state: str) -> bool:
+        params = action.params
+        hand = params.get("hand")
+        jokers = params.get("jokers")
+        consumables = params.get("consumables")
+        flags = [
+            hand is not None,
+            jokers is not None,
+            consumables is not None,
+        ]
+        if sum(1 for flag in flags if flag) != 1:
+            return False
+        if hand is not None:
+            return state in {"SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
+        return state in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
 
     def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
         round_num = gs_round_num(gs)
@@ -243,3 +291,33 @@ class BotRunner:
             steps,
         )
         return 2
+
+    def _log_rpc_error(self, state: Mapping[str, Any], exc: BalatroRPCError) -> None:
+        name = self._error_name(exc)
+        self._logger.warning(
+            "RPC error code=%s message=%s name=%s",
+            exc.code,
+            exc.message,
+            name or "UNKNOWN",
+            extra={
+                "state": gs_state(state),
+                "ante": gs_ante(state),
+                "round": gs_round_num(state),
+                "money": gs_money(state),
+                "action_kind": "error",
+            },
+        )
+
+
+_REQUIRED_STATES: dict[str, set[str]] = {
+    "select": {"BLIND_SELECT"},
+    "skip": {"BLIND_SELECT"},
+    "play": {"SELECTING_HAND"},
+    "discard": {"SELECTING_HAND"},
+    "cash_out": {"ROUND_EVAL"},
+    "buy": {"SHOP"},
+    "sell": {"SHOP"},
+    "reroll": {"SHOP"},
+    "next_round": {"SHOP"},
+    "pack": {"SMODS_BOOSTER_OPENED"},
+}
