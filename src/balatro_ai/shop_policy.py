@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any, Mapping, TYPE_CHECKING
 
 from balatro_ai.actions import Action
+from balatro_ai.cards import card_key, card_text, card_tokens
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_ante,
@@ -17,12 +17,12 @@ from balatro_ai.gs import (
     gs_state,
     safe_get,
 )
+from balatro_ai.joker_rules import joker_rule
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
 _MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
@@ -56,11 +56,13 @@ class ShopPolicy:
         if gs_state(gs) != "SHOP":
             raise ValueError(f"ShopPolicy used outside SHOP state: {gs_state(gs)}")
         shop_mem = _shop_memory(ctx)
-        pending = shop_mem.pop("pending_buy", None)
+        pending = shop_mem.get("pending_buy")
         if pending:
-            action = _pending_action(pending)
+            action = _pending_action(pending, gs)
             if action is not None:
+                shop_mem.pop("pending_buy", None)
                 return action
+            shop_mem.pop("pending_buy", None)
         money = gs_money(gs)
         ante = gs_ante(gs)
         reserve = _reserve(cfg, ante)
@@ -80,7 +82,13 @@ class ShopPolicy:
         if best.kind == "card" and _jokers_full(gs):
             worst_index = _worst_joker_index(gs, ante)
             if worst_index is not None:
-                shop_mem["pending_buy"] = {"kind": "buy", "item_kind": "card", "index": best.index}
+                identity = _item_identity(gs_shop_cards(gs)[best.index])
+                shop_mem["pending_buy"] = {
+                    "kind": "buy",
+                    "item_kind": "card",
+                    "index": best.index,
+                    "identity": identity,
+                }
                 return Action(kind="sell", params={"joker": worst_index})
         return _buy_action(best)
 
@@ -164,11 +172,14 @@ def _buy_action(candidate: _Candidate) -> Action:
     return Action(kind="buy", params={"card": candidate.index})
 
 
-def _pending_action(pending: Mapping[str, Any]) -> Action | None:
+def _pending_action(pending: Mapping[str, Any], gs: Mapping[str, Any]) -> Action | None:
     kind = pending.get("kind")
     item_kind = pending.get("item_kind")
     index = pending.get("index")
+    identity = pending.get("identity")
     if kind != "buy" or not isinstance(index, int):
+        return None
+    if identity is not None and not _identity_matches(gs, item_kind, index, identity):
         return None
     if item_kind == "voucher":
         return Action(kind="buy", params={"voucher": index})
@@ -213,13 +224,7 @@ def _worst_joker_index(gs: Mapping[str, Any], ante: int) -> int | None:
 
 
 def _item_text(item: Mapping[str, Any]) -> str:
-    label = item.get("label")
-    if isinstance(label, str) and label:
-        return label.lower()
-    key = item.get("key")
-    if isinstance(key, str) and key:
-        return key.lower()
-    return ""
+    return card_text(item)
 
 
 def _item_cost(item: Mapping[str, Any]) -> int:
@@ -235,9 +240,7 @@ def _item_cost(item: Mapping[str, Any]) -> int:
 
 
 def _tokens(text: str) -> set[str]:
-    if not text:
-        return set()
-    return set(_TOKEN_RE.findall(text.lower()))
+    return card_tokens(text)
 
 
 def _score_voucher(voucher: Mapping[str, Any]) -> int:
@@ -254,6 +257,13 @@ def _score_voucher(voucher: Mapping[str, Any]) -> int:
 
 
 def _score_joker(joker: Mapping[str, Any], ante: int) -> int:
+    key = card_key(joker)
+    rule = joker_rule(key)
+    if rule is not None:
+        score = _score_from_category(rule.category)
+        if rule.category == "econ" and ante >= 6:
+            score -= 20
+        return score
     text = _item_text(joker)
     tokens = _tokens(text)
     score = 0
@@ -295,6 +305,54 @@ def _has_x_token(tokens: set[str]) -> bool:
         if token.startswith("x") and token[1:].isdigit():
             return True
     return False
+
+
+def _score_from_category(category: str) -> int:
+    if category == "xmult":
+        return 100
+    if category == "mult":
+        return 50
+    if category == "chips":
+        return 20
+    if category == "econ":
+        return 0
+    return 0
+
+
+def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
+    identity: dict[str, str] = {}
+    key = card_key(item)
+    if key:
+        identity["key"] = key
+    text = card_text(item)
+    if text:
+        identity["label"] = text
+    return identity
+
+
+def _identity_matches(
+    gs: Mapping[str, Any],
+    item_kind: str,
+    index: int,
+    identity: Mapping[str, Any],
+) -> bool:
+    items: list[dict]
+    if item_kind == "voucher":
+        items = gs_shop_vouchers(gs)
+    elif item_kind == "pack":
+        items = gs_shop_packs(gs)
+    else:
+        items = gs_shop_cards(gs)
+    if index < 0 or index >= len(items):
+        return False
+    current = items[index]
+    key = identity.get("key")
+    if isinstance(key, str) and card_key(current) != key:
+        return False
+    label = identity.get("label")
+    if isinstance(label, str) and card_text(current) != label:
+        return False
+    return True
 
 
 def _shop_memory(ctx: "PolicyContext") -> dict[str, Any]:

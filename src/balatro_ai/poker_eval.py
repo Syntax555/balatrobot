@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import enum
-import re
 from typing import Any, Mapping
 
+from balatro_ai.cards import card_rank, card_suit, card_text
 
 class HandType(str, enum.Enum):
     """Poker hand types for Balatro."""
@@ -19,46 +19,13 @@ class HandType(str, enum.Enum):
     STRAIGHT_FLUSH = "STRAIGHT_FLUSH"
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
-_SUIT_TOKENS = {
-    "spades": "spades",
-    "spade": "spades",
-    "s": "spades",
-    "hearts": "hearts",
-    "heart": "hearts",
-    "h": "hearts",
-    "diamonds": "diamonds",
-    "diamond": "diamonds",
-    "d": "diamonds",
-    "clubs": "clubs",
-    "club": "clubs",
-    "c": "clubs",
-}
-_RANK_MAP = {
-    "a": 14,
-    "k": 13,
-    "q": 12,
-    "j": 11,
-    "t": 10,
-    "10": 10,
-    "9": 9,
-    "8": 8,
-    "7": 7,
-    "6": 6,
-    "5": 5,
-    "4": 4,
-    "3": 3,
-    "2": 2,
-}
-
-
 def classify_hand(cards: list[dict]) -> HandType:
-    """Classify a 1-5 card hand by poker precedence."""
+    """Classify a hand with up to 5 cards (straights/flushes only at 5 cards)."""
     count = len(cards)
     if count == 0:
         return HandType.HIGH_CARD
-    ranks = [_rank_value(card) for card in cards]
-    suits = [_card_suit(card) for card in cards]
+    ranks = [card_rank(card) for card in cards]
+    suits = [card_suit(card) for card in cards]
     counts = _rank_counts(ranks)
     max_dupe = max(counts.values(), default=1)
     has_flush = count >= 5 and _flush_count(suits) >= 5
@@ -90,8 +57,8 @@ def scoring_subset(cards: list[dict], hand_type: HandType, jokers_text: str) -> 
         return []
     if "splash" in (jokers_text or "").lower():
         return list(range(count))
-    ranks = [_rank_value(card) for card in cards]
-    suits = [_card_suit(card) for card in cards]
+    ranks = [card_rank(card) for card in cards]
+    suits = [card_suit(card) for card in cards]
     counts = _rank_counts(ranks)
     indices: list[int] = []
     if hand_type == HandType.STRAIGHT_FLUSH:
@@ -124,8 +91,8 @@ def evaluate_candidate(cards: list[dict], jokers: Any) -> dict:
     hand_type = classify_hand(cards)
     jokers_text = _jokers_text(jokers)
     scoring_indices = scoring_subset(cards, hand_type, jokers_text)
-    suits = [_card_suit(card) for card in cards]
-    ranks = [_rank_value(card) for card in cards]
+    suits = [card_suit(card) for card in cards]
+    ranks = [card_rank(card) for card in cards]
     features = {
         "flush_count": _flush_count(suits),
         "max_dupe": max(_rank_counts(ranks).values(), default=1),
@@ -137,63 +104,6 @@ def evaluate_candidate(cards: list[dict], jokers: Any) -> dict:
         "scoring_indices": scoring_indices,
         "features": features,
     }
-
-
-def _rank_value(card: Mapping[str, Any]) -> int:
-    for key in ("rank", "value", "rank_value"):
-        value = card.get(key)
-        if isinstance(value, int) and not isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            mapped = _RANK_MAP.get(value.lower())
-            if mapped is not None:
-                return mapped
-    value = card.get("value")
-    if isinstance(value, Mapping):
-        nested = value.get("rank") or value.get("value")
-        if isinstance(nested, int) and not isinstance(nested, bool):
-            return nested
-        if isinstance(nested, str):
-            mapped = _RANK_MAP.get(nested.lower())
-            if mapped is not None:
-                return mapped
-    label = card.get("label")
-    if isinstance(label, str):
-        return _rank_from_text(label)
-    return 0
-
-
-def _card_suit(card: Mapping[str, Any]) -> str | None:
-    for key in ("suit", "suit_name", "suit_key"):
-        value = card.get(key)
-        if isinstance(value, str) and value:
-            return _SUIT_TOKENS.get(value.lower(), value.lower())
-    value = card.get("value")
-    if isinstance(value, Mapping):
-        nested = value.get("suit")
-        if isinstance(nested, str) and nested:
-            return _SUIT_TOKENS.get(nested.lower(), nested.lower())
-    label = card.get("label")
-    if isinstance(label, str):
-        tokens = _TOKEN_RE.findall(label.lower())
-        for token in tokens:
-            if token in _SUIT_TOKENS:
-                return _SUIT_TOKENS[token]
-    return None
-
-
-def _rank_from_text(text: str) -> int:
-    lowered = text.lower()
-    if "10" in lowered:
-        return 10
-    tokens = _TOKEN_RE.findall(lowered)
-    for token in tokens:
-        if token in _RANK_MAP:
-            return _RANK_MAP[token]
-    for char in lowered:
-        if char in _RANK_MAP:
-            return _RANK_MAP[char]
-    return 0
 
 
 def _rank_counts(ranks: list[int]) -> dict[int, int]:
@@ -238,7 +148,7 @@ def _flush_count(suits: list[str | None]) -> int:
 def _straight_flush_possible(cards: list[dict]) -> bool:
     suits: dict[str, list[int]] = {}
     for index, card in enumerate(cards):
-        suit = _card_suit(card)
+        suit = card_suit(card)
         if not suit:
             continue
         suits.setdefault(suit, []).append(index)
@@ -246,7 +156,7 @@ def _straight_flush_possible(cards: list[dict]) -> bool:
         if len(indices) < 5:
             continue
         suited_cards = [cards[i] for i in indices]
-        ranks = [_rank_value(card) for card in suited_cards]
+        ranks = [card_rank(card) for card in suited_cards]
         if _best_straight_ranks(ranks):
             return True
     return False
@@ -292,7 +202,7 @@ def _straight_flush_indices(cards: list[dict]) -> list[int]:
     best_high = 0
     suits: dict[str, list[int]] = {}
     for index, card in enumerate(cards):
-        suit = _card_suit(card)
+        suit = card_suit(card)
         if not suit:
             continue
         suits.setdefault(suit, []).append(index)
@@ -300,7 +210,7 @@ def _straight_flush_indices(cards: list[dict]) -> list[int]:
         if len(indices) < 5:
             continue
         suited_cards = [cards[i] for i in indices]
-        ranks = [_rank_value(card) for card in suited_cards]
+        ranks = [card_rank(card) for card in suited_cards]
         target = _best_straight_ranks(ranks)
         if not target:
             continue
@@ -309,7 +219,7 @@ def _straight_flush_indices(cards: list[dict]) -> list[int]:
             suited_indices = _straight_indices(ranks)
             best_indices = [indices[i] for i in suited_indices]
             best_high = high
-    return best_indices or _straight_indices([_rank_value(card) for card in cards])
+    return best_indices or _straight_indices([card_rank(card) for card in cards])
 
 
 def _kind_indices(ranks: list[int], counts: Mapping[int, int], kind: int) -> list[int]:
@@ -412,13 +322,7 @@ def _jokers_text(jokers: Any) -> str:
         parts: list[str] = []
         for joker in jokers:
             if isinstance(joker, Mapping):
-                label = joker.get("label")
-                if isinstance(label, str) and label:
-                    parts.append(label.lower())
-                    continue
-                key = joker.get("key")
-                if isinstance(key, str) and key:
-                    parts.append(key.lower())
+                parts.append(card_text(joker))
         return " ".join(parts)
     return ""
 

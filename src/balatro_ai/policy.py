@@ -5,7 +5,7 @@ from typing import Any, Mapping
 
 from balatro_ai.actions import Action
 from balatro_ai.config import Config
-from balatro_ai.gs import gs_hand_cards, gs_state
+from balatro_ai.gs import gs_state
 from balatro_ai.joker_order import maybe_reorder_jokers
 from balatro_ai.pack_policy import PackPolicy
 from balatro_ai.shop_policy import ShopPolicy
@@ -81,14 +81,6 @@ class Policy:
         if ctx.config.seed is not None:
             params["seed"] = ctx.config.seed
         return Action(kind="start", params=params)
-
-    def _hand_action(self, gs: Mapping[str, Any]) -> Action:
-        cards = gs_hand_cards(gs)
-        count = min(5, len(cards))
-        if count == 0:
-            return Action(kind="gamestate", params={})
-        indices = list(range(count))
-        return Action(kind="play", params={"cards": indices})
 
     def _intent(self, ctx: PolicyContext) -> str:
         intent = ctx.round_memory.get("intent")

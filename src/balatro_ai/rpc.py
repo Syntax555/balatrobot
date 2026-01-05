@@ -227,14 +227,14 @@ class BalatroRPC:
             {"hand": hand, "jokers": jokers, "consumables": consumables},
             method="rearrange",
         )
-        indices = self._validate_indices(choice, value)
+        indices = self._validate_indices(choice, value, allow_empty=True)
         return self.call("rearrange", {choice: indices})
 
     def use(self, *, consumable: int, cards: list[int] | None = None) -> JsonObject:
         """Use a consumable card."""
         params: JsonObject = {"consumable": self._validate_index("consumable", consumable)}
         if cards is not None:
-            params["cards"] = self._validate_indices("cards", cards)
+            params["cards"] = self._validate_indices("cards", cards, allow_empty=True)
         return self.call("use", params)
 
     def save(self, path: str) -> JsonObject:
@@ -378,10 +378,16 @@ class BalatroRPC:
             raise self._invalid_params(f"{name} must be >= 0", {name: value})
         return value
 
-    def _validate_indices(self, name: str, values: list[int]) -> list[int]:
+    def _validate_indices(
+        self,
+        name: str,
+        values: list[int],
+        *,
+        allow_empty: bool = False,
+    ) -> list[int]:
         if not isinstance(values, list):
             raise self._invalid_params(f"{name} must be a list", {name: values})
-        if not values:
+        if not values and not allow_empty:
             raise self._invalid_params(f"{name} must be non-empty", {name: values})
         indices: list[int] = []
         for value in values:

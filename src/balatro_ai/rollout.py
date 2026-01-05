@@ -10,6 +10,7 @@ from typing import Any, Iterable, Mapping, TYPE_CHECKING
 
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent, infer_intent
+from balatro_ai.cards import card_rank, card_suit
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_blind_score,
@@ -111,10 +112,11 @@ def _generate_play_candidates(
 ) -> list[_ScoredCandidate]:
     candidates: list[_ScoredCandidate] = []
     hand_size = len(hand_cards)
+    priority = _priority_indices(hand_cards)
     for size in range(5, 0, -1):
         if size > hand_size:
             continue
-        combos = _combinations_bounded(list(range(hand_size)), size, max_count=80)
+        combos = _combinations_bounded(list(range(hand_size)), size, max_count=80, priority=priority)
         for combo in combos:
             cards = [hand_cards[i] for i in combo]
             evaluation = evaluate_candidate(cards, jokers)
@@ -304,7 +306,7 @@ def _discard_priority_indices(hand_cards: list[dict], intent: BuildIntent) -> li
 
 
 def _discard_for_flush(hand_cards: list[dict]) -> list[int]:
-    suits = [_card_suit(card) for card in hand_cards]
+    suits = [card_suit(card) for card in hand_cards]
     counts: dict[str, int] = {}
     for suit in suits:
         if not suit:
@@ -318,7 +320,7 @@ def _discard_for_flush(hand_cards: list[dict]) -> list[int]:
 
 
 def _discard_for_straight(hand_cards: list[dict]) -> list[int]:
-    ranks = [_rank_value(card) for card in hand_cards]
+    ranks = [card_rank(card) for card in hand_cards]
     target = _best_straight_ranks(ranks)
     if not target:
         return _discard_low_ranks(hand_cards)
@@ -334,7 +336,7 @@ def _discard_for_straight(hand_cards: list[dict]) -> list[int]:
 
 
 def _discard_for_pairs(hand_cards: list[dict]) -> list[int]:
-    ranks = [_rank_value(card) for card in hand_cards]
+    ranks = [card_rank(card) for card in hand_cards]
     counts: dict[int, int] = {}
     for rank in ranks:
         counts[rank] = counts.get(rank, 0) + 1
@@ -345,7 +347,7 @@ def _discard_for_pairs(hand_cards: list[dict]) -> list[int]:
 
 
 def _discard_low_ranks(hand_cards: list[dict]) -> list[int]:
-    ranks = [_rank_value(card) for card in hand_cards]
+    ranks = [card_rank(card) for card in hand_cards]
     ranked = sorted(range(len(ranks)), key=lambda idx: ranks[idx])
     return ranked
 
@@ -367,90 +369,31 @@ def _best_straight_ranks(ranks: list[int]) -> list[int]:
     return best
 
 
-def _combinations_bounded(indices: list[int], size: int, max_count: int) -> Iterable[tuple[int, ...]]:
+def _combinations_bounded(
+    indices: list[int],
+    size: int,
+    max_count: int,
+    priority: list[int] | None = None,
+) -> Iterable[tuple[int, ...]]:
     total = math.comb(len(indices), size)
     if total <= max_count:
         return list(combinations(indices, size))
-    stride = max(1, total // max_count)
+    priority_order = priority or indices
     selected: list[tuple[int, ...]] = []
-    for idx, combo in enumerate(combinations(indices, size)):
-        if idx % stride == 0:
-            selected.append(combo)
+    seen: set[tuple[int, ...]] = set()
+    for order in _priority_orders(priority_order):
+        stride = max(1, total // max_count)
+        for idx, combo in enumerate(combinations(order, size)):
+            if idx % stride != 0:
+                continue
+            normalized = tuple(sorted(combo))
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            selected.append(normalized)
             if len(selected) >= max_count:
-                break
+                return selected
     return selected
-
-
-def _rank_value(card: Mapping[str, Any]) -> int:
-    for key in ("rank", "value", "rank_value"):
-        value = card.get(key)
-        if isinstance(value, int) and not isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            mapped = _rank_from_text(value)
-            if mapped > 0:
-                return mapped
-    value = card.get("value")
-    if isinstance(value, Mapping):
-        nested = value.get("rank") or value.get("value")
-        if isinstance(nested, int) and not isinstance(nested, bool):
-            return nested
-        if isinstance(nested, str):
-            mapped = _rank_from_text(nested)
-            if mapped > 0:
-                return mapped
-    label = card.get("label")
-    if isinstance(label, str):
-        return _rank_from_text(label)
-    return 0
-
-
-def _rank_from_text(text: str) -> int:
-    lowered = text.lower()
-    if "10" in lowered:
-        return 10
-    tokens = [token for token in re.findall(r"[a-z0-9]+", lowered)]
-    for token in tokens:
-        if token == "a":
-            return 14
-        if token == "k":
-            return 13
-        if token == "q":
-            return 12
-        if token == "j":
-            return 11
-        if token == "t":
-            return 10
-        if token.isdigit():
-            value = int(token)
-            if 2 <= value <= 14:
-                return value
-    return 0
-
-
-def _card_suit(card: Mapping[str, Any]) -> str | None:
-    for key in ("suit", "suit_name", "suit_key"):
-        value = card.get(key)
-        if isinstance(value, str) and value:
-            return value.lower()
-    value = card.get("value")
-    if isinstance(value, Mapping):
-        nested = value.get("suit")
-        if isinstance(nested, str) and nested:
-            return nested.lower()
-    label = card.get("label")
-    if isinstance(label, str):
-        tokens = re.findall(r"[a-z0-9]+", label.lower())
-        for token in tokens:
-            if token in {"spade", "spades"}:
-                return "spades"
-            if token in {"heart", "hearts"}:
-                return "hearts"
-            if token in {"diamond", "diamonds"}:
-                return "diamonds"
-            if token in {"club", "clubs"}:
-                return "clubs"
-    return None
 
 
 def _save_path() -> str:
@@ -462,3 +405,31 @@ def _safe_int(value: Any) -> int:
     if isinstance(value, int) and not isinstance(value, bool):
         return value
     return 0
+
+
+def _priority_indices(hand_cards: list[dict]) -> list[int]:
+    suits = [card_suit(card) for card in hand_cards]
+    suit_counts: dict[str, int] = {}
+    for suit in suits:
+        if not suit:
+            continue
+        suit_counts[suit] = suit_counts.get(suit, 0) + 1
+    ranks = [card_rank(card) for card in hand_cards]
+    rank_counts: dict[int, int] = {}
+    for rank in ranks:
+        rank_counts[rank] = rank_counts.get(rank, 0) + 1
+    def score_index(idx: int) -> tuple[int, int, int]:
+        suit = suits[idx]
+        suit_score = suit_counts.get(suit, 0) if suit else 0
+        rank = ranks[idx]
+        dup_score = rank_counts.get(rank, 0)
+        return (dup_score, suit_score, rank)
+    return sorted(range(len(hand_cards)), key=score_index, reverse=True)
+
+
+def _priority_orders(order: list[int]) -> list[list[int]]:
+    orders = [order]
+    reversed_order = list(reversed(order))
+    if reversed_order != order:
+        orders.append(reversed_order)
+    return orders

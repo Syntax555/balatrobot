@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import re
 from typing import Any, Mapping, TYPE_CHECKING
 
 from balatro_ai.actions import Action
+from balatro_ai.cards import card_key, card_text, card_tokens
 from balatro_ai.gs import gs_jokers, gs_state
+from balatro_ai.joker_rules import joker_rule
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
 _MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
@@ -21,21 +21,18 @@ def joker_text(j: dict) -> str:
     """Return lowercase text for a joker, preferring label then key."""
     if not isinstance(j, Mapping):
         return ""
-    label = j.get("label")
-    if isinstance(label, str) and label:
-        return label.lower()
-    key = j.get("key")
-    if isinstance(key, str) and key:
-        return key.lower()
-    return ""
+    return card_text(j)
 
 
-def classify_joker_bucket(text: str) -> int:
+def classify_joker_bucket(text: str, key: str | None = None) -> int:
     """Return the bucket index for the provided joker text."""
+    rule = joker_rule(key)
+    if rule is not None:
+        return _category_bucket(rule.category)
     if not text:
         return 2
     lowered = text.lower()
-    tokens = set(_TOKEN_RE.findall(lowered))
+    tokens = card_tokens(lowered)
     if "$" in lowered or tokens & _ECON_TOKENS:
         return 0
     if tokens & _CHIPS_TOKENS:
@@ -50,7 +47,10 @@ def classify_joker_bucket(text: str) -> int:
 def compute_joker_permutation(jokers: list[dict]) -> list[int]:
     """Compute a stable permutation ordering jokers by bucket."""
     indexed = list(enumerate(jokers))
-    ordered = sorted(indexed, key=lambda item: classify_joker_bucket(joker_text(item[1])))
+    ordered = sorted(
+        indexed,
+        key=lambda item: classify_joker_bucket(joker_text(item[1]), card_key(item[1])),
+    )
     return [index for index, _ in ordered]
 
 
@@ -79,3 +79,15 @@ def _has_x_token(tokens: set[str]) -> bool:
         if token.startswith("x") and token[1:].isdigit():
             return True
     return False
+
+
+def _category_bucket(category: str) -> int:
+    if category == "econ":
+        return 0
+    if category == "chips":
+        return 1
+    if category == "mult":
+        return 2
+    if category == "xmult":
+        return 3
+    return 2

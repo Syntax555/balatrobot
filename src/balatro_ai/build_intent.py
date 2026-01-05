@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import enum
-import re
 from typing import Any, Mapping
 
+from balatro_ai.cards import card_rank, card_suit
 from balatro_ai.gs import gs_hand_cards, gs_jokers
 from balatro_ai.joker_order import joker_text
 
@@ -17,33 +17,6 @@ class BuildIntent(str, enum.Enum):
     HIGH_CARD = "HIGH_CARD"
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
-_SUIT_TOKENS = {
-    "spades": "spades",
-    "spade": "spades",
-    "hearts": "hearts",
-    "heart": "hearts",
-    "diamonds": "diamonds",
-    "diamond": "diamonds",
-    "clubs": "clubs",
-    "club": "clubs",
-}
-_RANK_MAP = {
-    "a": 14,
-    "k": 13,
-    "q": 12,
-    "j": 11,
-    "t": 10,
-    "10": 10,
-    "9": 9,
-    "8": 8,
-    "7": 7,
-    "6": 6,
-    "5": 5,
-    "4": 4,
-    "3": 3,
-    "2": 2,
-}
 
 
 def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
@@ -92,7 +65,7 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
 def _flush_conf(hand: list[dict]) -> float:
     counts: dict[str, int] = {}
     for card in hand:
-        suit = _card_suit(card)
+        suit = card_suit(card)
         if not suit:
             continue
         counts[suit] = counts.get(suit, 0) + 1
@@ -105,7 +78,7 @@ def _flush_conf(hand: list[dict]) -> float:
 
 
 def _pairs_conf(hand: list[dict]) -> float:
-    ranks = [_rank_value(card) for card in hand]
+    ranks = [card_rank(card) for card in hand]
     counts: dict[int, int] = {}
     for rank in ranks:
         if rank <= 0:
@@ -120,7 +93,7 @@ def _pairs_conf(hand: list[dict]) -> float:
 
 
 def _straight_conf(hand: list[dict]) -> float:
-    ranks = {_rank_value(card) for card in hand}
+    ranks = {card_rank(card) for card in hand}
     ranks.discard(0)
     if not ranks:
         return 0.0
@@ -136,49 +109,6 @@ def _straight_conf(hand: list[dict]) -> float:
     if max_count >= 3:
         return max_count / 5.0
     return 0.0
-
-
-def _card_suit(card: Mapping[str, Any]) -> str | None:
-    for key in ("suit", "suit_name", "suit_key"):
-        value = card.get(key)
-        if isinstance(value, str) and value:
-            return _SUIT_TOKENS.get(value.lower(), value.lower())
-    label = card.get("label")
-    if isinstance(label, str):
-        tokens = _TOKEN_RE.findall(label.lower())
-        for token in tokens:
-            if token in _SUIT_TOKENS:
-                return _SUIT_TOKENS[token]
-    return None
-
-
-def _rank_value(card: Mapping[str, Any]) -> int:
-    for key in ("rank", "value", "rank_value"):
-        value = card.get(key)
-        if isinstance(value, int) and not isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            mapped = _RANK_MAP.get(value.lower())
-            if mapped is not None:
-                return mapped
-    label = card.get("label")
-    if isinstance(label, str):
-        return _rank_from_text(label)
-    return 0
-
-
-def _rank_from_text(text: str) -> int:
-    lowered = text.lower()
-    if "10" in lowered:
-        return 10
-    tokens = _TOKEN_RE.findall(lowered)
-    for token in tokens:
-        if token in _RANK_MAP:
-            return _RANK_MAP[token]
-    for char in lowered:
-        if char in _RANK_MAP:
-            return _RANK_MAP[char]
-    return 0
 
 
 def _intent_priority(intent: BuildIntent) -> int:

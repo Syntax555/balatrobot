@@ -1,49 +1,22 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any, Mapping, TYPE_CHECKING
 
 from balatro_ai.actions import Action
+from balatro_ai.cards import card_key, card_rank, card_suit, card_text, card_tokens
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_hand_cards, gs_pack_cards, gs_state
+from balatro_ai.joker_rules import joker_rule
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
 
 
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
 _MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
 _XMULT_TOKENS = {"xmult", "times"}
 _TARGET_TOKENS = {"target", "select", "enhance", "convert", "destroy", "copy"}
-
-_RANK_MAP = {
-    "a": 14,
-    "k": 13,
-    "q": 12,
-    "j": 11,
-    "t": 10,
-    "10": 10,
-    "9": 9,
-    "8": 8,
-    "7": 7,
-    "6": 6,
-    "5": 5,
-    "4": 4,
-    "3": 3,
-    "2": 2,
-}
-_SUIT_TOKENS = {
-    "spades": "spades",
-    "spade": "spades",
-    "hearts": "hearts",
-    "heart": "hearts",
-    "diamonds": "diamonds",
-    "diamond": "diamonds",
-    "clubs": "clubs",
-    "club": "clubs",
-}
 
 
 @dataclass(frozen=True)
@@ -82,13 +55,7 @@ def pack_card_text(c: dict) -> str:
     """Return lowercase text for a pack card, preferring label then key."""
     if not isinstance(c, Mapping):
         return ""
-    label = c.get("label")
-    if isinstance(label, str) and label:
-        return label.lower()
-    key = c.get("key")
-    if isinstance(key, str) and key:
-        return key.lower()
-    return ""
+    return card_text(c)
 
 
 def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
@@ -98,8 +65,12 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
     intent_key = intent.lower() if isinstance(intent, str) else ""
     for index, card in enumerate(pack_cards):
         text = pack_card_text(card)
-        tokens = set(_TOKEN_RE.findall(text))
+        tokens = card_tokens(text)
         score = 0
+        key = card_key(card)
+        rule = joker_rule(key)
+        if rule is not None:
+            score += _score_from_category(rule.category)
         if tokens & _XMULT_TOKENS or _has_x_token(tokens):
             score += 100
         if tokens & _MULT_TOKENS:
@@ -123,8 +94,7 @@ def needs_targets(card_text: str) -> bool:
     """Return True if the card likely needs target selection."""
     if not card_text:
         return False
-    tokens = set(_TOKEN_RE.findall(card_text.lower()))
-    return bool(tokens & _TARGET_TOKENS)
+    return bool(card_tokens(card_text) & _TARGET_TOKENS)
 
 
 def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
@@ -138,14 +108,14 @@ def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
     for index, card in enumerate(hand_cards):
         if _is_hidden_or_debuffed(card):
             continue
-        score = _rank_value(card)
-        if suit_target and _card_suit(card) == suit_target:
+        score = card_rank(card)
+        if suit_target and card_suit(card) == suit_target:
             score += 5
         candidates.append(_TargetCandidate(index=index, score=score))
     if not candidates:
         for index, card in enumerate(hand_cards):
-            score = _rank_value(card)
-            if suit_target and _card_suit(card) == suit_target:
+            score = card_rank(card)
+            if suit_target and card_suit(card) == suit_target:
                 score += 5
             candidates.append(_TargetCandidate(index=index, score=score))
     if not candidates:
@@ -164,54 +134,22 @@ def _has_x_token(tokens: set[str]) -> bool:
     return False
 
 
-def _rank_value(card: Mapping[str, Any]) -> int:
-    for key in ("rank", "value", "rank_value"):
-        value = card.get(key)
-        if isinstance(value, int) and not isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            mapped = _RANK_MAP.get(value.lower())
-            if mapped is not None:
-                return mapped
-    label = card.get("label")
-    if isinstance(label, str):
-        return _rank_from_text(label)
+def _score_from_category(category: str) -> int:
+    if category == "xmult":
+        return 100
+    if category == "mult":
+        return 50
+    if category == "chips":
+        return 20
+    if category == "econ":
+        return 0
     return 0
-
-
-def _rank_from_text(text: str) -> int:
-    lowered = text.lower()
-    if "10" in lowered:
-        return 10
-    tokens = _TOKEN_RE.findall(lowered)
-    for token in tokens:
-        if token in _RANK_MAP:
-            return _RANK_MAP[token]
-    for char in lowered:
-        if char in _RANK_MAP:
-            return _RANK_MAP[char]
-    return 0
-
-
-def _card_suit(card: Mapping[str, Any]) -> str | None:
-    for key in ("suit", "suit_name", "suit_key"):
-        value = card.get(key)
-        if isinstance(value, str) and value:
-            normalized = _SUIT_TOKENS.get(value.lower())
-            return normalized or value.lower()
-    label = card.get("label")
-    if isinstance(label, str):
-        tokens = _TOKEN_RE.findall(label.lower())
-        for token in tokens:
-            if token in _SUIT_TOKENS:
-                return _SUIT_TOKENS[token]
-    return None
 
 
 def _majority_suit(cards: list[dict]) -> str | None:
     counts: dict[str, int] = {}
     for card in cards:
-        suit = _card_suit(card)
+        suit = card_suit(card)
         if not suit:
             continue
         counts[suit] = counts.get(suit, 0) + 1
