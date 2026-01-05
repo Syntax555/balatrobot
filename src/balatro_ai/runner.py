@@ -95,18 +95,50 @@ class BotRunner:
             )
         if action.kind == "select":
             return self._client.select()
+        if action.kind == "skip":
+            return self._client.skip()
         if action.kind == "play":
             return self._client.play(cards=self._require_list(params, "cards"))
+        if action.kind == "discard":
+            return self._client.discard(cards=self._require_list(params, "cards"))
         if action.kind == "cash_out":
             return self._client.cash_out()
         if action.kind == "next_round":
             return self._client.next_round()
+        if action.kind == "reroll":
+            return self._client.reroll()
+        if action.kind == "buy":
+            return self._client.buy(
+                card=params.get("card"),
+                voucher=params.get("voucher"),
+                pack=params.get("pack"),
+            )
+        if action.kind == "sell":
+            return self._client.sell(
+                joker=params.get("joker"),
+                consumable=params.get("consumable"),
+            )
         if action.kind == "pack":
             return self._client.pack(
                 card=params.get("card"),
                 targets=params.get("targets"),
                 skip=params.get("skip"),
             )
+        if action.kind == "rearrange":
+            return self._client.rearrange(
+                hand=params.get("hand"),
+                jokers=params.get("jokers"),
+                consumables=params.get("consumables"),
+            )
+        if action.kind == "use":
+            return self._client.use(
+                consumable=self._require_param(params, "consumable"),
+                cards=params.get("cards"),
+            )
+        if action.kind == "save":
+            return self._client.save(path=self._require_param(params, "path"))
+        if action.kind == "load":
+            return self._client.load(path=self._require_param(params, "path"))
         if action.kind == "gamestate":
             return self._client.gamestate()
         raise BalatroRPCError(

@@ -7,6 +7,7 @@ from balatro_ai.actions import Action
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_hand_cards, gs_state
 from balatro_ai.joker_order import maybe_reorder_jokers
+from balatro_ai.shop_policy import ShopPolicy
 
 JsonObject = dict[str, Any]
 
@@ -27,10 +28,15 @@ class PolicyContext:
 class Policy:
     """Policy that mirrors the temporary baseline behavior."""
 
+    def __init__(self) -> None:
+        self._shop_policy = ShopPolicy()
+
     def decide(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
         """Decide the next action based on the current game state."""
         state = gs_state(gs)
         last_state = ctx.run_memory.get("last_state")
+        if last_state == "SHOP" and state != "SHOP":
+            ctx.round_memory.pop("shop", None)
         entering = state != last_state
         if entering and state in {"SHOP", "SELECTING_HAND"}:
             reorder_action = maybe_reorder_jokers(gs, ctx)
@@ -52,8 +58,13 @@ class Policy:
             ctx.run_memory["last_state"] = state
             return Action(kind="cash_out", params={})
         if state == "SHOP":
+            reorder_action = maybe_reorder_jokers(gs, ctx)
+            if reorder_action is not None:
+                ctx.run_memory["last_state"] = state
+                return reorder_action
+            action = self._shop_policy.choose_action(gs, ctx.config, ctx)
             ctx.run_memory["last_state"] = state
-            return Action(kind="next_round", params={})
+            return action
         if state == "SMODS_BOOSTER_OPENED":
             ctx.run_memory["last_state"] = state
             return Action(kind="pack", params={"card": 0})
