@@ -62,7 +62,7 @@ def rollout_step(
         fallback = play_candidates[0] if play_candidates else Action(kind="gamestate", params={})
         return _apply_action(rpc, fallback)
     candidates = [candidate.action for candidate in play_candidates] + discard_candidates
-    best = _evaluate_candidates(rpc, save_path, candidates)
+    best = _evaluate_candidates(rpc, save_path, candidates, intent, cfg)
     if best is None:
         if play_candidates:
             return _apply_action(rpc, play_candidates[0].action)
@@ -135,18 +135,44 @@ def _evaluate_candidates(
     rpc: BalatroRPC,
     save_path: str,
     actions: list[Action],
+    intent: BuildIntent,
+    cfg: Config,
 ) -> _EvalResult | None:
     best: _EvalResult | None = None
     for action in actions:
         try:
             rpc.load(save_path)
-            gs2 = _apply_action(rpc, action)
-            reward = _reward(gs2)
+            if action.kind == "discard":
+                reward = _evaluate_discard_candidate(rpc, action, intent, cfg)
+            else:
+                gs2 = _apply_action(rpc, action)
+                reward = _reward(gs2)
         except BalatroRPCError:
             reward = -1_000_000_000.0
         if best is None or reward > best.reward:
             best = _EvalResult(action=action, reward=reward)
     return best
+
+
+def _evaluate_discard_candidate(
+    rpc: BalatroRPC,
+    action: Action,
+    intent: BuildIntent,
+    cfg: Config,
+) -> float:
+    gs2 = _apply_action(rpc, action)
+    state = gs_state(gs2)
+    if state in {"ROUND_EVAL", "GAME_OVER"}:
+        return _reward(gs2)
+    hand_cards = gs_hand_cards(gs2)
+    if not hand_cards:
+        return _reward(gs2)
+    play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs2), intent, cfg.rollout_k)
+    if not play_candidates:
+        return _reward(gs2)
+    best_play = play_candidates[0].action
+    gs3 = _apply_action(rpc, best_play)
+    return _reward(gs3)
 
 
 def _reward(gs: Mapping[str, Any]) -> float:
