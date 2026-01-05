@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import re
+from typing import Any, Mapping, TYPE_CHECKING
+
+from balatro_ai.actions import Action
+from balatro_ai.gs import gs_jokers, gs_state
+
+if TYPE_CHECKING:
+    from balatro_ai.policy import PolicyContext
+
+
+_TOKEN_RE = re.compile(r"[a-z0-9]+")
+_ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
+_CHIPS_TOKENS = {"chips", "chip", "bonus"}
+_MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
+_XMULT_TOKENS = {"xmult", "times", "retrigger", "again"}
+
+
+def joker_text(j: dict) -> str:
+    """Return lowercase text for a joker, preferring label then key."""
+    if not isinstance(j, Mapping):
+        return ""
+    label = j.get("label")
+    if isinstance(label, str) and label:
+        return label.lower()
+    key = j.get("key")
+    if isinstance(key, str) and key:
+        return key.lower()
+    return ""
+
+
+def classify_joker_bucket(text: str) -> int:
+    """Return the bucket index for the provided joker text."""
+    if not text:
+        return 2
+    lowered = text.lower()
+    tokens = set(_TOKEN_RE.findall(lowered))
+    if "$" in lowered or tokens & _ECON_TOKENS:
+        return 0
+    if tokens & _CHIPS_TOKENS:
+        return 1
+    if tokens & _XMULT_TOKENS or _has_x_token(tokens):
+        return 3
+    if tokens & _MULT_TOKENS:
+        return 2
+    return 2
+
+
+def compute_joker_permutation(jokers: list[dict]) -> list[int]:
+    """Compute a stable permutation ordering jokers by bucket."""
+    indexed = list(enumerate(jokers))
+    ordered = sorted(indexed, key=lambda item: classify_joker_bucket(joker_text(item[1])))
+    return [index for index, _ in ordered]
+
+
+def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: "PolicyContext") -> Action | None:
+    """Return a rearrange action when jokers should be reordered."""
+    state = gs_state(gs)
+    if state not in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}:
+        return None
+    jokers = gs_jokers(gs)
+    if len(jokers) < 2:
+        return None
+    permutation = compute_joker_permutation(jokers)
+    if permutation == list(range(len(jokers))):
+        return None
+    perm_hash = tuple(permutation)
+    if ctx.memory.get("last_joker_perm_hash") == perm_hash:
+        return None
+    ctx.memory["last_joker_perm_hash"] = perm_hash
+    return Action(kind="rearrange", params={"jokers": permutation})
+
+
+def _has_x_token(tokens: set[str]) -> bool:
+    if "x" in tokens:
+        return True
+    for token in tokens:
+        if token.startswith("x") and token[1:].isdigit():
+            return True
+    return False

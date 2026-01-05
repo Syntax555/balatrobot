@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from balatro_ai.actions import Action
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_hand_cards, gs_state
+from balatro_ai.joker_order import maybe_reorder_jokers
 
 JsonObject = dict[str, Any]
 
@@ -18,6 +19,10 @@ class PolicyContext:
     run_memory: dict[str, Any]
     round_memory: dict[str, Any]
 
+    @property
+    def memory(self) -> dict[str, Any]:
+        return self.run_memory
+
 
 class Policy:
     """Policy that mirrors the temporary baseline behavior."""
@@ -25,18 +30,34 @@ class Policy:
     def decide(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
         """Decide the next action based on the current game state."""
         state = gs_state(gs)
+        last_state = ctx.run_memory.get("last_state")
+        entering = state != last_state
+        if entering and state in {"SHOP", "SELECTING_HAND"}:
+            reorder_action = maybe_reorder_jokers(gs, ctx)
+            if reorder_action is not None:
+                ctx.run_memory["last_state"] = state
+                return reorder_action
         if state == "MENU":
-            return self._menu_action(ctx)
+            action = self._menu_action(ctx)
+            ctx.run_memory["last_state"] = state
+            return action
         if state == "BLIND_SELECT":
+            ctx.run_memory["last_state"] = state
             return Action(kind="select", params={})
         if state == "SELECTING_HAND":
-            return self._hand_action(gs)
+            action = self._hand_action(gs)
+            ctx.run_memory["last_state"] = state
+            return action
         if state == "ROUND_EVAL":
+            ctx.run_memory["last_state"] = state
             return Action(kind="cash_out", params={})
         if state == "SHOP":
+            ctx.run_memory["last_state"] = state
             return Action(kind="next_round", params={})
         if state == "SMODS_BOOSTER_OPENED":
+            ctx.run_memory["last_state"] = state
             return Action(kind="pack", params={"card": 0})
+        ctx.run_memory["last_state"] = state
         return Action(kind="gamestate", params={})
 
     def _menu_action(self, ctx: PolicyContext) -> Action:
