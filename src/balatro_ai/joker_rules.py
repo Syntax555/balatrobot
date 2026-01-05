@@ -16,6 +16,7 @@ _RULES: dict[str, JokerRule] = {
     "j_lusty_joker": JokerRule(category="mult"),
     "j_wrathful_joker": JokerRule(category="mult"),
     "j_gluttenous_joker": JokerRule(category="mult"),
+    "j_gluttonous_joker": JokerRule(category="mult"),
     "j_jolly": JokerRule(category="mult"),
     "j_zany": JokerRule(category="mult"),
     "j_mad": JokerRule(category="mult"),

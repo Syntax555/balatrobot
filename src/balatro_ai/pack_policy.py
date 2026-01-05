@@ -68,7 +68,7 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
         tokens = card_tokens(text)
         score = 0
         key = card_key(card)
-        rule = joker_rule(key)
+        rule = joker_rule(key) if key and key.startswith("j_") else None
         if rule is not None:
             score += _score_from_category(rule.category)
         if tokens & _XMULT_TOKENS or _has_x_token(tokens):
