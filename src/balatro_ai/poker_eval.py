@@ -17,6 +17,9 @@ class HandType(str, enum.Enum):
     FULL_HOUSE = "FULL_HOUSE"
     FOUR_KIND = "FOUR_KIND"
     STRAIGHT_FLUSH = "STRAIGHT_FLUSH"
+    FIVE_KIND = "FIVE_KIND"
+    FLUSH_HOUSE = "FLUSH_HOUSE"
+    FLUSH_FIVE = "FLUSH_FIVE"
 
 
 def classify_hand(cards: list[dict]) -> HandType:
@@ -31,6 +34,12 @@ def classify_hand(cards: list[dict]) -> HandType:
     has_flush = count >= 5 and _flush_count(suits) >= 5
     straight_ranks = _best_straight_ranks(ranks) if count >= 5 else []
     has_straight = bool(straight_ranks)
+    if has_flush and max_dupe >= 5:
+        return HandType.FLUSH_FIVE
+    if has_flush and max_dupe >= 3 and _has_pair(counts, exclude_rank=_best_rank(counts)):
+        return HandType.FLUSH_HOUSE
+    if max_dupe >= 5:
+        return HandType.FIVE_KIND
     if has_flush and has_straight and _straight_flush_possible(cards):
         return HandType.STRAIGHT_FLUSH
     if max_dupe >= 4:
@@ -61,7 +70,13 @@ def scoring_subset(cards: list[dict], hand_type: HandType, jokers_text: str) -> 
     suits = [card_suit(card) for card in cards]
     counts = _rank_counts(ranks)
     indices: list[int] = []
-    if hand_type == HandType.STRAIGHT_FLUSH:
+    if hand_type == HandType.FLUSH_FIVE:
+        indices = _flush_indices(suits, ranks, limit=5)
+    elif hand_type == HandType.FLUSH_HOUSE:
+        indices = _flush_indices(suits, ranks, limit=5)
+    elif hand_type == HandType.FIVE_KIND:
+        indices = _kind_indices(ranks, counts, 5)
+    elif hand_type == HandType.STRAIGHT_FLUSH:
         indices = _straight_flush_indices(cards)
     elif hand_type == HandType.FOUR_KIND:
         indices = _kind_indices(ranks, counts, 4)
