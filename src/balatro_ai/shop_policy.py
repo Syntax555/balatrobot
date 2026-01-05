@@ -227,6 +227,10 @@ def _item_cost(item: Mapping[str, Any]) -> int:
         value = item.get(key)
         if isinstance(value, int) and not isinstance(value, bool):
             return value
+        if isinstance(value, Mapping):
+            buy = value.get("buy")
+            if isinstance(buy, int) and not isinstance(buy, bool):
+                return buy
     return 0
 
 

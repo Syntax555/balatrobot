@@ -15,6 +15,7 @@ from balatro_ai.gs import (
     gs_won,
 )
 from balatro_ai.policy import Policy, PolicyContext
+from balatro_ai.rollout import rollout_step
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 GameState = dict[str, Any]
@@ -144,6 +145,8 @@ class BotRunner:
             return self._client.save(path=self._require_param(params, "path"))
         if action.kind == "load":
             return self._client.load(path=self._require_param(params, "path"))
+        if action.kind == "rollout":
+            return rollout_step(gs, self._config, self._context, self._client)
         if action.kind == "gamestate":
             return self._client.gamestate()
         raise BalatroRPCError(
@@ -320,4 +323,5 @@ _REQUIRED_STATES: dict[str, set[str]] = {
     "reroll": {"SHOP"},
     "next_round": {"SHOP"},
     "pack": {"SMODS_BOOSTER_OPENED"},
+    "rollout": {"SELECTING_HAND"},
 }

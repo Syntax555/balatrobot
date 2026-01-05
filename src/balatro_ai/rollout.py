@@ -56,19 +56,35 @@ def rollout_step(
     play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs), intent, cfg.rollout_k)
     discard_candidates = _generate_discard_candidates(hand_cards, intent, cfg, gs)
     save_path = _save_path()
+    before_chips = gs_round_chips(gs)
+    before_money = gs_money(gs)
     try:
         rpc.save(save_path)
     except BalatroRPCError:
         fallback = play_candidates[0] if play_candidates else Action(kind="gamestate", params={})
         return _apply_action(rpc, fallback)
-    candidates = [candidate.action for candidate in play_candidates] + discard_candidates
-    best = _evaluate_candidates(rpc, save_path, candidates, intent, cfg)
-    if best is None:
-        if play_candidates:
-            return _apply_action(rpc, play_candidates[0].action)
-        return rpc.gamestate()
-    rpc.load(save_path)
-    return _apply_action(rpc, best.action)
+    try:
+        candidates = [candidate.action for candidate in play_candidates] + discard_candidates
+        best = _evaluate_candidates(
+            rpc,
+            save_path,
+            candidates,
+            intent,
+            cfg,
+            before_chips,
+            before_money,
+        )
+        if best is None:
+            if play_candidates:
+                return _apply_action(rpc, play_candidates[0].action)
+            return rpc.gamestate()
+        rpc.load(save_path)
+        return _apply_action(rpc, best.action)
+    finally:
+        try:
+            os.remove(save_path)
+        except OSError:
+            pass
 
 
 def _apply_action(rpc: BalatroRPC, action: Action) -> dict:
@@ -137,20 +153,33 @@ def _evaluate_candidates(
     actions: list[Action],
     intent: BuildIntent,
     cfg: Config,
+    before_chips: int | None,
+    before_money: int,
 ) -> _EvalResult | None:
     best: _EvalResult | None = None
     for action in actions:
         try:
             rpc.load(save_path)
             if action.kind == "discard":
-                reward = _evaluate_discard_candidate(rpc, action, intent, cfg)
+                reward, terminal = _evaluate_discard_candidate(
+                    rpc,
+                    action,
+                    intent,
+                    cfg,
+                    before_chips,
+                    before_money,
+                )
             else:
                 gs2 = _apply_action(rpc, action)
-                reward = _reward(gs2)
+                reward = _reward(gs2, before_chips, before_money)
+                terminal = gs_state(gs2) == "ROUND_EVAL"
         except BalatroRPCError:
             reward = -1_000_000_000.0
+            terminal = False
         if best is None or reward > best.reward:
             best = _EvalResult(action=action, reward=reward)
+        if terminal:
+            return best
     return best
 
 
@@ -159,23 +188,25 @@ def _evaluate_discard_candidate(
     action: Action,
     intent: BuildIntent,
     cfg: Config,
-) -> float:
+    before_chips: int | None,
+    before_money: int,
+) -> tuple[float, bool]:
     gs2 = _apply_action(rpc, action)
     state = gs_state(gs2)
     if state in {"ROUND_EVAL", "GAME_OVER"}:
-        return _reward(gs2)
+        return _reward(gs2, before_chips, before_money), True
     hand_cards = gs_hand_cards(gs2)
     if not hand_cards:
-        return _reward(gs2)
+        return _reward(gs2, before_chips, before_money), False
     play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs2), intent, cfg.rollout_k)
     if not play_candidates:
-        return _reward(gs2)
+        return _reward(gs2, before_chips, before_money), False
     best_play = play_candidates[0].action
     gs3 = _apply_action(rpc, best_play)
-    return _reward(gs3)
+    return _reward(gs3, before_chips, before_money), gs_state(gs3) == "ROUND_EVAL"
 
 
-def _reward(gs: Mapping[str, Any]) -> float:
+def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) -> float:
     reward = 0.0
     state = gs_state(gs)
     if state == "ROUND_EVAL":
@@ -184,12 +215,12 @@ def _reward(gs: Mapping[str, Any]) -> float:
         reward -= 1_000_000.0
     blind_score = gs_blind_score(gs)
     round_chips = gs_round_chips(gs)
-    if blind_score and round_chips is not None and blind_score > 0:
-        progress = max(0.0, min(2.0, round_chips / blind_score))
-        reward += 10_000.0 * progress
+    if blind_score and before_chips is not None and round_chips is not None:
+        delta = round_chips - before_chips
+        reward += 50.0 * delta / max(1, blind_score)
     reward += 50.0 * gs_hands_left(gs)
     reward += 10.0 * gs_discards_left(gs)
-    reward += float(gs_money(gs))
+    reward += float(gs_money(gs) - before_money)
     return reward
 
 

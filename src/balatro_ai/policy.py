@@ -53,9 +53,8 @@ class Policy:
             ctx.run_memory["last_state"] = state
             return Action(kind="select", params={})
         if state == "SELECTING_HAND":
-            action = self._hand_action(gs)
             ctx.run_memory["last_state"] = state
-            return action
+            return Action(kind="rollout", params={})
         if state == "ROUND_EVAL":
             ctx.run_memory["last_state"] = state
             return Action(kind="cash_out", params={})

@@ -72,6 +72,8 @@ class PackPolicy:
         text = pack_card_text(pack_cards[index])
         if needs_targets(text):
             targets = choose_targets(gs, intent)
+            if not targets:
+                return Action(kind="pack", params={"skip": True})
             return Action(kind="pack", params={"card": index, "targets": targets})
         return Action(kind="pack", params={"card": index})
 
