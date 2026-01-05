@@ -19,3 +19,7 @@ class Config:
     reserve_mid: int = 20
     reserve_late: int = 25
     max_rerolls_per_shop: int = 1
+    # If True, block forever at MENU (Option A) until the script is restarted.
+    pause_at_menu: bool = True
+    # If True, attempt to call RPC "start" from MENU using deck/stake/seed.
+    auto_start: bool = False

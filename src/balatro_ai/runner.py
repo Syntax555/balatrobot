@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Any, Mapping
 
 from balatro_ai.actions import Action
@@ -26,6 +27,7 @@ _PACE_RESET = "reset"
 _PACE_BUMP = "bump"
 _PACE_BUMP_HARD = "bump_hard"
 _HARD_BACKOFF_FACTOR = 2.5
+_RETRYABLE_RPC_CODES = {-32098, -32097, -32000}
 
 
 class BotRunner:
@@ -56,10 +58,19 @@ class BotRunner:
         steps = 0
         limit_logged = False
         try:
-            state = self._client.gamestate()
+            state = self._fetch_gamestate_forever()
             self._sync_round_context(state)
             while True:
                 state_name = gs_state(state)
+                if (
+                    state_name == "MENU"
+                    and self._config.pause_at_menu
+                    and not self._config.auto_start
+                ):
+                    self._logger.info(
+                        "At MENU with pause_at_menu=True. Waiting indefinitely.",
+                    )
+                    threading.Event().wait()
                 if state_name in _IDLE_STATES or steps >= self._config.max_steps:
                     if steps >= self._config.max_steps and not limit_logged:
                         self._logger.warning(
@@ -67,24 +78,55 @@ class BotRunner:
                             steps,
                         )
                         limit_logged = True
-                    state, changed = self._idle_tick(state)
-                    if changed:
-                        self._pacer.reset()
-                    else:
-                        self._pacer.bump()
-                    self._pacer.sleep()
+                    state, changed, idle_pace = self._idle_tick_safe(state)
+                    self._apply_pace(idle_pace if not changed else _PACE_RESET)
                     continue
                 limit_logged = False
-                state, steps, pace = self._step(state, steps)
-                self._apply_pace(pace)
+                try:
+                    state, steps, pace = self._step(state, steps)
+                    self._apply_pace(pace)
+                except BalatroRPCError as exc:
+                    if not self._is_retryable_rpc_error(exc):
+                        raise
+                    self._log_rpc_error(state, exc)
+                    self._logger.warning(
+                        "RPC error during run loop. Backing off and retrying.",
+                    )
+                    self._apply_pace(_PACE_BUMP_HARD)
+                    state = self._fetch_gamestate_forever()
             return 0
         finally:
             self._client.close()
 
-    def _idle_tick(self, state: Mapping[str, Any]) -> tuple[GameState, bool]:
-        refreshed = self._client.gamestate()
-        self._sync_round_context(refreshed)
-        return dict(refreshed), gs_state(refreshed) != gs_state(state)
+    def _fetch_gamestate_forever(self) -> GameState:
+        """Fetch gamestate, retrying forever with adaptive backoff."""
+        while True:
+            try:
+                gs = self._client.gamestate()
+                self._pacer.reset()
+                return dict(gs)
+            except BalatroRPCError as exc:
+                if not self._is_retryable_rpc_error(exc):
+                    raise
+                self._logger.warning(
+                    "Failed to fetch gamestate (%s). Backing off and retrying.",
+                    exc,
+                )
+                self._apply_pace(_PACE_BUMP_HARD)
+
+    def _idle_tick_safe(self, state: Mapping[str, Any]) -> tuple[GameState, bool, str]:
+        """Idle polling that backs off on transient RPC errors."""
+        try:
+            refreshed = self._client.gamestate()
+            self._sync_round_context(refreshed)
+            changed = gs_state(refreshed) != gs_state(state)
+            pace = _PACE_RESET if changed else _PACE_BUMP
+            return dict(refreshed), changed, pace
+        except BalatroRPCError as exc:
+            if not self._is_retryable_rpc_error(exc):
+                raise
+            self._log_rpc_error(state, exc)
+            return dict(state), False, _PACE_BUMP_HARD
 
     def _apply_pace(self, pace: str) -> None:
         if pace == _PACE_RESET:
@@ -222,6 +264,9 @@ class BotRunner:
             name = data.get("name")
             return str(name) if name is not None else None
         return None
+
+    def _is_retryable_rpc_error(self, exc: BalatroRPCError) -> bool:
+        return exc.code in _RETRYABLE_RPC_CODES
 
     def _fallback_not_allowed(self, gs: Mapping[str, Any]) -> Action:
         state = gs_state(gs)

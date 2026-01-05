@@ -42,6 +42,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="Maximum rerolls per shop",
     )
+    parser.add_argument(
+        "--pause-at-menu",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If enabled, wait forever at MENU until script restart.",
+    )
+    parser.add_argument(
+        "--auto-start",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="If enabled, call RPC start from MENU using --deck/--stake/--seed.",
+    )
     return parser
 
 
@@ -62,6 +74,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         reserve_mid=args.reserve_mid,
         reserve_late=args.reserve_late,
         max_rerolls_per_shop=args.max_rerolls_per_shop,
+        pause_at_menu=args.pause_at_menu,
+        auto_start=args.auto_start,
     )
     configure_logging(config.log_level)
     runner = BotRunner(config=config, base_url=base_url)
