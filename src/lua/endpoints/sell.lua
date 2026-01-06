@@ -102,6 +102,10 @@ return {
     local expected_money = initial_money + card.sell_cost
     local card_id = card.sort_id
 
+    -- Log what we're selling
+    local item_name = card.ability and card.ability.name or "Unknown"
+    sendDebugMessage(string.format("Selling %s '%s' for $%d", sell_type, item_name, card.sell_cost), "BB.ENDPOINTS")
+
     -- Create mock UI element for G.FUNCS.sell_card
     local mock_element = {
       config = {

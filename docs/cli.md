@@ -179,19 +179,16 @@ uvx balatrobot --platform native --balatro-path /path/to/balatro/source
     # Balatro window rules
     ################################################################################
 
-    # 1. Open on Workspace 9 SILENTLY
+    # Open on Workspace 9 SILENTLY
     windowrulev2 = workspace 9 silent, class:^(love)$, title:^(Balatro)$
 
-    # 2. Float the window
+    # Float the window
     windowrulev2 = float, class:^(love)$, title:^(Balatro)$
 
-    # 3. Set size to 640x360 (Tiny)
-    windowrulev2 = size 640 360, class:^(love)$, title:^(Balatro)$
-
-    # 4. Center it
+    # Center it
     windowrulev2 = center, class:^(love)$, title:^(Balatro)$
 
-    # 5. BLOCK FOCUS STEALING (Crucial for "Silent" to work)
+    # Block focus stealing
     windowrulev2 = noinitialfocus, class:^(love)$, title:^(Balatro)$
     windowrulev2 = suppressevent activate, class:^(love)$, title:^(Balatro)$
     ```
