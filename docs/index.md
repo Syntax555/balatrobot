@@ -1,11 +1,38 @@
-<div style="display: flex; justify-content: center;">
+<style>
+  .project-logos img {
+    transition: transform 0.3s ease;
+  }
+  .project-logos img:hover {
+    transform: scale(1.1);
+  }
+</style>
+
+<div class="project-logos" style="display: flex; justify-content: center; align-items: flex-end; gap: 2rem; flex-wrap: wrap;">
   <figure style="text-align: center; margin: 0;">
     <a href="https://coder.github.io/balatrobot/">
-      <img src="assets/balatrobot.svg" alt="BalatroBot" width="170">
+      <img src="assets/balatrobot.svg" alt="BalatroBot" width="120">
     </a>
     <figcaption>
       <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
       <small>API for developing Balatro bots</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="...">
+      <img src="assets/balatrollm.svg" alt="BalatroLLM" width="80">
+    </a>
+    <figcaption>
+      <a href="...">BalatroLLM</a><br>
+      <small>Play Balatro with LLMs</small>
+    </figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <a href="...">
+      <img src="assets/balatrobench.svg" alt="BalatroBench" width="80">
+    </a>
+    <figcaption>
+      <a href="...">BalatroBench</a><br>
+      <small>Benchmark LLMs playing Balatro</small>
     </figcaption>
   </figure>
 </div>
@@ -59,7 +86,7 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
     [:octicons-arrow-right-24: API Reference](api.md)
 
-- :material-code-tags:{ .lg .middle } __Contributing__
+- :octicons-people-24:{ .lg .middle } __Contributing__
 
     ---
 
@@ -77,34 +104,3 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
 </div>
 
-## Related Projects
-
-<div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
-  <figure style="text-align: center; margin: 0;">
-    <a href="https://coder.github.io/balatrobot/">
-      <img src="assets/balatrobot.svg" alt="BalatroBot" width="92">
-    </a>
-    <figcaption>
-      <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
-      <small>API for developing Balatro bots</small>
-    </figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <a href="...">
-      <img src="assets/balatrollm.svg" alt="BalatroLLM" width="92">
-    </a>
-    <figcaption>
-      <a href="...">BalatroLLM</a><br>
-      <small>Play Balatro with LLMs (coming soon)</small>
-    </figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <a href="...">
-      <img src="assets/balatrobench.svg" alt="BalatroBench" width="92">
-    </a>
-    <figcaption>
-      <a href="...">BalatroBench</a><br>
-      <small>Benchmark LLMs playing Balatro (coming soon)</small>
-    </figcaption>
-  </figure>
-</div>

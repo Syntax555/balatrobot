@@ -14,10 +14,11 @@ Guide for contributing to BalatroBot development.
 
 ## Prerequisites
 
-- **Balatro** (v1.0.1+)
-- **Lovely Injector** (v0.8.0+) - [Installation](https://github.com/ethangreen-dev/lovely-injector)
-- **Steamodded** (v1.0.0-beta-1221a+) - [Installation](https://github.com/Steamopollys/Steamodded)
-- **DebugPlus** (v1.5.1+) (optional) - Required for test endpoints
+- **Balatro** (v1.0.1+) - Purchase from [Steam](https://store.steampowered.com/app/2379780/Balatro/)
+- **Lovely Injector** (v0.8.0+) - Follow the [installation guide](https://github.com/ethangreen-dev/lovely-injector#manual-installation)
+- **Steamodded** (v1.0.0-beta-1221a+) - Follow the [installation guide](https://github.com/Steamodded/smods/wiki)
+- **Uv** (v0.9.21+) - Follow the [installation guide](https://docs.astral.sh/uv)
+- **DebugPlus** (v1.5.1+) (optional) - Follow the [installation guide](https://github.com/WilsontheWolf/DebugPlus) - Required for test endpoints
 
 ## Development Environment Setup
 
@@ -130,8 +131,13 @@ ln -s "$(pwd)" ~/.config/love/Mods/balatrobot/
 ```powershell
 New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Balatro\Mods\balatrobot" -Target (Get-Location)
 ```
+### 3. Install Dependencies
 
-### 3. Activate Virtual Environment
+```bash
+make install
+```
+
+### 4. Activate Virtual Environment
 
 Activate the virtual environment to use the `balatrobot` command:
 
@@ -147,7 +153,7 @@ source .venv/bin/activate
 .venv\Scripts\Activate.ps1
 ```
 
-### 4. Launch Balatro
+### 5. Launch Balatro
 
 Start with debug and fast mode for development:
 
@@ -157,7 +163,7 @@ balatrobot --debug --fast
 
 For detailed CLI options, see the [CLI Reference](cli.md).
 
-### 5. Running Tests
+### 6. Running Tests
 
 Tests use Python + pytest to communicate with the Lua API. You don't need to have balatrobot running—the tests automatically start the required Balatro instances.
 
@@ -166,9 +172,6 @@ Tests use Python + pytest to communicate with the Lua API. You don't need to hav
     The Lua and CLI test suites **must be run separately**. Running them together (e.g., `pytest tests`) is not supported.
 
 ```bash
-# Install all dependencies
-make install
-
 # Run all tests (runs CLI and Lua suites separately)
 make test
 
