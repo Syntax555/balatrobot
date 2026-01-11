@@ -79,3 +79,73 @@ def test_policy_unknown_state_uses_default() -> None:
 
     assert action == Action(kind="gamestate", params={})
     assert ctx.run_memory["last_state"] == "SOME_NEW_STATE"
+
+
+def _standard_deck() -> list[dict]:
+    suits = ["spades", "hearts", "diamonds", "clubs"]
+    return [{"rank": rank, "suit": suit} for rank in range(2, 15) for suit in suits]
+
+
+def _flush_biased_deck(*, size: int = 52, suit: str = "spades") -> list[dict]:
+    ranks = list(range(2, 15))
+    deck: list[dict] = []
+    while len(deck) < size:
+        for rank in ranks:
+            deck.append({"rank": rank, "suit": suit})
+            if len(deck) >= size:
+                break
+    return deck
+
+
+def _straight_biased_deck(*, size: int = 52) -> list[dict]:
+    suits = ["spades", "hearts", "diamonds", "clubs"]
+    ranks = [2, 3, 4, 5, 6]
+    return [{"rank": ranks[i % len(ranks)], "suit": suits[i % len(suits)]} for i in range(size)]
+
+
+def test_policy_sets_intent_high_card_when_uncertain() -> None:
+    policy = Policy()
+    ctx = PolicyContext(config=_cfg(auto_start=False), run_memory={}, round_memory={})
+    gs = {
+        "state": "BLIND_SELECT",
+        "seed": "TEST",
+        "ante_num": 1,
+        "round_num": 1,
+        "money": 4,
+        "jokers": [],
+        "cards": {"cards": _standard_deck()},
+    }
+
+    action = policy.decide(gs, ctx)
+
+    assert action == Action(kind="select", params={})
+    assert getattr(ctx.run_memory.get("intent"), "value", None) == "HIGH_CARD"
+
+
+def test_policy_switches_intent_when_deck_changes() -> None:
+    policy = Policy()
+    ctx = PolicyContext(config=_cfg(auto_start=False), run_memory={}, round_memory={})
+
+    gs_flush = {
+        "state": "BLIND_SELECT",
+        "seed": "TEST",
+        "ante_num": 1,
+        "round_num": 1,
+        "money": 4,
+        "jokers": [],
+        "cards": {"cards": _flush_biased_deck()},
+    }
+    policy.decide(gs_flush, ctx)
+    assert getattr(ctx.run_memory.get("intent"), "value", None) == "FLUSH"
+
+    gs_straight = {
+        "state": "SHOP",
+        "seed": "TEST",
+        "ante_num": 1,
+        "round_num": 1,
+        "money": 4,
+        "jokers": [],
+        "cards": {"cards": _straight_biased_deck()},
+    }
+    policy.decide(gs_straight, ctx)
+    assert getattr(ctx.run_memory.get("intent"), "value", None) == "STRAIGHT"
