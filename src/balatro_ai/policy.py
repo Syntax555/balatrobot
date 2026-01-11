@@ -63,60 +63,81 @@ class Policy:
                 ctx.run_memory["last_state"] = state
                 return reorder_action
         if state == "MENU":
-            ctx.run_memory["last_state"] = state
-            if ctx.config.auto_start:
-                logger.debug("Policy.decide: MENU auto_start=True -> start")
-                params: JsonObject = {
-                    "deck": ctx.config.deck,
-                    "stake": ctx.config.stake,
-                }
-                if ctx.config.seed is not None:
-                    params["seed"] = ctx.config.seed
-                return Action(kind="start", params=params)
-            logger.debug("Policy.decide: MENU auto_start=False -> gamestate")
-            return Action(kind="gamestate", params={})
+            return self.decide_in_menu(gs, ctx)
         if state == "BLIND_SELECT":
-            ctx.run_memory["last_state"] = state
-            logger.debug("Policy.decide: BLIND_SELECT -> select")
-            return Action(kind="select", params={})
+            return self.decide_in_blind_select(gs, ctx)
         if state == "SELECTING_HAND":
-            ctx.run_memory["last_state"] = state
-            logger.debug("Policy.decide: SELECTING_HAND -> rollout")
-            return Action(kind="rollout", params={})
+            return self.decide_in_selecting_hand(gs, ctx)
         if state == "ROUND_EVAL":
-            ctx.run_memory["last_state"] = state
-            logger.debug("Policy.decide: ROUND_EVAL -> cash_out")
-            return Action(kind="cash_out", params={})
+            return self.decide_in_round_eval(gs, ctx)
         if state == "SHOP":
-            reorder_action = maybe_reorder_jokers(gs, ctx)
-            if reorder_action is not None:
-                logger.debug(
-                    "Policy.decide: SHOP joker reorder action=%s params=%s",
-                    reorder_action.kind,
-                    reorder_action.params,
-                )
-                ctx.run_memory["last_state"] = state
-                return reorder_action
-            action = self._shop_policy.choose_action(gs, ctx.config, ctx)
-            logger.debug(
-                "Policy.decide: SHOP action=%s params=%s",
-                action.kind,
-                action.params,
-            )
-            ctx.run_memory["last_state"] = state
-            return action
+            return self.decide_in_shop(gs, ctx)
         if state == "SMODS_BOOSTER_OPENED":
-            ctx.run_memory["last_state"] = state
-            intent = self._intent(ctx)
-            logger.debug("Policy.decide: SMODS_BOOSTER_OPENED intent=%r", intent)
-            action = self._pack_policy.choose_action(gs, ctx.config, ctx, intent)
+            return self.decide_in_pack_choice(gs, ctx)
+        return self.decide_in_default(gs, ctx)
+
+    def decide_in_menu(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = "MENU"
+        if ctx.config.auto_start:
+            logger.debug("Policy.decide: MENU auto_start=True -> start")
+            params: JsonObject = {
+                "deck": ctx.config.deck,
+                "stake": ctx.config.stake,
+            }
+            if ctx.config.seed is not None:
+                params["seed"] = ctx.config.seed
+            return Action(kind="start", params=params)
+        logger.debug("Policy.decide: MENU auto_start=False -> gamestate")
+        return Action(kind="gamestate", params={})
+
+    def decide_in_blind_select(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = "BLIND_SELECT"
+        logger.debug("Policy.decide: BLIND_SELECT -> select")
+        return Action(kind="select", params={})
+
+    def decide_in_selecting_hand(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = "SELECTING_HAND"
+        logger.debug("Policy.decide: SELECTING_HAND -> rollout")
+        return Action(kind="rollout", params={})
+
+    def decide_in_round_eval(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = "ROUND_EVAL"
+        logger.debug("Policy.decide: ROUND_EVAL -> cash_out")
+        return Action(kind="cash_out", params={})
+
+    def decide_in_shop(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        reorder_action = maybe_reorder_jokers(gs, ctx)
+        if reorder_action is not None:
             logger.debug(
-                "Policy.decide: SMODS_BOOSTER_OPENED action=%s params=%s",
-                action.kind,
-                action.params,
+                "Policy.decide: SHOP joker reorder action=%s params=%s",
+                reorder_action.kind,
+                reorder_action.params,
             )
-            return action
-        ctx.run_memory["last_state"] = state
+            ctx.run_memory["last_state"] = "SHOP"
+            return reorder_action
+        action = self._shop_policy.choose_action(gs, ctx.config, ctx)
+        logger.debug(
+            "Policy.decide: SHOP action=%s params=%s",
+            action.kind,
+            action.params,
+        )
+        ctx.run_memory["last_state"] = "SHOP"
+        return action
+
+    def decide_in_pack_choice(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = "SMODS_BOOSTER_OPENED"
+        intent = self._intent(ctx)
+        logger.debug("Policy.decide: SMODS_BOOSTER_OPENED intent=%r", intent)
+        action = self._pack_policy.choose_action(gs, ctx.config, ctx, intent)
+        logger.debug(
+            "Policy.decide: SMODS_BOOSTER_OPENED action=%s params=%s",
+            action.kind,
+            action.params,
+        )
+        return action
+
+    def decide_in_default(self, gs: Mapping[str, Any], ctx: PolicyContext) -> Action:
+        ctx.run_memory["last_state"] = gs_state(gs)
         logger.debug("Policy.decide: default -> gamestate")
         return Action(kind="gamestate", params={})
 
