@@ -39,6 +39,38 @@ _VOUCHER_VERY_HIGH = {
 }
 _VOUCHER_MEDIUM = {"tarot", "planet", "spectral"}
 
+SCORE_NONE = 0
+
+ANTE_EARLY_MAX = 2
+ANTE_PACK_MID_MAX = 4
+ANTE_MID_MAX = 5
+ANTE_ECON_PENALTY_MIN = 6
+
+VOUCHER_SCORE_HIGH_BASE = 60
+VOUCHER_SCORE_HIGH_PER_HIT = 5
+VOUCHER_SCORE_MEDIUM_BASE = 30
+VOUCHER_SCORE_MEDIUM_PER_HIT = 3
+
+JOKER_SCORE_XMULT = 100
+JOKER_SCORE_MULT = 50
+JOKER_SCORE_CHIPS = 20
+JOKER_SCORE_ECON = 0
+JOKER_SCORE_DEFAULT = 0
+JOKER_ECON_LATE_PENALTY = 20
+
+PACK_SCORE_EARLY = 10
+PACK_SCORE_MID = 6
+PACK_SCORE_LATE = 3
+PACK_SCORE_NONE = 0
+
+INDEX_INITIAL = 0
+ENUMERATE_START = 1
+REROLL_USED_DEFAULT = 0
+REROLL_USED_INCREMENT = 1
+
+INDEX_MIN = 0
+SLICE_AFTER_FIRST_CHAR = 1
+
 
 @dataclass(frozen=True)
 class _Candidate:
@@ -69,14 +101,16 @@ class ShopPolicy:
         reroll_cost = gs_reroll_cost(gs)
         candidates = _collect_shop_candidates(gs, ante, money, reserve)
         best = _best_candidate(candidates)
-        if best is None or best.score <= 0:
+        if best is None or best.score <= SCORE_NONE:
             pack_candidates = _collect_pack_candidates(gs, ante, money, reserve)
             best_pack = _best_candidate(pack_candidates)
-            if best_pack is not None and best_pack.score > 0:
+            if best_pack is not None and best_pack.score > SCORE_NONE:
                 best = best_pack
             else:
                 if _can_reroll(cfg, money, reserve, reroll_cost, shop_mem):
-                    shop_mem["rerolls_used"] = shop_mem.get("rerolls_used", 0) + 1
+                    shop_mem["rerolls_used"] = (
+                        shop_mem.get("rerolls_used", REROLL_USED_DEFAULT) + REROLL_USED_INCREMENT
+                    )
                     return Action(kind="reroll", params={})
                 return Action(kind="next_round", params={})
         if best.kind == "card" and _jokers_full(gs):
@@ -94,9 +128,9 @@ class ShopPolicy:
 
 
 def _reserve(cfg: Config, ante: int) -> int:
-    if ante <= 2:
+    if ante <= ANTE_EARLY_MAX:
         return cfg.reserve_early
-    if ante <= 5:
+    if ante <= ANTE_MID_MAX:
         return cfg.reserve_mid
     return cfg.reserve_late
 
@@ -131,7 +165,7 @@ def _collect_pack_candidates(
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
     pack_score = _score_pack(ante)
-    if pack_score <= 0:
+    if pack_score <= SCORE_NONE:
         return candidates
     for index, pack in enumerate(gs_shop_packs(gs)):
         cost = _item_cost(pack)
@@ -158,9 +192,9 @@ def _can_reroll(
 ) -> bool:
     if money - reroll_cost < reserve:
         return False
-    used = shop_mem.get("rerolls_used", 0)
+    used = shop_mem.get("rerolls_used", REROLL_USED_DEFAULT)
     if not isinstance(used, int):
-        used = 0
+        used = REROLL_USED_DEFAULT
     return used < cfg.max_rerolls_per_shop
 
 
@@ -213,9 +247,9 @@ def _worst_joker_index(gs: Mapping[str, Any], ante: int) -> int | None:
     jokers = gs_jokers(gs)
     if not jokers:
         return None
-    worst_index = 0
-    worst_score = _score_joker(jokers[0], ante)
-    for index, joker in enumerate(jokers[1:], start=1):
+    worst_index = INDEX_INITIAL
+    worst_score = _score_joker(jokers[INDEX_INITIAL], ante)
+    for index, joker in enumerate(jokers[ENUMERATE_START:], start=ENUMERATE_START):
         score = _score_joker(joker, ante)
         if score < worst_score:
             worst_score = score
@@ -236,7 +270,7 @@ def _item_cost(item: Mapping[str, Any]) -> int:
             buy = value.get("buy")
             if isinstance(buy, int) and not isinstance(buy, bool):
                 return buy
-    return 0
+    return SCORE_NONE
 
 
 def _tokens(text: str) -> set[str]:
@@ -246,13 +280,13 @@ def _tokens(text: str) -> set[str]:
 def _score_voucher(voucher: Mapping[str, Any]) -> int:
     text = _item_text(voucher)
     tokens = _tokens(text)
-    score = 0
+    score = SCORE_NONE
     high_hits = tokens & _VOUCHER_VERY_HIGH
     if high_hits:
-        score += 60 + 5 * len(high_hits)
+        score += VOUCHER_SCORE_HIGH_BASE + VOUCHER_SCORE_HIGH_PER_HIT * len(high_hits)
     medium_hits = tokens & _VOUCHER_MEDIUM
     if medium_hits:
-        score += 30 + 3 * len(medium_hits)
+        score += VOUCHER_SCORE_MEDIUM_BASE + VOUCHER_SCORE_MEDIUM_PER_HIT * len(medium_hits)
     return score
 
 
@@ -261,45 +295,45 @@ def _score_joker(joker: Mapping[str, Any], ante: int) -> int:
     rule = joker_rule(key)
     if rule is not None:
         score = _score_from_category(rule.category)
-        if rule.category == "econ" and ante >= 6:
+        if rule.category == "econ" and ante >= ANTE_ECON_PENALTY_MIN:
             text = _item_text(joker)
             tokens = _tokens(text)
             xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
             mult = bool(tokens & _MULT_TOKENS)
             chips = bool(tokens & _CHIPS_TOKENS)
             if not (xmult or mult or chips):
-                score -= 20
+                score -= JOKER_ECON_LATE_PENALTY
         return score
     text = _item_text(joker)
     tokens = _tokens(text)
-    score = 0
+    score = SCORE_NONE
     xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
     mult = bool(tokens & _MULT_TOKENS)
     chips = bool(tokens & _CHIPS_TOKENS)
     econ = "$" in text or bool(tokens & _ECON_TOKENS)
     if xmult:
-        score += 100
+        score += JOKER_SCORE_XMULT
     if mult:
-        score += 50
+        score += JOKER_SCORE_MULT
     if chips:
-        score += 20
-    if econ and ante >= 6 and not (xmult or mult or chips):
-        score -= 20
+        score += JOKER_SCORE_CHIPS
+    if econ and ante >= ANTE_ECON_PENALTY_MIN and not (xmult or mult or chips):
+        score -= JOKER_ECON_LATE_PENALTY
     return score
 
 
 def _score_pack(ante: int) -> int:
-    if ante <= 2:
-        return 10
-    if ante <= 4:
-        return 6
-    if ante <= 5:
-        return 3
-    return 0
+    if ante <= ANTE_EARLY_MAX:
+        return PACK_SCORE_EARLY
+    if ante <= ANTE_PACK_MID_MAX:
+        return PACK_SCORE_MID
+    if ante <= ANTE_MID_MAX:
+        return PACK_SCORE_LATE
+    return PACK_SCORE_NONE
 
 
 def _affordable(money: int, reserve: int, cost: int) -> bool:
-    if cost == 0:
+    if cost == SCORE_NONE:
         return True
     return money - cost >= reserve
 
@@ -308,21 +342,21 @@ def _has_x_token(tokens: set[str]) -> bool:
     if "x" in tokens:
         return True
     for token in tokens:
-        if token.startswith("x") and token[1:].isdigit():
+        if token.startswith("x") and token[SLICE_AFTER_FIRST_CHAR:].isdigit():
             return True
     return False
 
 
 def _score_from_category(category: str) -> int:
     if category == "xmult":
-        return 100
+        return JOKER_SCORE_XMULT
     if category == "mult":
-        return 50
+        return JOKER_SCORE_MULT
     if category == "chips":
-        return 20
+        return JOKER_SCORE_CHIPS
     if category == "econ":
-        return 0
-    return 0
+        return JOKER_SCORE_ECON
+    return JOKER_SCORE_DEFAULT
 
 
 def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
@@ -349,7 +383,7 @@ def _identity_matches(
         items = gs_shop_packs(gs)
     else:
         items = gs_shop_cards(gs)
-    if index < 0 or index >= len(items):
+    if index < INDEX_MIN or index >= len(items):
         return False
     current = items[index]
     key = identity.get("key")

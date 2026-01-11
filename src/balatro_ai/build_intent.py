@@ -17,6 +17,39 @@ class BuildIntent(str, enum.Enum):
     HIGH_CARD = "HIGH_CARD"
 
 
+HAND_CONFIDENCE_OVERRIDE_THRESHOLD = 0.95
+CONFIDENCE_NONE = 0.0
+CONFIDENCE_MAX = 1.0
+
+INTENT_COUNT_INITIAL = 0
+INTENT_COUNT_INCREMENT = 1
+
+FLUSH_MIN_SUITS_IN_HAND = 4
+HAND_SIZE_FOR_CONFIDENCE = 5.0
+
+PAIRS_MIN_DUPLICATE_COUNT = 2
+PAIRS_CONFIDENCE_DIVISOR = 4.0
+
+ACE_HIGH_RANK = 14
+ACE_LOW_RANK = 1
+RANK_UNKNOWN = 0
+STRAIGHT_WINDOW_SPAN = 4
+STRAIGHT_MIN_RANKS_IN_WINDOW = 3
+
+INTENT_PRIORITY_FLUSH = 3
+INTENT_PRIORITY_STRAIGHT = 2
+INTENT_PRIORITY_PAIRS = 1
+INTENT_PRIORITY_DEFAULT = 0
+
+JOKER_CONFIDENCE_MAX = 0.9
+JOKER_CONFIDENCE_BASE = 0.6
+JOKER_CONFIDENCE_PER_EXTRA = 0.1
+JOKER_CONFIDENCE_EXTRA_OFFSET = 1
+
+FIRST_INDEX = 0
+SECOND_INDEX = 1
+
+
 
 
 def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
@@ -24,41 +57,47 @@ def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     joker_intent = _intent_from_jokers(gs)
     hand_intent, hand_conf = _intent_from_hand(gs)
     if joker_intent is not None:
-        if hand_conf >= 0.95 and hand_conf > joker_intent[1]:
+        if (
+            hand_conf >= HAND_CONFIDENCE_OVERRIDE_THRESHOLD
+            and hand_conf > joker_intent[SECOND_INDEX]
+        ):
             return hand_intent, hand_conf
         return joker_intent
-    if hand_conf > 0:
+    if hand_conf > CONFIDENCE_NONE:
         return hand_intent, hand_conf
-    return BuildIntent.HIGH_CARD, 0.0
+    return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
 
 
 def _intent_from_jokers(gs: Mapping[str, Any]) -> tuple[BuildIntent, float] | None:
     counts = {
-        BuildIntent.FLUSH: 0,
-        BuildIntent.STRAIGHT: 0,
-        BuildIntent.PAIRS: 0,
+        BuildIntent.FLUSH: INTENT_COUNT_INITIAL,
+        BuildIntent.STRAIGHT: INTENT_COUNT_INITIAL,
+        BuildIntent.PAIRS: INTENT_COUNT_INITIAL,
     }
     for joker in gs_jokers(gs):
         tokens = card_tokens(joker_text(joker))
         if not tokens:
             continue
         if "flush" in tokens:
-            counts[BuildIntent.FLUSH] += 1
+            counts[BuildIntent.FLUSH] += INTENT_COUNT_INCREMENT
         if "straight" in tokens:
-            counts[BuildIntent.STRAIGHT] += 1
+            counts[BuildIntent.STRAIGHT] += INTENT_COUNT_INCREMENT
         if _matches_pairs(tokens):
-            counts[BuildIntent.PAIRS] += 1
-    best_intent = max(counts.items(), key=lambda item: (item[1], _intent_priority(item[0])))
-    if best_intent[1] <= 0:
+            counts[BuildIntent.PAIRS] += INTENT_COUNT_INCREMENT
+    best_intent = max(
+        counts.items(),
+        key=lambda item: (item[SECOND_INDEX], _intent_priority(item[FIRST_INDEX])),
+    )
+    if best_intent[SECOND_INDEX] <= INTENT_COUNT_INITIAL:
         return None
-    confidence = _joker_confidence(best_intent[1])
-    return best_intent[0], confidence
+    confidence = _joker_confidence(best_intent[SECOND_INDEX])
+    return best_intent[FIRST_INDEX], confidence
 
 
 def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     hand = gs_hand_cards(gs)
     if not hand:
-        return BuildIntent.HIGH_CARD, 0.0
+        return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
     flush_conf = _flush_conf(hand)
     straight_conf = _straight_conf(hand)
     pairs_conf = _pairs_conf(hand)
@@ -67,9 +106,12 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
         (BuildIntent.STRAIGHT, straight_conf),
         (BuildIntent.PAIRS, pairs_conf),
     ]
-    best = max(intents, key=lambda item: (item[1], _intent_priority(item[0])))
-    if best[1] <= 0:
-        return BuildIntent.HIGH_CARD, 0.0
+    best = max(
+        intents,
+        key=lambda item: (item[SECOND_INDEX], _intent_priority(item[FIRST_INDEX])),
+    )
+    if best[SECOND_INDEX] <= CONFIDENCE_NONE:
+        return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
     return best
 
 
@@ -79,57 +121,57 @@ def _flush_conf(hand: list[dict]) -> float:
         suit = card_suit(card)
         if not suit:
             continue
-        counts[suit] = counts.get(suit, 0) + 1
+        counts[suit] = counts.get(suit, INTENT_COUNT_INITIAL) + INTENT_COUNT_INCREMENT
     if not counts:
-        return 0.0
+        return CONFIDENCE_NONE
     max_count = max(counts.values())
-    if max_count >= 4:
-        return max_count / 5.0
-    return 0.0
+    if max_count >= FLUSH_MIN_SUITS_IN_HAND:
+        return max_count / HAND_SIZE_FOR_CONFIDENCE
+    return CONFIDENCE_NONE
 
 
 def _pairs_conf(hand: list[dict]) -> float:
     ranks = [card_rank(card) for card in hand]
     counts: dict[int, int] = {}
     for rank in ranks:
-        if rank <= 0:
+        if rank <= RANK_UNKNOWN:
             continue
-        counts[rank] = counts.get(rank, 0) + 1
+        counts[rank] = counts.get(rank, INTENT_COUNT_INITIAL) + INTENT_COUNT_INCREMENT
     if not counts:
-        return 0.0
+        return CONFIDENCE_NONE
     max_dup = max(counts.values())
-    if max_dup >= 2:
-        return min(1.0, max_dup / 4.0)
-    return 0.0
+    if max_dup >= PAIRS_MIN_DUPLICATE_COUNT:
+        return min(CONFIDENCE_MAX, max_dup / PAIRS_CONFIDENCE_DIVISOR)
+    return CONFIDENCE_NONE
 
 
 def _straight_conf(hand: list[dict]) -> float:
     ranks = {card_rank(card) for card in hand}
-    ranks.discard(0)
+    ranks.discard(RANK_UNKNOWN)
     if not ranks:
-        return 0.0
-    if 14 in ranks:
-        ranks.add(1)
+        return CONFIDENCE_NONE
+    if ACE_HIGH_RANK in ranks:
+        ranks.add(ACE_LOW_RANK)
     unique = sorted(ranks)
-    max_count = 0
+    max_count = INTENT_COUNT_INITIAL
     for start in unique:
-        end = start + 4
-        count = sum(1 for rank in unique if start <= rank <= end)
+        end = start + STRAIGHT_WINDOW_SPAN
+        count = sum(INTENT_COUNT_INCREMENT for rank in unique if start <= rank <= end)
         if count > max_count:
             max_count = count
-    if max_count >= 3:
-        return max_count / 5.0
-    return 0.0
+    if max_count >= STRAIGHT_MIN_RANKS_IN_WINDOW:
+        return max_count / HAND_SIZE_FOR_CONFIDENCE
+    return CONFIDENCE_NONE
 
 
 def _intent_priority(intent: BuildIntent) -> int:
     if intent == BuildIntent.FLUSH:
-        return 3
+        return INTENT_PRIORITY_FLUSH
     if intent == BuildIntent.STRAIGHT:
-        return 2
+        return INTENT_PRIORITY_STRAIGHT
     if intent == BuildIntent.PAIRS:
-        return 1
-    return 0
+        return INTENT_PRIORITY_PAIRS
+    return INTENT_PRIORITY_DEFAULT
 
 
 def _matches_pairs(tokens: set[str]) -> bool:
@@ -139,4 +181,9 @@ def _matches_pairs(tokens: set[str]) -> bool:
 
 
 def _joker_confidence(count: int) -> float:
-    return min(0.9, 0.6 + 0.1 * max(0, count - 1))
+    return min(
+        JOKER_CONFIDENCE_MAX,
+        JOKER_CONFIDENCE_BASE
+        + JOKER_CONFIDENCE_PER_EXTRA
+        * max(INTENT_COUNT_INITIAL, count - JOKER_CONFIDENCE_EXTRA_OFFSET),
+    )

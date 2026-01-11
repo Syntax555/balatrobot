@@ -29,6 +29,56 @@ if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
 
 
+JSONRPC_UNSUPPORTED_ACTION_CODE = -32601
+
+ZERO = 0
+ONE = 1
+FIRST_INDEX = 0
+
+ACE_HIGH_RANK = 14
+ACE_LOW_RANK = 1
+RANK_UNKNOWN = 0
+STRAIGHT_WINDOW_SPAN = 4
+STRAIGHT_WINDOW_INCLUSIVE_OFFSET = 1
+
+DISCARD_PRIORITY_POSITION_WEIGHT = 10
+DISCARD_BASE_SCORE = 900
+DISCARD_SIZE_WEIGHT = 25
+
+COMBINATIONS_MAX_COUNT = 80
+MIN_ROLLOUT_CANDIDATES = 1
+
+DISCARD_MIN_SIZE = 1
+DISCARD_MAX_SIZE_EXCLUSIVE = 4
+
+EVAL_FAILURE_REWARD = -1_000_000_000.0
+
+REWARD_INITIAL = 0.0
+REWARD_ROUND_EVAL_BONUS = 1_000_000.0
+REWARD_GAME_OVER_PENALTY = 1_000_000.0
+REWARD_CHIPS_DELTA_WEIGHT = 50.0
+REWARD_HANDS_LEFT_WEIGHT = 50.0
+REWARD_DISCARDS_LEFT_WEIGHT = 10.0
+REWARD_BLIND_SCORE_MIN = 1
+
+TIER_SCORE_MULTIPLIER = 1000
+INTENT_BONUS_SCORE = 500
+INTENT_BONUS_NONE = 0
+
+FEATURE_FLUSH_COUNT_WEIGHT = 5
+FEATURE_MAX_DUPE_WEIGHT = 10
+FEATURE_STRAIGHT_QUALITY_WEIGHT = 6
+
+HAND_MAX_PLAY_SIZE = 5
+HAND_TIER_BASE = 1
+
+MIN_SIZE_DEFAULT = 1
+MIN_SIZE_WEAK = 2
+MIN_SIZE_MEDIUM = 3
+MIN_SIZE_STRONG = 4
+
+
+
 @dataclass(frozen=True)
 class _ScoredCandidate:
     action: Action
@@ -82,7 +132,7 @@ def rollout_step(
         )
         if best is None:
             if play_candidates:
-                return _apply_action(rpc, play_candidates[0].action)
+                return _apply_action(rpc, play_candidates[FIRST_INDEX].action)
             return rpc.gamestate()
         rpc.load(save_path)
         return _apply_action(rpc, best.action)
@@ -101,7 +151,7 @@ def _apply_action(rpc: BalatroRPC, action: Action) -> dict:
     if action.kind == "gamestate":
         return rpc.gamestate()
     raise BalatroRPCError(
-        code=-32601,
+        code=JSONRPC_UNSUPPORTED_ACTION_CODE,
         message="Unsupported rollout action",
         data={"action": action.kind},
         method=action.kind,
@@ -115,7 +165,7 @@ def _fallback_action_on_save_error(
     hand_cards: list[dict],
     intent: BuildIntent,
 ) -> Action:
-    best_play = play_candidates[0] if play_candidates else None
+    best_play = play_candidates[FIRST_INDEX] if play_candidates else None
     best_discard = _best_discard_candidate(discard_candidates, hand_cards, intent)
     if best_discard is not None and (best_play is None or best_discard.score > best_play.score):
         return best_discard.action
@@ -134,15 +184,18 @@ def _best_discard_candidate(
     if not discard_candidates:
         return None
     priority = _discard_priority_indices(hand_cards, intent)
-    weights = {idx: (len(priority) - pos) * 10 for pos, idx in enumerate(priority)}
+    weights = {
+        idx: (len(priority) - pos) * DISCARD_PRIORITY_POSITION_WEIGHT
+        for pos, idx in enumerate(priority)
+    }
     best: _ScoredCandidate | None = None
     for action in discard_candidates:
         cards = action.params.get("cards", [])
         if not isinstance(cards, list) or not cards:
             continue
-        score = 900 + 25 * len(cards)
+        score = DISCARD_BASE_SCORE + DISCARD_SIZE_WEIGHT * len(cards)
         for card in cards:
-            score += weights.get(card, 0)
+            score += weights.get(card, ZERO)
         candidate = _ScoredCandidate(action=action, score=score)
         if best is None or candidate.score > best.score:
             best = candidate
@@ -162,7 +215,12 @@ def _generate_play_candidates(
     for size in _candidate_sizes(hand_cards, intent):
         if size > hand_size:
             continue
-        combos = _combinations_bounded(list(range(hand_size)), size, max_count=80, priority=priority)
+        combos = _combinations_bounded(
+            list(range(hand_size)),
+            size,
+            max_count=COMBINATIONS_MAX_COUNT,
+            priority=priority,
+        )
         for combo in combos:
             combo_key = tuple(combo)
             evaluation = eval_cache.get(combo_key)
@@ -175,7 +233,7 @@ def _generate_play_candidates(
                 _ScoredCandidate(action=Action(kind="play", params={"cards": list(combo)}), score=score)
             )
     candidates.sort(key=lambda candidate: candidate.score, reverse=True)
-    return candidates[: max(1, rollout_k)]
+    return candidates[: max(MIN_ROLLOUT_CANDIDATES, rollout_k)]
 
 
 def _generate_discard_candidates(
@@ -184,14 +242,14 @@ def _generate_discard_candidates(
     cfg: Config,
     gs: Mapping[str, Any],
 ) -> list[Action]:
-    if gs_discards_left(gs) <= 0:
+    if gs_discards_left(gs) <= ZERO:
         return []
     indices = _discard_priority_indices(hand_cards, intent)
     if not indices:
         return []
-    max_candidates = max(0, cfg.discard_m)
+    max_candidates = max(ZERO, cfg.discard_m)
     results: list[Action] = []
-    for size in range(1, 4):
+    for size in range(DISCARD_MIN_SIZE, DISCARD_MAX_SIZE_EXCLUSIVE):
         for combo in combinations(indices, size):
             results.append(Action(kind="discard", params={"cards": list(combo)}))
             if len(results) >= max_candidates:
@@ -226,7 +284,7 @@ def _evaluate_candidates(
                 reward = _reward(gs2, before_chips, before_money)
                 terminal = gs_state(gs2) == "ROUND_EVAL"
         except BalatroRPCError:
-            reward = -1_000_000_000.0
+            reward = EVAL_FAILURE_REWARD
             terminal = False
         if best is None or reward > best.reward:
             best = _EvalResult(action=action, reward=reward)
@@ -253,25 +311,25 @@ def _evaluate_discard_candidate(
     play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs2), intent, cfg.rollout_k)
     if not play_candidates:
         return _reward(gs2, before_chips, before_money), False
-    best_play = play_candidates[0].action
+    best_play = play_candidates[FIRST_INDEX].action
     gs3 = _apply_action(rpc, best_play)
     return _reward(gs3, before_chips, before_money), gs_state(gs3) == "ROUND_EVAL"
 
 
 def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) -> float:
-    reward = 0.0
+    reward = REWARD_INITIAL
     state = gs_state(gs)
     if state == "ROUND_EVAL":
-        reward += 1_000_000.0
+        reward += REWARD_ROUND_EVAL_BONUS
     if state == "GAME_OVER":
-        reward -= 1_000_000.0
+        reward -= REWARD_GAME_OVER_PENALTY
     blind_score = gs_blind_score(gs)
     round_chips = gs_round_chips(gs)
     if blind_score and before_chips is not None and round_chips is not None:
         delta = round_chips - before_chips
-        reward += 50.0 * delta / max(1, blind_score)
-    reward += 50.0 * gs_hands_left(gs)
-    reward += 10.0 * gs_discards_left(gs)
+        reward += REWARD_CHIPS_DELTA_WEIGHT * delta / max(REWARD_BLIND_SCORE_MIN, blind_score)
+    reward += REWARD_HANDS_LEFT_WEIGHT * gs_hands_left(gs)
+    reward += REWARD_DISCARDS_LEFT_WEIGHT * gs_discards_left(gs)
     reward += float(gs_money(gs) - before_money)
     return reward
 
@@ -300,22 +358,27 @@ def _score_candidate(evaluation: Mapping[str, Any], intent: BuildIntent) -> int:
     hand_type = evaluation.get("hand_type", HandType.HIGH_CARD)
     if not isinstance(hand_type, HandType):
         hand_type = HandType.HIGH_CARD
-    tier_score = _hand_tier(hand_type) * 1000
+    tier_score = _hand_tier(hand_type) * TIER_SCORE_MULTIPLIER
     intent_bonus = _intent_bonus(hand_type, intent)
     features = evaluation.get("features", {})
     flush_count = _safe_int(features.get("flush_count"))
     max_dupe = _safe_int(features.get("max_dupe"))
     straight_quality = _safe_int(features.get("straight_quality"))
     high_rank_sum = _safe_int(features.get("high_rank_sum"))
-    feature_score = flush_count * 5 + max_dupe * 10 + straight_quality * 6 + high_rank_sum
+    feature_score = (
+        flush_count * FEATURE_FLUSH_COUNT_WEIGHT
+        + max_dupe * FEATURE_MAX_DUPE_WEIGHT
+        + straight_quality * FEATURE_STRAIGHT_QUALITY_WEIGHT
+        + high_rank_sum
+    )
     return tier_score + intent_bonus + feature_score
 
 
 def _intent_bonus(hand_type: HandType, intent: BuildIntent) -> int:
     if intent == BuildIntent.FLUSH and hand_type in {HandType.FLUSH, HandType.STRAIGHT_FLUSH}:
-        return 500
+        return INTENT_BONUS_SCORE
     if intent == BuildIntent.STRAIGHT and hand_type in {HandType.STRAIGHT, HandType.STRAIGHT_FLUSH}:
-        return 500
+        return INTENT_BONUS_SCORE
     if intent == BuildIntent.PAIRS and hand_type in {
         HandType.PAIR,
         HandType.TWO_PAIR,
@@ -323,8 +386,8 @@ def _intent_bonus(hand_type: HandType, intent: BuildIntent) -> int:
         HandType.FULL_HOUSE,
         HandType.FOUR_KIND,
     }:
-        return 500
-    return 0
+        return INTENT_BONUS_SCORE
+    return INTENT_BONUS_NONE
 
 
 def _hand_tier(hand_type: HandType) -> int:
@@ -340,9 +403,9 @@ def _hand_tier(hand_type: HandType) -> int:
         HandType.STRAIGHT_FLUSH,
     ]
     try:
-        return order.index(hand_type) + 1
+        return order.index(hand_type) + HAND_TIER_BASE
     except ValueError:
-        return 1
+        return HAND_TIER_BASE
 
 
 def _discard_priority_indices(hand_cards: list[dict], intent: BuildIntent) -> list[int]:
@@ -357,29 +420,29 @@ def _discard_priority_indices(hand_cards: list[dict], intent: BuildIntent) -> li
 
 def _candidate_sizes(hand_cards: list[dict], intent: BuildIntent) -> list[int]:
     hand_size = len(hand_cards)
-    max_size = min(5, hand_size)
-    if max_size <= 0:
+    max_size = min(HAND_MAX_PLAY_SIZE, hand_size)
+    if max_size <= ZERO:
         return []
-    sizes = list(range(max_size, 0, -1))
-    min_size = 1
+    sizes = list(range(max_size, ZERO, -ONE))
+    min_size = MIN_SIZE_DEFAULT
     if intent == BuildIntent.FLUSH:
         max_suit = _max_suit_count(hand_cards)
-        if max_suit >= 4:
-            min_size = 4
-        elif max_suit == 3:
-            min_size = 3
+        if max_suit >= MIN_SIZE_STRONG:
+            min_size = MIN_SIZE_STRONG
+        elif max_suit == MIN_SIZE_MEDIUM:
+            min_size = MIN_SIZE_MEDIUM
         else:
-            min_size = 2
+            min_size = MIN_SIZE_WEAK
     elif intent == BuildIntent.STRAIGHT:
         max_window = _max_straight_window(hand_cards)
-        if max_window >= 4:
-            min_size = 4
-        elif max_window == 3:
-            min_size = 3
+        if max_window >= MIN_SIZE_STRONG:
+            min_size = MIN_SIZE_STRONG
+        elif max_window == MIN_SIZE_MEDIUM:
+            min_size = MIN_SIZE_MEDIUM
         else:
-            min_size = 2
+            min_size = MIN_SIZE_WEAK
     elif intent == BuildIntent.PAIRS:
-        min_size = 2
+        min_size = MIN_SIZE_WEAK
     filtered = [size for size in sizes if size >= min_size]
     return filtered or sizes
 
@@ -390,31 +453,31 @@ def _max_suit_count(hand_cards: list[dict]) -> int:
         suit = card_suit(card)
         if not suit:
             continue
-        counts[suit] = counts.get(suit, 0) + 1
-    return max(counts.values()) if counts else 0
+        counts[suit] = counts.get(suit, ZERO) + ONE
+    return max(counts.values()) if counts else ZERO
 
 
 def _max_dup_count(hand_cards: list[dict]) -> int:
     counts: dict[int, int] = {}
     for rank in (card_rank(card) for card in hand_cards):
-        if rank <= 0:
+        if rank <= RANK_UNKNOWN:
             continue
-        counts[rank] = counts.get(rank, 0) + 1
-    return max(counts.values()) if counts else 0
+        counts[rank] = counts.get(rank, ZERO) + ONE
+    return max(counts.values()) if counts else ZERO
 
 
 def _max_straight_window(hand_cards: list[dict]) -> int:
     ranks = {card_rank(card) for card in hand_cards}
-    ranks.discard(0)
+    ranks.discard(RANK_UNKNOWN)
     if not ranks:
-        return 0
-    if 14 in ranks:
-        ranks.add(1)
+        return ZERO
+    if ACE_HIGH_RANK in ranks:
+        ranks.add(ACE_LOW_RANK)
     unique = sorted(ranks)
-    max_count = 0
+    max_count = ZERO
     for start in unique:
-        end = start + 4
-        count = sum(1 for rank in unique if start <= rank <= end)
+        end = start + STRAIGHT_WINDOW_SPAN
+        count = sum(ONE for rank in unique if start <= rank <= end)
         if count > max_count:
             max_count = count
     return max_count
@@ -426,8 +489,8 @@ def _discard_for_flush(hand_cards: list[dict]) -> list[int]:
     for suit in suits:
         if not suit:
             continue
-        counts[suit] = counts.get(suit, 0) + 1
-    majority = max(counts.items(), key=lambda item: item[1])[0] if counts else None
+        counts[suit] = counts.get(suit, ZERO) + ONE
+    majority = max(counts.items(), key=lambda item: item[ONE])[FIRST_INDEX] if counts else None
     off_suit = [i for i, suit in enumerate(suits) if suit != majority]
     if off_suit:
         return off_suit
@@ -442,7 +505,7 @@ def _discard_for_straight(hand_cards: list[dict]) -> list[int]:
     target_set = set(target)
     indices = []
     for index, rank in enumerate(ranks):
-        normalized = 1 if rank == 14 and 1 in target_set else rank
+        normalized = ACE_LOW_RANK if rank == ACE_HIGH_RANK and ACE_LOW_RANK in target_set else rank
         if normalized not in target_set:
             indices.append(index)
     if indices:
@@ -454,8 +517,8 @@ def _discard_for_pairs(hand_cards: list[dict]) -> list[int]:
     ranks = [card_rank(card) for card in hand_cards]
     counts: dict[int, int] = {}
     for rank in ranks:
-        counts[rank] = counts.get(rank, 0) + 1
-    indices = [i for i, rank in enumerate(ranks) if counts.get(rank, 0) == 1]
+        counts[rank] = counts.get(rank, ZERO) + ONE
+    indices = [i for i, rank in enumerate(ranks) if counts.get(rank, ZERO) == ONE]
     if indices:
         return indices
     return _discard_low_ranks(hand_cards)
@@ -468,16 +531,16 @@ def _discard_low_ranks(hand_cards: list[dict]) -> list[int]:
 
 
 def _best_straight_ranks(ranks: list[int]) -> list[int]:
-    unique = sorted({rank for rank in ranks if rank > 0})
+    unique = sorted({rank for rank in ranks if rank > RANK_UNKNOWN})
     if not unique:
         return []
-    if 14 in unique:
-        unique.append(1)
+    if ACE_HIGH_RANK in unique:
+        unique.append(ACE_LOW_RANK)
         unique = sorted(set(unique))
     best: list[int] = []
     for start in unique:
-        end = start + 4
-        window = [rank for rank in range(start, end + 1)]
+        end = start + STRAIGHT_WINDOW_SPAN
+        window = [rank for rank in range(start, end + STRAIGHT_WINDOW_INCLUSIVE_OFFSET)]
         if all(rank in unique for rank in window):
             if not best or end > max(best):
                 best = window
@@ -497,9 +560,9 @@ def _combinations_bounded(
     selected: list[tuple[int, ...]] = []
     seen: set[tuple[int, ...]] = set()
     for order in _priority_orders(priority_order):
-        stride = max(1, total // max_count)
+        stride = max(ONE, total // max_count)
         for idx, combo in enumerate(combinations(order, size)):
-            if idx % stride != 0:
+            if idx % stride != ZERO:
                 continue
             normalized = tuple(sorted(combo))
             if normalized in seen:
@@ -519,7 +582,7 @@ def _save_path() -> str:
 def _safe_int(value: Any) -> int:
     if isinstance(value, int) and not isinstance(value, bool):
         return value
-    return 0
+    return ZERO
 
 
 def _priority_indices(hand_cards: list[dict]) -> list[int]:
@@ -528,16 +591,16 @@ def _priority_indices(hand_cards: list[dict]) -> list[int]:
     for suit in suits:
         if not suit:
             continue
-        suit_counts[suit] = suit_counts.get(suit, 0) + 1
+        suit_counts[suit] = suit_counts.get(suit, ZERO) + ONE
     ranks = [card_rank(card) for card in hand_cards]
     rank_counts: dict[int, int] = {}
     for rank in ranks:
-        rank_counts[rank] = rank_counts.get(rank, 0) + 1
+        rank_counts[rank] = rank_counts.get(rank, ZERO) + ONE
     def score_index(idx: int) -> tuple[int, int, int]:
         suit = suits[idx]
-        suit_score = suit_counts.get(suit, 0) if suit else 0
+        suit_score = suit_counts.get(suit, ZERO) if suit else ZERO
         rank = ranks[idx]
-        dup_score = rank_counts.get(rank, 0)
+        dup_score = rank_counts.get(rank, ZERO)
         return (dup_score, suit_score, rank)
     return sorted(range(len(hand_cards)), key=score_index, reverse=True)
 

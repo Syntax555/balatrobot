@@ -4,9 +4,7 @@ import itertools
 import time
 from typing import Any, Mapping
 
-import requests
-from requests import Response, Session
-from requests.exceptions import ConnectionError, RequestException, Timeout
+import httpx
 
 JsonObject = dict[str, Any]
 
@@ -59,12 +57,12 @@ class BalatroRPC:
             )
         self._base_url = base_url
         self._timeout = timeout
-        self._session = requests.Session()
+        self._client = httpx.Client(timeout=timeout)
         self._id_counter = itertools.count(1)
 
     def close(self) -> None:
         """Close the underlying HTTP session."""
-        self._session.close()
+        self._client.close()
 
     def call(self, method: str, params: dict[str, Any] | None = None) -> JsonObject:
         """Call a JSON-RPC method and return its result."""
@@ -256,13 +254,9 @@ class BalatroRPC:
         delays = (0.1, 0.2, 0.4)
         for attempt in range(len(delays) + 1):
             try:
-                response = self._session.post(
-                    self._base_url,
-                    json=payload,
-                    timeout=self._timeout,
-                )
+                response = self._client.post(self._base_url, json=payload)
                 return self._parse_response(response, payload)
-            except (ConnectionError, Timeout) as exc:
+            except (httpx.ConnectError, httpx.TimeoutException) as exc:
                 if attempt < len(delays):
                     time.sleep(delays[attempt])
                     continue
@@ -273,7 +267,7 @@ class BalatroRPC:
                     method=payload.get("method"),
                     params=payload.get("params"),
                 ) from exc
-            except RequestException as exc:
+            except httpx.RequestError as exc:
                 raise BalatroRPCError(
                     code=-32097,
                     message="Request error",
@@ -289,8 +283,8 @@ class BalatroRPC:
             params=payload.get("params"),
         )
 
-    def _parse_response(self, response: Response, payload: Mapping[str, Any]) -> JsonObject:
-        if not response.ok:
+    def _parse_response(self, response: httpx.Response, payload: Mapping[str, Any]) -> JsonObject:
+        if not response.is_success:
             raise BalatroRPCError(
                 code=-32000,
                 message="HTTP error",
