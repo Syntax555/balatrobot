@@ -15,7 +15,7 @@ from balatro_ai.pack_sim import evaluate_pack_choice
 from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
-    from balatro_ai.policy import PolicyContext
+    from balatro_ai.policy_context import PolicyContext
 
 logger = logging.getLogger(__name__)
 

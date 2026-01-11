@@ -23,7 +23,7 @@ from balatro_ai.joker_rules import joker_rule
 from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
-    from balatro_ai.policy import PolicyContext
+    from balatro_ai.policy_context import PolicyContext
 
 logger = logging.getLogger(__name__)
 

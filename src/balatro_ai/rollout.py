@@ -41,7 +41,7 @@ from balatro_ai.poker_eval import HandType, evaluate_candidate
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 if TYPE_CHECKING:
-    from balatro_ai.policy import PolicyContext
+    from balatro_ai.policy_context import PolicyContext
 
 logger = logging.getLogger(__name__)
 
