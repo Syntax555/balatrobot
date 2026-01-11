@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import enum
 import logging
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
-from balatro_ai.cards import card_rank, card_tokens
+from balatro_ai.cards import card_rank, card_suit, card_tokens
 from balatro_ai.gs import gs_hand_cards, gs_jokers
 from balatro_ai.hand_stats import (
     max_rank_count_from_ranks,
@@ -14,7 +15,11 @@ from balatro_ai.hand_stats import (
     suit_counts,
 )
 from balatro_ai.joker_order import joker_text
-from balatro_ai.odds import comb, deck_flush_hit_probability, deck_straight_hit_probability
+from balatro_ai.odds import (
+    comb,
+    deck_flush_hit_probability,
+    deck_straight_hit_probability,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -247,13 +252,18 @@ def _deck_flush_conf(deck_cards: list[dict]) -> float:
         bias = max(DECK_CONFIDENCE_NONE, (max_count / baseline) - 1.0)
         heuristic = min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
 
-    playable_size = sum(1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None)
-    p = deck_flush_hit_probability(deck_cards, hand_size=5)
-    p_base = _baseline_flush_probability(playable_size)
-    if p_base <= 0.0:
+    playable_card_count = sum(
+        1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None
+    )
+    flush_hit_probability = deck_flush_hit_probability(deck_cards, hand_size=5)
+    baseline_flush_probability = _baseline_flush_probability(playable_card_count)
+    if baseline_flush_probability <= 0.0:
         analytic = DECK_CONFIDENCE_NONE
     else:
-        bias = max(DECK_CONFIDENCE_NONE, (p / p_base) - 1.0)
+        bias = max(
+            DECK_CONFIDENCE_NONE,
+            (flush_hit_probability / baseline_flush_probability) - 1.0,
+        )
         analytic = min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
     return max(heuristic, analytic)
 
@@ -316,13 +326,18 @@ def _deck_straight_conf(deck_cards: list[dict]) -> float:
         bias = max(DECK_CONFIDENCE_NONE, (max_window / baseline) - 1.0)
         heuristic = min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
 
-    playable_size = sum(1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None)
-    p = deck_straight_hit_probability(deck_cards, hand_size=5)
-    p_base = _baseline_straight_probability(playable_size)
-    if p_base <= 0.0:
+    playable_card_count = sum(
+        1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None
+    )
+    straight_hit_probability = deck_straight_hit_probability(deck_cards, hand_size=5)
+    baseline_straight_probability = _baseline_straight_probability(playable_card_count)
+    if baseline_straight_probability <= 0.0:
         analytic = DECK_CONFIDENCE_NONE
     else:
-        bias = max(DECK_CONFIDENCE_NONE, (p / p_base) - 1.0)
+        bias = max(
+            DECK_CONFIDENCE_NONE,
+            (straight_hit_probability / baseline_straight_probability) - 1.0,
+        )
         analytic = min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
     return max(heuristic, analytic)
 
@@ -330,9 +345,9 @@ def _deck_straight_conf(deck_cards: list[dict]) -> float:
 def _baseline_flush_probability(deck_size: int, hand_size: int = 5) -> float:
     if deck_size < hand_size or hand_size <= 0:
         return 0.0
-    per = deck_size // 4
-    rem = deck_size % 4
-    suit_counts = [per + (1 if i < rem else 0) for i in range(4)]
+    base_per_suit = deck_size // 4
+    extra_cards = deck_size % 4
+    suit_counts = [base_per_suit + (1 if i < extra_cards else 0) for i in range(4)]
     denom = comb(deck_size, hand_size)
     if denom <= 0:
         return 0.0
@@ -345,11 +360,12 @@ def _baseline_straight_probability(deck_size: int, hand_size: int = 5) -> float:
         return 0.0
     if hand_size != 5:
         return 0.0
-    per = deck_size // 13
-    rem = deck_size % 13
-    rank_order = list(range(2, 15))
+    base_per_rank = deck_size // 13
+    extra_cards = deck_size % 13
+    rank_values = list(range(2, 15))
     rank_counts = {
-        rank: per + (1 if idx < rem else 0) for idx, rank in enumerate(rank_order)
+        rank: base_per_rank + (1 if rank_index < extra_cards else 0)
+        for rank_index, rank in enumerate(rank_values)
     }
     denom = comb(deck_size, hand_size)
     if denom <= 0:

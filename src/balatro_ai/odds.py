@@ -174,6 +174,7 @@ def probability_complete_flush_after_draw(
 ) -> float:
     kept_counts = _count_suits(kept_suits)
     deck_counts = _count_suits(deck_suits)
+    spades, hearts, diamonds, clubs = SUITS
     draws = max(0, int(draws))
     required = max(0, int(required))
     if required <= 0:
@@ -188,21 +189,28 @@ def probability_complete_flush_after_draw(
     if denom <= 0:
         return 0.0
     total = 0.0
-    k0, k1, k2, k3 = (deck_counts[s] for s in SUITS)
-    for x0 in range(0, min(draws, k0) + 1):
-        for x1 in range(0, min(draws - x0, k1) + 1):
-            for x2 in range(0, min(draws - x0 - x1, k2) + 1):
-                x3 = draws - x0 - x1 - x2
-                if x3 < 0 or x3 > k3:
+    spades_in_deck, hearts_in_deck, diamonds_in_deck, clubs_in_deck = (
+        deck_counts[s] for s in SUITS
+    )
+    for spades_drawn in range(0, min(draws, spades_in_deck) + 1):
+        for hearts_drawn in range(0, min(draws - spades_drawn, hearts_in_deck) + 1):
+            for diamonds_drawn in range(
+                0, min(draws - spades_drawn - hearts_drawn, diamonds_in_deck) + 1
+            ):
+                clubs_drawn = draws - spades_drawn - hearts_drawn - diamonds_drawn
+                if clubs_drawn < 0 or clubs_drawn > clubs_in_deck:
                     continue
                 if (
-                    kept_counts[SUITS[0]] + x0 >= required
-                    or kept_counts[SUITS[1]] + x1 >= required
-                    or kept_counts[SUITS[2]] + x2 >= required
-                    or kept_counts[SUITS[3]] + x3 >= required
+                    kept_counts[spades] + spades_drawn >= required
+                    or kept_counts[hearts] + hearts_drawn >= required
+                    or kept_counts[diamonds] + diamonds_drawn >= required
+                    or kept_counts[clubs] + clubs_drawn >= required
                 ):
                     ways = (
-                        comb(k0, x0) * comb(k1, x1) * comb(k2, x2) * comb(k3, x3)
+                        comb(spades_in_deck, spades_drawn)
+                        * comb(hearts_in_deck, hearts_drawn)
+                        * comb(diamonds_in_deck, diamonds_drawn)
+                        * comb(clubs_in_deck, clubs_drawn)
                     )
                     total += float(ways) / float(denom)
     return min(1.0, max(0.0, total))

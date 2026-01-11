@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from balatro_ai.cards import card_rank, card_suit, card_text
+
 
 class HandType(str, enum.Enum):
     """Poker hand types for Balatro."""

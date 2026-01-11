@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
@@ -87,7 +88,7 @@ class _Candidate:
 class ShopPolicy:
     """Shop decision policy for choosing a single action."""
 
-    def choose_action(self, gs: Mapping[str, Any], cfg: Config, ctx: "PolicyContext") -> Action:
+    def choose_action(self, gs: Mapping[str, Any], cfg: Config, ctx: PolicyContext) -> Action:
         """Choose an action while in SHOP state."""
         if gs_state(gs) != "SHOP":
             raise ValueError(f"ShopPolicy used outside SHOP state: {gs_state(gs)}")
@@ -482,7 +483,7 @@ def _identity_matches(
     return True
 
 
-def _shop_memory(ctx: "PolicyContext") -> dict[str, Any]:
+def _shop_memory(ctx: PolicyContext) -> dict[str, Any]:
     shop = ctx.round_memory.get("shop")
     if not isinstance(shop, dict):
         shop = {}

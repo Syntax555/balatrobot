@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent, infer_dynamic_intent
@@ -169,9 +170,9 @@ class BotRunner:
     def execute_action(self, action: Action, gs: Mapping[str, Any]) -> GameState:
         """Execute a single action and return the new game state."""
         self._log_action(gs, action)
-        return self._dispatch_action(action)
+        return self._dispatch_action(action, gs)
 
-    def _dispatch_action(self, action: Action) -> GameState:
+    def _dispatch_action(self, action: Action, gs: Mapping[str, Any]) -> GameState:
         params = action.params
         if action.kind == "menu":
             return self._client.menu()

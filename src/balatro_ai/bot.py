@@ -10,8 +10,8 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

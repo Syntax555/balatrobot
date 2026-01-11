@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_rank, card_suit, card_text, card_tokens
@@ -68,7 +69,7 @@ class PackPolicy:
         self,
         gs: Mapping[str, Any],
         cfg: Config,
-        ctx: "PolicyContext",
+        ctx: PolicyContext,
         intent: str,
     ) -> Action:
         """Choose an action in SMODS_BOOSTER_OPENED state."""

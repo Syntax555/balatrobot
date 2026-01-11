@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
@@ -145,7 +146,7 @@ def find_best_joker_sequence(
     return best_order
 
 
-def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: "PolicyContext") -> Action | None:
+def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | None:
     """Return a rearrange action when jokers should be reordered."""
     state = gs_state(gs)
     if state not in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}:

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import random
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from balatro_ai.cards import card_rank, card_suit
-from balatro_ai.hand_stats import max_straight_window_count_from_ranks, max_suit_count_from_suits
+from balatro_ai.hand_stats import (
+    max_straight_window_count_from_ranks,
+    max_suit_count_from_suits,
+)
 from balatro_ai.odds import (
     deck_flush_hit_probability,
     deck_flush_hit_probability_with_forced_card,

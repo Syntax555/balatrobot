@@ -5,9 +5,10 @@ import math
 import os
 import tempfile
 import uuid
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from itertools import combinations
-from typing import TYPE_CHECKING, Any, Iterable, Mapping
+from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent, infer_intent
@@ -15,8 +16,8 @@ from balatro_ai.cards import card_rank, card_suit
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_blind_score,
-    gs_discards_left,
     gs_deck_cards,
+    gs_discards_left,
     gs_hand_cards,
     gs_hands_left,
     gs_jokers,
@@ -32,8 +33,11 @@ from balatro_ai.hand_stats import (
     rank_counts_from_ranks,
     suit_counts_from_suits,
 )
+from balatro_ai.odds import (
+    probability_complete_flush_after_draw,
+    probability_complete_straight_after_draw,
+)
 from balatro_ai.poker_eval import HandType, evaluate_candidate
-from balatro_ai.odds import probability_complete_flush_after_draw, probability_complete_straight_after_draw
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 if TYPE_CHECKING:
@@ -107,7 +111,7 @@ class _EvalResult:
 def rollout_step(
     gs: Mapping[str, Any],
     cfg: Config,
-    ctx: "PolicyContext",
+    ctx: PolicyContext,
     rpc: BalatroRPC,
 ) -> dict:
     """Evaluate play/discard candidates using save/load and apply the best action."""
@@ -390,13 +394,13 @@ def _evaluate_candidates(
                     before_money,
                 )
             else:
-                gs2 = _apply_action(rpc, action)
-                reward = _reward(gs2, before_chips, before_money)
-                terminal = gs_state(gs2) == "ROUND_EVAL"
+                candidate_state = _apply_action(rpc, action)
+                reward = _reward(candidate_state, before_chips, before_money)
+                terminal = gs_state(candidate_state) == "ROUND_EVAL"
         except BalatroRPCError:
             reward = EVAL_FAILURE_REWARD
             terminal = False
-        prev_best = best.reward if best is not None else float("-inf")
+        previous_best_reward = best.reward if best is not None else float("-inf")
         if best is None or reward > best.reward:
             best = _EvalResult(action=action, reward=reward)
         logger.debug(
@@ -405,7 +409,7 @@ def _evaluate_candidates(
             action.params,
             reward,
             terminal,
-            best.reward if best is not None else prev_best,
+            best.reward if best is not None else previous_best_reward,
         )
         if terminal:
             logger.debug("eval early stop (terminal reached): best=%s", best)
@@ -421,10 +425,10 @@ def _evaluate_discard_candidate(
     before_chips: int | None,
     before_money: int,
 ) -> tuple[float, bool]:
-    gs2 = _apply_action(rpc, action)
-    state = gs_state(gs2)
+    after_discard_state = _apply_action(rpc, action)
+    state = gs_state(after_discard_state)
     if state in {"ROUND_EVAL", "GAME_OVER"}:
-        reward = _reward(gs2, before_chips, before_money)
+        reward = _reward(after_discard_state, before_chips, before_money)
         logger.debug(
             "_evaluate_discard_candidate: immediate terminal state=%s reward=%.2f cards=%s",
             state,
@@ -432,16 +436,21 @@ def _evaluate_discard_candidate(
             action.params.get("cards"),
         )
         return reward, True
-    hand_cards = gs_hand_cards(gs2)
+    hand_cards = gs_hand_cards(after_discard_state)
     if not hand_cards:
-        return _reward(gs2, before_chips, before_money), False
-    play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs2), intent, cfg.rollout_k)
+        return _reward(after_discard_state, before_chips, before_money), False
+    play_candidates = _generate_play_candidates(
+        hand_cards,
+        gs_jokers(after_discard_state),
+        intent,
+        cfg.rollout_k,
+    )
     if not play_candidates:
-        return _reward(gs2, before_chips, before_money), False
+        return _reward(after_discard_state, before_chips, before_money), False
     best_play = play_candidates[FIRST_INDEX].action
-    gs3 = _apply_action(rpc, best_play)
-    reward = _reward(gs3, before_chips, before_money)
-    terminal = gs_state(gs3) == "ROUND_EVAL"
+    after_play_state = _apply_action(rpc, best_play)
+    reward = _reward(after_play_state, before_chips, before_money)
+    terminal = gs_state(after_play_state) == "ROUND_EVAL"
     logger.debug(
         "_evaluate_discard_candidate: discard=%s followup_play=%s reward=%.2f terminal=%s",
         action.params.get("cards"),
@@ -470,7 +479,7 @@ def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) 
     return reward
 
 
-def _intent_from_ctx(gs: Mapping[str, Any], ctx: "PolicyContext") -> BuildIntent:
+def _intent_from_ctx(gs: Mapping[str, Any], ctx: PolicyContext) -> BuildIntent:
     memory_intent = ctx.memory.get("intent")
     intent = _coerce_intent(memory_intent)
     if intent is not None:
