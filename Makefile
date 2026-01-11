@@ -24,8 +24,8 @@ help: ## Show this help message
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "help"      "Show this help message"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "install"   "Install balatrobot and all dependencies (including dev)"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "lint"      "Run ruff linter (check only)"
-	@printf "  $(GREEN)%-18s$(RESET) %s\n" "format"    "Run ruff and mdformat formatters"
-	@printf "  $(GREEN)%-18s$(RESET) %s\n" "typecheck" "Run type checker"
+	@printf "  $(GREEN)%-18s$(RESET) %s\n" "format"    "Run formatters (ruff, mdformat, stylua)"
+	@printf "  $(GREEN)%-18s$(RESET) %s\n" "typecheck" "Run type checkers (Python and Lua)"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "quality"   "Run all code quality checks"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "fixtures"  "Generate fixtures"
 	@printf "  $(GREEN)%-18s$(RESET) %s\n" "test"      "Run all tests"
@@ -40,7 +40,7 @@ lint: ## Run ruff linter (check only)
 	ruff check --fix --select I .
 	ruff check --fix .
 
-format: ## Run ruff and mdformat formatters
+format: ## Run formatters (ruff, mdformat, stylua)
 	@$(PRINT) "$(YELLOW)Running ruff formatter...$(RESET)"
 	ruff check --select I --fix .
 	ruff format .
@@ -53,7 +53,7 @@ format: ## Run ruff and mdformat formatters
 		$(PRINT) "$(BLUE)Skipping stylua formatter (stylua not found)$(RESET)"; \
 	fi
 
-typecheck: ## Run type checker
+typecheck: ## Run type checkers (Python and Lua)
 	@$(PRINT) "$(YELLOW)Running Python type checker...$(RESET)"
 	@ty check
 	@if command -v lua-language-server >/dev/null 2>&1 && [ -f .luarc.json ]; then \

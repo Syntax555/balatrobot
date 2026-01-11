@@ -1,5 +1,8 @@
 -- src/lua/endpoints/play.lua
 
+---@type BB_LOGGER
+local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
+
 -- ==========================================================================
 -- Play Endpoint Params
 -- ==========================================================================
@@ -67,6 +70,10 @@ return {
     for _, card_index in ipairs(args.cards) do
       G.hand.cards[card_index + 1]:click()
     end
+
+    -- Log the cards being played
+    local card_str = BB_LOGGER.format_playing_cards(G.hand.cards, args.cards)
+    sendDebugMessage(string.format("Playing %d cards: %s", #args.cards, card_str), "BB.ENDPOINTS")
 
     ---@diagnostic disable-next-line: undefined-field
     local play_button = UIBox:get_UIE_by_ID("play_button", G.buttons.UIRoot)

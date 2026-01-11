@@ -33,6 +33,15 @@ return {
     local select_button = blind_pane:get_UIE_by_ID("select_blind_button")
     assert(select_button ~= nil, "select() select button not found: " .. current_blind)
 
+    -- Log which blind we're selecting
+    local blind_info = BB_GAMESTATE.get_blinds_info()[string.lower(current_blind)]
+    local blind_name = blind_info and blind_info.name or current_blind
+    local chips = blind_info and blind_info.chips or "?"
+    sendDebugMessage(
+      string.format("Selecting %s (%s), chips required: %s", current_blind, blind_name, tostring(chips)),
+      "BB.ENDPOINTS"
+    )
+
     -- Execute blind selection
     G.FUNCS.select_blind(select_button)
 
