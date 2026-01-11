@@ -41,6 +41,7 @@ class GameState(TypedDict, total=False):
     round: RoundState
     blind: BlindState
     hand: HandState
+    cards: dict
     jokers: list[dict]
     consumables: list[dict]
     shop: ShopState
@@ -188,6 +189,12 @@ def gs_shop_packs(gs: Mapping[str, Any]) -> list[dict]:
 def gs_pack_cards(gs: Mapping[str, Any]) -> list[dict]:
     """Return the list of cards in the opened pack."""
     value = safe_get(gs, ["pack", "cards"], [])
+    return _list_of_dicts(value)
+
+
+def gs_deck_cards(gs: Mapping[str, Any]) -> list[dict]:
+    """Return the list of cards remaining in the deck pile."""
+    value = safe_get(gs, ["cards", "cards"], [])
     return _list_of_dicts(value)
 
 

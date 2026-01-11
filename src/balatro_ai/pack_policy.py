@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Any, Mapping
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_rank, card_suit, card_text, card_tokens
 from balatro_ai.config import Config
-from balatro_ai.gs import gs_hand_cards, gs_pack_cards, gs_state
+from balatro_ai.gs import gs_deck_cards, gs_hand_cards, gs_pack_cards, gs_seed, gs_state
 from balatro_ai.hand_stats import majority_suit
 from balatro_ai.joker_rules import joker_rule
+from balatro_ai.pack_sim import evaluate_pack_choice
 from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
@@ -51,6 +52,8 @@ LENGTH_NONE = 0
 
 SLICE_AFTER_FIRST_CHAR = 1
 
+PACK_SIM_SCORE_WEIGHT = 200.0
+
 
 @dataclass(frozen=True)
 class _TargetCandidate:
@@ -76,7 +79,7 @@ class PackPolicy:
         if not pack_cards:
             logger.debug("PackPolicy: no pack cards -> skip")
             return Action(kind="pack", params={"skip": True})
-        index = pick_pack_card(pack_cards, intent)
+        index = pick_pack_card_with_simulation(gs, cfg, pack_cards, intent)
         card = pack_cards[index]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
@@ -111,53 +114,64 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("pick_pack_card: intent_key=%r cards=%s", intent_key, len(pack_cards))
     for index, card in enumerate(pack_cards):
-        text = pack_card_text(card)
-        tokens = card_tokens(text)
-        score = SCORE_INITIAL
-        key = card_key(card)
-        rule = joker_rule(key) if key and key.startswith("j_") else None
-        category_score = SCORE_INITIAL
-        if rule is not None:
-            category_score = _score_from_category(rule.category)
-            score += category_score
-        xmult_hit = bool(tokens & _XMULT_TOKENS) or has_x_token(
-            tokens,
-            slice_after_first_char=SLICE_AFTER_FIRST_CHAR,
-        )
-        if xmult_hit:
-            score += PICK_XMULT_BONUS
-        mult_hit = bool(tokens & _MULT_TOKENS)
-        if tokens & _MULT_TOKENS:
-            score += PICK_MULT_BONUS
-        chips_hit = bool(tokens & _CHIPS_TOKENS)
-        if tokens & _CHIPS_TOKENS:
-            score += PICK_CHIPS_BONUS
-        intent_bonus = SCORE_INITIAL
-        if intent_key:
-            if "flush" in intent_key and "flush" in tokens:
-                intent_bonus += INTENT_FLUSH_BONUS
-            if "straight" in intent_key and "straight" in tokens:
-                intent_bonus += INTENT_STRAIGHT_BONUS
-            if "pair" in intent_key and "pair" in tokens:
-                intent_bonus += INTENT_PAIR_BONUS
-        score += intent_bonus
+        score, debug = _heuristic_score_pack_card(card, intent_key)
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 "pick_pack_card option: idx=%s score=%s (cat=%s xmult=%s mult=%s chips=%s intent_bonus=%s) key=%s text=%r",
                 index,
                 score,
-                category_score,
-                xmult_hit,
-                mult_hit,
-                chips_hit,
-                intent_bonus,
-                key,
-                text,
+                debug["category_score"],
+                debug["xmult_hit"],
+                debug["mult_hit"],
+                debug["chips_hit"],
+                debug["intent_bonus"],
+                debug["key"],
+                debug["text"],
             )
         if score > best_score:
             best_score = score
             best_index = index
     logger.debug("pick_pack_card: best_idx=%s best_score=%s", best_index, best_score)
+    return best_index
+
+
+def pick_pack_card_with_simulation(
+    gs: Mapping[str, Any],
+    cfg: Config,
+    pack_cards: list[dict],
+    intent: str,
+) -> int:
+    """Pick a pack card index using simulation + heuristics."""
+    intent_key = intent.lower() if isinstance(intent, str) else ""
+    if not intent_key:
+        return pick_pack_card(pack_cards, intent)
+
+    deck_cards = gs_deck_cards(gs)
+    seed = gs_seed(gs) or cfg.seed or ""
+    seed_text = f"{seed}|{cfg.deck}|{cfg.stake}|{intent_key}"
+    sim_scores = evaluate_pack_choice(deck_cards, pack_cards, intent, seed_text=seed_text)
+    if not any(abs(score) > 1e-12 for score in sim_scores):
+        return pick_pack_card(pack_cards, intent)
+
+    best_index = INDEX_INITIAL
+    best_score = float("-inf")
+    for index, (card, sim_score) in enumerate(zip(pack_cards, sim_scores, strict=False)):
+        heur_score, debug = _heuristic_score_pack_card(card, intent_key)
+        combined = float(heur_score) + PACK_SIM_SCORE_WEIGHT * sim_score
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "pick_pack_card sim option: idx=%s combined=%.2f heur=%s sim=%.4f key=%s text=%r",
+                index,
+                combined,
+                heur_score,
+                sim_score,
+                debug["key"],
+                debug["text"],
+            )
+        if combined > best_score:
+            best_score = combined
+            best_index = index
+    logger.debug("pick_pack_card_with_simulation: best_idx=%s best_score=%.2f", best_index, best_score)
     return best_index
 
 
@@ -269,3 +283,45 @@ def _is_hidden_or_debuffed(card: Mapping[str, Any]) -> bool:
         if isinstance(value, bool) and value:
             return True
     return False
+
+
+def _heuristic_score_pack_card(card: dict, intent_key: str) -> tuple[int, dict[str, Any]]:
+    text = pack_card_text(card)
+    tokens = card_tokens(text)
+    score = SCORE_INITIAL
+    key = card_key(card)
+    rule = joker_rule(key) if key and key.startswith("j_") else None
+    category_score = SCORE_INITIAL
+    if rule is not None:
+        category_score = _score_from_category(rule.category)
+        score += category_score
+    xmult_hit = bool(tokens & _XMULT_TOKENS) or has_x_token(
+        tokens,
+        slice_after_first_char=SLICE_AFTER_FIRST_CHAR,
+    )
+    if xmult_hit:
+        score += PICK_XMULT_BONUS
+    mult_hit = bool(tokens & _MULT_TOKENS)
+    if mult_hit:
+        score += PICK_MULT_BONUS
+    chips_hit = bool(tokens & _CHIPS_TOKENS)
+    if chips_hit:
+        score += PICK_CHIPS_BONUS
+    intent_bonus = SCORE_INITIAL
+    if intent_key:
+        if "flush" in intent_key and "flush" in tokens:
+            intent_bonus += INTENT_FLUSH_BONUS
+        if "straight" in intent_key and "straight" in tokens:
+            intent_bonus += INTENT_STRAIGHT_BONUS
+        if "pair" in intent_key and "pair" in tokens:
+            intent_bonus += INTENT_PAIR_BONUS
+    score += intent_bonus
+    return score, {
+        "text": text,
+        "key": key,
+        "category_score": category_score,
+        "xmult_hit": xmult_hit,
+        "mult_hit": mult_hit,
+        "chips_hit": chips_hit,
+        "intent_bonus": intent_bonus,
+    }
