@@ -14,6 +14,7 @@ from balatro_ai.hand_stats import (
     suit_counts,
 )
 from balatro_ai.joker_order import joker_text
+from balatro_ai.odds import comb, deck_flush_hit_probability, deck_straight_hit_probability
 
 logger = logging.getLogger(__name__)
 
@@ -241,9 +242,20 @@ def _deck_flush_conf(deck_cards: list[dict]) -> float:
     max_count = max(counts.values()) if counts else 0
     baseline = deck_size / DECK_SUIT_COUNT
     if baseline <= 0:
-        return DECK_CONFIDENCE_NONE
-    bias = max(DECK_CONFIDENCE_NONE, (max_count / baseline) - 1.0)
-    return min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
+        heuristic = DECK_CONFIDENCE_NONE
+    else:
+        bias = max(DECK_CONFIDENCE_NONE, (max_count / baseline) - 1.0)
+        heuristic = min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
+
+    playable_size = sum(1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None)
+    p = deck_flush_hit_probability(deck_cards, hand_size=5)
+    p_base = _baseline_flush_probability(playable_size)
+    if p_base <= 0.0:
+        analytic = DECK_CONFIDENCE_NONE
+    else:
+        bias = max(DECK_CONFIDENCE_NONE, (p / p_base) - 1.0)
+        analytic = min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
+    return max(heuristic, analytic)
 
 
 def _pairs_conf(hand: list[dict]) -> float:
@@ -299,9 +311,59 @@ def _deck_straight_conf(deck_cards: list[dict]) -> float:
             max_window = window_sum
     baseline = STRAIGHT_WINDOW_SIZE * (deck_size / DECK_RANK_COUNT)
     if baseline <= 0:
-        return DECK_CONFIDENCE_NONE
-    bias = max(DECK_CONFIDENCE_NONE, (max_window / baseline) - 1.0)
-    return min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
+        heuristic = DECK_CONFIDENCE_NONE
+    else:
+        bias = max(DECK_CONFIDENCE_NONE, (max_window / baseline) - 1.0)
+        heuristic = min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
+
+    playable_size = sum(1 for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None)
+    p = deck_straight_hit_probability(deck_cards, hand_size=5)
+    p_base = _baseline_straight_probability(playable_size)
+    if p_base <= 0.0:
+        analytic = DECK_CONFIDENCE_NONE
+    else:
+        bias = max(DECK_CONFIDENCE_NONE, (p / p_base) - 1.0)
+        analytic = min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
+    return max(heuristic, analytic)
+
+
+def _baseline_flush_probability(deck_size: int, hand_size: int = 5) -> float:
+    if deck_size < hand_size or hand_size <= 0:
+        return 0.0
+    per = deck_size // 4
+    rem = deck_size % 4
+    suit_counts = [per + (1 if i < rem else 0) for i in range(4)]
+    denom = comb(deck_size, hand_size)
+    if denom <= 0:
+        return 0.0
+    num = sum(comb(count, hand_size) for count in suit_counts)
+    return float(num) / float(denom)
+
+
+def _baseline_straight_probability(deck_size: int, hand_size: int = 5) -> float:
+    if deck_size < hand_size or hand_size <= 0:
+        return 0.0
+    if hand_size != 5:
+        return 0.0
+    per = deck_size // 13
+    rem = deck_size % 13
+    rank_order = list(range(2, 15))
+    rank_counts = {
+        rank: per + (1 if idx < rem else 0) for idx, rank in enumerate(rank_order)
+    }
+    denom = comb(deck_size, hand_size)
+    if denom <= 0:
+        return 0.0
+    num = 0
+    for start in range(1, 11):
+        ways = 1
+        for rank in range(start, start + 5):
+            actual = 14 if rank == 1 else rank
+            ways *= rank_counts.get(actual, 0)
+            if ways == 0:
+                break
+        num += ways
+    return float(num) / float(denom)
 
 
 def _intent_priority(intent: BuildIntent) -> int:

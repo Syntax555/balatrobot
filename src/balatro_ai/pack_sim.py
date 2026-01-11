@@ -6,6 +6,13 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 from balatro_ai.cards import card_rank, card_suit
+from balatro_ai.hand_stats import max_straight_window_count_from_ranks, max_suit_count_from_suits
+from balatro_ai.odds import (
+    deck_flush_hit_probability,
+    deck_flush_hit_probability_with_forced_card,
+    deck_straight_hit_probability,
+    deck_straight_hit_probability_with_forced_card,
+)
 from balatro_ai.poker_eval import HandType, evaluate_candidate
 
 HAND_SIZE = 5
@@ -85,6 +92,35 @@ def _simulate_value(
     trials: int,
     rng: random.Random,
 ) -> DeckSimResult:
+    if intent_mode in {"flush", "straight"}:
+        quality_sum = 0.0
+        hit_rate = (
+            deck_flush_hit_probability(deck_cards, hand_size=HAND_SIZE)
+            if intent_mode == "flush"
+            else deck_straight_hit_probability(deck_cards, hand_size=HAND_SIZE)
+        )
+        for _ in range(max(1, trials)):
+            hand = _draw_hand(deck_cards, rng)
+            if intent_mode == "flush":
+                quality_sum += float(max_suit_count_from_suits(card_suit(card) for card in hand))
+            else:
+                quality_sum += float(
+                    max_straight_window_count_from_ranks(
+                        (card_rank(card) for card in hand),
+                        window_span=4,
+                        ace_high_rank=14,
+                        ace_low_rank=1,
+                        unknown_rank=0,
+                    )
+                )
+        denom = float(max(1, trials))
+        avg_quality = quality_sum / denom
+        return DeckSimResult(
+            value=(HIT_WEIGHT * hit_rate) + (QUALITY_WEIGHT * avg_quality),
+            hit_rate=hit_rate,
+            avg_quality=avg_quality,
+        )
+
     hits = 0
     quality_sum = 0.0
     value_sum = 0.0
@@ -114,6 +150,36 @@ def _simulate_value_with_forced_card(
     rng: random.Random,
 ) -> DeckSimResult:
     forced = _coerce_card(forced_card)
+    if intent_mode in {"flush", "straight"}:
+        quality_sum = 0.0
+        hit_rate = (
+            deck_flush_hit_probability_with_forced_card(deck_cards, forced, hand_size=HAND_SIZE)
+            if intent_mode == "flush"
+            else deck_straight_hit_probability_with_forced_card(deck_cards, forced, hand_size=HAND_SIZE)
+        )
+        for _ in range(max(1, trials)):
+            others = _draw_other_cards(deck_cards, HAND_SIZE - 1, rng)
+            hand = [forced, *others]
+            if intent_mode == "flush":
+                quality_sum += float(max_suit_count_from_suits(card_suit(card) for card in hand))
+            else:
+                quality_sum += float(
+                    max_straight_window_count_from_ranks(
+                        (card_rank(card) for card in hand),
+                        window_span=4,
+                        ace_high_rank=14,
+                        ace_low_rank=1,
+                        unknown_rank=0,
+                    )
+                )
+        denom = float(max(1, trials))
+        avg_quality = quality_sum / denom
+        return DeckSimResult(
+            value=(HIT_WEIGHT * hit_rate) + (QUALITY_WEIGHT * avg_quality),
+            hit_rate=hit_rate,
+            avg_quality=avg_quality,
+        )
+
     hits = 0
     quality_sum = 0.0
     value_sum = 0.0
@@ -201,4 +267,3 @@ def _coerce_card(card: Mapping[str, Any]) -> dict:
 def _stable_seed(text: str) -> int:
     digest = hashlib.sha256(text.encode("utf-8")).digest()
     return int.from_bytes(digest[:8], "big", signed=False)
-

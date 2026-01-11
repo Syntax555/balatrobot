@@ -16,6 +16,7 @@ from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_blind_score,
     gs_discards_left,
+    gs_deck_cards,
     gs_hand_cards,
     gs_hands_left,
     gs_jokers,
@@ -32,6 +33,7 @@ from balatro_ai.hand_stats import (
     suit_counts_from_suits,
 )
 from balatro_ai.poker_eval import HandType, evaluate_candidate
+from balatro_ai.odds import probability_complete_flush_after_draw, probability_complete_straight_after_draw
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 if TYPE_CHECKING:
@@ -307,9 +309,40 @@ def _generate_discard_candidates(
         return []
     max_candidates = max(ZERO, cfg.discard_m)
     results: list[Action] = []
+    deck_cards = gs_deck_cards(gs)
+    deck_playable = [card for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None]
+    deck_suits = [card_suit(card) for card in deck_playable]
     for size in range(DISCARD_MIN_SIZE, DISCARD_MAX_SIZE_EXCLUSIVE):
+        scored: list[tuple[float, tuple[int, ...]]] = []
         for combo in combinations(indices, size):
+            score = 0.0
+            if deck_playable and intent == BuildIntent.FLUSH:
+                kept_suits = [card_suit(card) for idx, card in enumerate(hand_cards) if idx not in combo]
+                score = probability_complete_flush_after_draw(
+                    kept_suits=kept_suits,
+                    deck_suits=deck_suits,
+                    draws=size,
+                    required=5,
+                )
+            elif deck_playable and intent == BuildIntent.STRAIGHT:
+                kept_ranks = [card_rank(card) for idx, card in enumerate(hand_cards) if idx not in combo]
+                score = probability_complete_straight_after_draw(
+                    kept_ranks=kept_ranks,
+                    deck_cards=deck_playable,
+                    draws=size,
+                    hand_size=5,
+                )
+            scored.append((score, combo))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        for score, combo in scored:
             results.append(Action(kind="discard", params={"cards": list(combo)}))
+            if logger.isEnabledFor(logging.DEBUG) and deck_cards and intent in {BuildIntent.FLUSH, BuildIntent.STRAIGHT}:
+                logger.debug(
+                    "_generate_discard_candidates: intent=%s discard=%s p_complete=%.3f",
+                    intent.value,
+                    list(combo),
+                    score,
+                )
             if len(results) >= max_candidates:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
