@@ -4,7 +4,7 @@ import logging
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, permutations
 from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
@@ -110,28 +110,16 @@ def find_best_joker_sequence(
     if all(effect.signature == (0, 0, 1.0) for effect in effects):
         return list(range(joker_count))
 
-    best_order = list(range(joker_count))
-    best_score = _simulate_order(best_order, effects, base_chips, base_mult)
+    best_order = tuple(range(joker_count))
+    best_score = _simulate_order(list(best_order), effects, base_chips, base_mult)
+    orders_evaluated = 0
 
-    seen_orders = {tuple(best_order)}
-    orders_evaluated = 1
-
-    for prefix in _unique_prefix_orders(effects, max_len=joker_count):
-        prefix_set = set(prefix)
-        remaining = [idx for idx in range(joker_count) if idx not in prefix_set]
-        order = prefix + remaining
-        order_key = tuple(order)
-        if order_key in seen_orders:
-            continue
-        seen_orders.add(order_key)
+    for order in permutations(range(joker_count)):
         orders_evaluated += 1
-
-        score = _simulate_order(order, effects, base_chips, base_mult)
-        if score > best_score:
+        score = _simulate_order(list(order), effects, base_chips, base_mult)
+        if score > best_score or (score == best_score and order < best_order):
             best_order = order
             best_score = score
-        elif score == best_score and order_key < tuple(best_order):
-            best_order = order
 
     logger.debug(
         "find_best_joker_sequence: hand=%s jokers=%s orders=%s base=(%s,%s) best_score=%.3f best_order=%s",
@@ -143,7 +131,7 @@ def find_best_joker_sequence(
         best_score,
         best_order,
     )
-    return best_order
+    return list(best_order)
 
 
 def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | None:
@@ -157,12 +145,9 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | 
         logger.debug("maybe_reorder_jokers: state=%s jokers=%s (no reorder needed)", state, len(jokers))
         return None
 
-    if state == "SELECTING_HAND":
-        hand_cards = gs_hand_cards(gs)
-        hands_info = safe_get(gs, ["hands"], None)
-        permutation = find_best_joker_sequence(hand_cards, jokers, hands_info=hands_info)
-    else:
-        permutation = compute_joker_permutation(jokers)
+    hand_cards = gs_hand_cards(gs)
+    hands_info = safe_get(gs, ["hands"], None)
+    permutation = find_best_joker_sequence(hand_cards, jokers, hands_info=hands_info)
 
     if permutation == list(range(len(jokers))):
         logger.debug("maybe_reorder_jokers: already ordered (perm=%s)", permutation)
@@ -171,14 +156,7 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | 
     if ctx.memory.get("last_joker_perm_hash") == perm_hash:
         logger.debug("maybe_reorder_jokers: repeated perm hash (perm=%s) -> skip", permutation)
         return None
-    if logger.isEnabledFor(logging.DEBUG):
-        buckets = [classify_joker_bucket(joker_text(j), card_key(j)) for j in jokers]
-        logger.debug(
-            "maybe_reorder_jokers: state=%s buckets=%s perm=%s",
-            state,
-            buckets,
-            permutation,
-        )
+    logger.debug("maybe_reorder_jokers: state=%s perm=%s", state, permutation)
     ctx.memory["last_joker_perm_hash"] = perm_hash
     return Action(kind="rearrange", params={"jokers": permutation})
 
@@ -247,40 +225,6 @@ def _simulate_order(order: list[int], effects: list[JokerEffect], base_chips: in
         mult += effect.mult_add
         mult *= effect.mult_mul
     return chips * mult
-
-
-def _unique_prefix_orders(effects: list[JokerEffect], *, max_len: int) -> list[list[int]]:
-    groups: dict[tuple[int, int, float], list[int]] = {}
-    for index, effect in enumerate(effects):
-        groups.setdefault(effect.signature, []).append(index)
-    for indices in groups.values():
-        indices.sort()
-
-    group_keys = sorted(groups.keys())
-    group_indices = [groups[key] for key in group_keys]
-    used_counts = [0 for _ in group_indices]
-
-    results: list[list[int]] = []
-    prefix: list[int] = []
-
-    def backtrack() -> None:
-        if prefix:
-            results.append(prefix.copy())
-        if len(prefix) >= max_len:
-            return
-        for group_id, indices in enumerate(group_indices):
-            used = used_counts[group_id]
-            if used >= len(indices):
-                continue
-            used_counts[group_id] = used + 1
-            prefix.append(indices[used])
-            backtrack()
-            prefix.pop()
-            used_counts[group_id] = used
-
-    backtrack()
-    results.sort()
-    return results
 
 
 def _best_play_subset(hand_cards: list[dict], hands_info: Mapping[str, Any] | None) -> list[dict]:
