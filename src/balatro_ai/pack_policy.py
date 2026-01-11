@@ -41,6 +41,13 @@ INTENT_PAIR_BONUS = 30
 
 TARGET_SUIT_BONUS = 5
 MAX_TARGETS = 2
+_TARGET_MAX_BY_KEY: dict[str, int] = {
+    # Tarots that can target 3 cards.
+    "c_sun": 3,
+    "c_moon": 3,
+    "c_star": 3,
+    "c_world": 3,
+}
 
 CATEGORY_SCORE_XMULT = 100
 CATEGORY_SCORE_MULT = 50
@@ -90,7 +97,7 @@ class PackPolicy:
                 pack_card_text(card),
             )
         if needs_targets(card):
-            targets = choose_targets(gs, intent)
+            targets = choose_targets(gs, intent, max_targets=target_limit(card))
             if not targets:
                 logger.debug("PackPolicy: card needs targets but none selected -> skip")
                 return Action(kind="pack", params={"skip": True})
@@ -204,8 +211,23 @@ def needs_targets(card: Mapping[str, Any]) -> bool:
     return False
 
 
-def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
-    """Choose 1-2 target indices from the hand."""
+def target_limit(card: Mapping[str, Any]) -> int:
+    """Return a best-effort max target count for `card`."""
+    for key in ("target_count", "target_max", "targets_required"):
+        value = card.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return max(1, min(5, int(value)))
+    nested = card.get("targets")
+    if isinstance(nested, int) and not isinstance(nested, bool):
+        return max(1, min(5, int(nested)))
+    key = card_key(card) or ""
+    if key in _TARGET_MAX_BY_KEY:
+        return _TARGET_MAX_BY_KEY[key]
+    return MAX_TARGETS
+
+
+def choose_targets(gs: Mapping[str, Any], intent: str, *, max_targets: int = MAX_TARGETS) -> list[int]:
+    """Choose up to `max_targets` target indices from the hand."""
     hand_cards = gs_hand_cards(gs)
     if not hand_cards:
         return []
@@ -228,7 +250,8 @@ def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
     if not candidates:
         return []
     candidates.sort(key=lambda item: item.score, reverse=True)
-    top = candidates[:MAX_TARGETS]
+    limit = max(1, min(int(max_targets), len(candidates)))
+    top = candidates[:limit]
     chosen = [item.index for item in top]
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(
