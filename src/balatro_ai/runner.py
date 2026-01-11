@@ -5,10 +5,11 @@ import threading
 from typing import Any, Mapping
 
 from balatro_ai.actions import Action
-from balatro_ai.build_intent import infer_intent
+from balatro_ai.build_intent import BuildIntent, infer_dynamic_intent
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_ante,
+    gs_deck_cards,
     gs_hand_cards,
     gs_money,
     gs_round_num,
@@ -28,6 +29,9 @@ _PACE_BUMP = "bump"
 _PACE_BUMP_HARD = "bump_hard"
 _HARD_BACKOFF_FACTOR = 2.5
 _RETRYABLE_RPC_CODES = {-32098, -32097, -32000}
+
+_INTENT_SWITCH_MIN_CONFIDENCE = 0.55
+_INTENT_SWITCH_MIN_DELTA = 0.15
 
 
 class BotRunner:
@@ -333,18 +337,22 @@ class BotRunner:
             return state in {"SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
         return state in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
 
-    def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
-        round_num = gs_round_num(gs)
-        last_round = self._context.run_memory.get("round_num")
-        if last_round != round_num:
-            self._context.round_memory.clear()
-            self._context.run_memory["round_num"] = round_num
-            intent, confidence = infer_intent(gs)
-            self._context.run_memory["intent"] = intent
+    def maybe_update_intent(self, current_deck: list[dict], gs: Mapping[str, Any]) -> None:
+        """Re-evaluate and update the run intent if it changes meaningfully."""
+        suggested, confidence = infer_dynamic_intent(gs, current_deck)
+        current = self._context.run_memory.get("intent")
+        current_intent = current if isinstance(current, BuildIntent) else None
+        current_confidence = self._context.run_memory.get("intent_confidence")
+        if not isinstance(current_confidence, (float, int)) or isinstance(current_confidence, bool):
+            current_confidence = 0.0
+        current_confidence = float(current_confidence)
+
+        if current_intent is None:
+            self._context.run_memory["intent"] = suggested
             self._context.run_memory["intent_confidence"] = confidence
             self._logger.info(
                 "Intent %s (%.2f)",
-                intent.value,
+                suggested.value,
                 confidence,
                 extra={
                     "state": gs_state(gs),
@@ -354,6 +362,42 @@ class BotRunner:
                     "action_kind": "intent",
                 },
             )
+            return
+
+        if suggested != current_intent:
+            delta = confidence - current_confidence
+            if confidence >= _INTENT_SWITCH_MIN_CONFIDENCE and delta >= _INTENT_SWITCH_MIN_DELTA:
+                self._context.run_memory["intent"] = suggested
+                self._context.run_memory["intent_confidence"] = confidence
+                self._logger.info(
+                    "Intent %s -> %s (%.2f -> %.2f)",
+                    current_intent.value,
+                    suggested.value,
+                    current_confidence,
+                    confidence,
+                    extra={
+                        "state": gs_state(gs),
+                        "ante": gs_ante(gs),
+                        "round": gs_round_num(gs),
+                        "money": gs_money(gs),
+                        "action_kind": "intent",
+                    },
+                )
+            return
+
+        if confidence != current_confidence:
+            self._context.run_memory["intent_confidence"] = confidence
+
+    def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
+        round_num = gs_round_num(gs)
+        ante_num = gs_ante(gs)
+        last_round = self._context.run_memory.get("round_num")
+        last_ante = self._context.run_memory.get("ante_num")
+        if last_round != round_num or last_ante != ante_num:
+            self._context.round_memory.clear()
+            self._context.run_memory["round_num"] = round_num
+            self._context.run_memory["ante_num"] = ante_num
+            self.maybe_update_intent(gs_deck_cards(gs), gs)
 
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(

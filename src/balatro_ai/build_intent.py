@@ -10,6 +10,8 @@ from balatro_ai.hand_stats import (
     max_rank_count_from_ranks,
     max_straight_window_count_from_ranks,
     max_suit_count,
+    rank_counts_from_ranks,
+    suit_counts,
 )
 from balatro_ai.joker_order import joker_text
 
@@ -54,6 +56,20 @@ JOKER_CONFIDENCE_BASE = 0.6
 JOKER_CONFIDENCE_PER_EXTRA = 0.1
 JOKER_CONFIDENCE_EXTRA_OFFSET = 1
 
+DECK_RANK_COUNT = 13.0
+DECK_SUIT_COUNT = 4.0
+
+DECK_CONFIDENCE_NONE = 0.0
+DECK_CONFIDENCE_MAX = 1.0
+DECK_CONFIDENCE_SWITCH_MIN = 0.55
+DECK_CONFIDENCE_SWITCH_DELTA = 0.15
+
+DECK_FLUSH_BIAS_SCALE = 0.5
+DECK_STRAIGHT_BIAS_SCALE = 0.5
+DECK_PAIRS_BIAS_SCALE = 0.5
+
+STRAIGHT_WINDOW_SIZE = 5
+
 FIRST_INDEX = 0
 SECOND_INDEX = 1
 
@@ -93,6 +109,30 @@ def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
         return hand_intent, hand_conf
     logger.debug("infer_intent: defaulting to HIGH_CARD (no confidence)")
     return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
+
+
+def infer_dynamic_intent(
+    gs: Mapping[str, Any],
+    deck_cards: list[dict] | None,
+) -> tuple[BuildIntent, float]:
+    """Infer intent using hand/jokers plus deck composition for adaptive pivots."""
+    base_intent, base_confidence = infer_intent(gs)
+    deck_intent, deck_confidence = _intent_from_deck(deck_cards or [])
+    if deck_intent == base_intent:
+        return base_intent, max(base_confidence, deck_confidence)
+    if (
+        deck_confidence >= DECK_CONFIDENCE_SWITCH_MIN
+        and deck_confidence >= base_confidence + DECK_CONFIDENCE_SWITCH_DELTA
+    ):
+        logger.debug(
+            "infer_dynamic_intent: switching to deck intent=%s (deck_conf=%.2f > base=%s %.2f)",
+            deck_intent.value,
+            deck_confidence,
+            base_intent.value,
+            base_confidence,
+        )
+        return deck_intent, deck_confidence
+    return base_intent, base_confidence
 
 
 def _intent_from_jokers(gs: Mapping[str, Any]) -> tuple[BuildIntent, float] | None:
@@ -161,11 +201,49 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     return best
 
 
+def _intent_from_deck(deck_cards: list[dict]) -> tuple[BuildIntent, float]:
+    if not deck_cards:
+        return BuildIntent.HIGH_CARD, DECK_CONFIDENCE_NONE
+    flush_conf = _deck_flush_conf(deck_cards)
+    straight_conf = _deck_straight_conf(deck_cards)
+    pairs_conf = _deck_pairs_conf(deck_cards)
+    logger.debug(
+        "intent_from_deck: flush=%.2f straight=%.2f pairs=%.2f (deck_size=%s)",
+        flush_conf,
+        straight_conf,
+        pairs_conf,
+        len(deck_cards),
+    )
+    intents = [
+        (BuildIntent.FLUSH, flush_conf),
+        (BuildIntent.STRAIGHT, straight_conf),
+        (BuildIntent.PAIRS, pairs_conf),
+    ]
+    best = max(
+        intents,
+        key=lambda item: (item[SECOND_INDEX], _intent_priority(item[FIRST_INDEX])),
+    )
+    if best[SECOND_INDEX] <= DECK_CONFIDENCE_NONE:
+        return BuildIntent.HIGH_CARD, DECK_CONFIDENCE_NONE
+    return best[FIRST_INDEX], best[SECOND_INDEX]
+
+
 def _flush_conf(hand: list[dict]) -> float:
     max_count = max_suit_count(hand)
     if max_count >= FLUSH_MIN_SUITS_IN_HAND:
         return max_count / HAND_SIZE_FOR_CONFIDENCE
     return CONFIDENCE_NONE
+
+
+def _deck_flush_conf(deck_cards: list[dict]) -> float:
+    deck_size = len(deck_cards)
+    counts = suit_counts(deck_cards)
+    max_count = max(counts.values()) if counts else 0
+    baseline = deck_size / DECK_SUIT_COUNT
+    if baseline <= 0:
+        return DECK_CONFIDENCE_NONE
+    bias = max(DECK_CONFIDENCE_NONE, (max_count / baseline) - 1.0)
+    return min(DECK_CONFIDENCE_MAX, bias / DECK_FLUSH_BIAS_SCALE)
 
 
 def _pairs_conf(hand: list[dict]) -> float:
@@ -174,6 +252,20 @@ def _pairs_conf(hand: list[dict]) -> float:
     if max_dup >= PAIRS_MIN_DUPLICATE_COUNT:
         return min(CONFIDENCE_MAX, max_dup / PAIRS_CONFIDENCE_DIVISOR)
     return CONFIDENCE_NONE
+
+
+def _deck_pairs_conf(deck_cards: list[dict]) -> float:
+    deck_size = len(deck_cards)
+    max_dup = max_rank_count_from_ranks(
+        (card_rank(card) for card in deck_cards),
+        include_unknown=False,
+        unknown_rank=RANK_UNKNOWN,
+    )
+    baseline = deck_size / DECK_RANK_COUNT
+    if baseline <= 0:
+        return DECK_CONFIDENCE_NONE
+    bias = max(DECK_CONFIDENCE_NONE, (max_dup / baseline) - 1.0)
+    return min(DECK_CONFIDENCE_MAX, bias / DECK_PAIRS_BIAS_SCALE)
 
 
 def _straight_conf(hand: list[dict]) -> float:
@@ -187,6 +279,29 @@ def _straight_conf(hand: list[dict]) -> float:
     if max_count >= STRAIGHT_MIN_RANKS_IN_WINDOW:
         return max_count / HAND_SIZE_FOR_CONFIDENCE
     return CONFIDENCE_NONE
+
+
+def _deck_straight_conf(deck_cards: list[dict]) -> float:
+    deck_size = len(deck_cards)
+    ranks = [card_rank(card) for card in deck_cards]
+    counts = rank_counts_from_ranks(ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN)
+    if not counts:
+        return DECK_CONFIDENCE_NONE
+    ace_count = counts.get(ACE_HIGH_RANK, 0)
+    counts[ACE_LOW_RANK] = max(counts.get(ACE_LOW_RANK, 0), ace_count)
+    max_window = 0
+    for start in range(ACE_LOW_RANK, 11):
+        window_sum = sum(
+            counts.get(rank, 0)
+            for rank in range(start, start + STRAIGHT_WINDOW_SIZE)
+        )
+        if window_sum > max_window:
+            max_window = window_sum
+    baseline = STRAIGHT_WINDOW_SIZE * (deck_size / DECK_RANK_COUNT)
+    if baseline <= 0:
+        return DECK_CONFIDENCE_NONE
+    bias = max(DECK_CONFIDENCE_NONE, (max_window / baseline) - 1.0)
+    return min(DECK_CONFIDENCE_MAX, bias / DECK_STRAIGHT_BIAS_SCALE)
 
 
 def _intent_priority(intent: BuildIntent) -> int:
