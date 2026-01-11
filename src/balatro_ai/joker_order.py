@@ -6,6 +6,7 @@ from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
 from balatro_ai.gs import gs_jokers, gs_state
 from balatro_ai.joker_rules import joker_rule
+from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
@@ -73,12 +74,7 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: "PolicyContext") -> Action 
 
 
 def _has_x_token(tokens: set[str]) -> bool:
-    if "x" in tokens:
-        return True
-    for token in tokens:
-        if token.startswith("x") and token[1:].isdigit():
-            return True
-    return False
+    return has_x_token(tokens, slice_after_first_char=1)
 
 
 def _category_bucket(category: str) -> int:

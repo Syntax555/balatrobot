@@ -7,7 +7,9 @@ from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_rank, card_suit, card_text, card_tokens
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_hand_cards, gs_pack_cards, gs_state
+from balatro_ai.hand_stats import majority_suit
 from balatro_ai.joker_rules import joker_rule
+from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
@@ -19,9 +21,6 @@ _XMULT_TOKENS = {"xmult", "times"}
 _TARGET_TOKENS = {"target", "targets"}
 _TARGET_ACTION_TOKENS = {"enhance", "convert", "destroy", "copy"}
 _TARGET_CARD_TOKENS = {"card", "cards", "hand"}
-
-COUNT_INITIAL = 0
-COUNT_INCREMENT = 1
 
 INDEX_INITIAL = 0
 SCORE_INITIAL = 0
@@ -47,8 +46,6 @@ CATEGORY_SCORE_DEFAULT = 0
 TARGET_COUNT_NONE = 0
 LENGTH_NONE = 0
 
-TUPLE_KEY_INDEX = 0
-TUPLE_VALUE_INDEX = 1
 SLICE_AFTER_FIRST_CHAR = 1
 
 
@@ -104,7 +101,7 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
         rule = joker_rule(key) if key and key.startswith("j_") else None
         if rule is not None:
             score += _score_from_category(rule.category)
-        if tokens & _XMULT_TOKENS or _has_x_token(tokens):
+        if tokens & _XMULT_TOKENS or has_x_token(tokens, slice_after_first_char=SLICE_AFTER_FIRST_CHAR):
             score += PICK_XMULT_BONUS
         if tokens & _MULT_TOKENS:
             score += PICK_MULT_BONUS
@@ -147,7 +144,7 @@ def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
     if not hand_cards:
         return []
     intent_key = intent.lower() if isinstance(intent, str) else ""
-    suit_target = _majority_suit(hand_cards) if "flush" in intent_key else None
+    suit_target = majority_suit(hand_cards) if "flush" in intent_key else None
     candidates: list[_TargetCandidate] = []
     for index, card in enumerate(hand_cards):
         if _is_hidden_or_debuffed(card):
@@ -167,15 +164,6 @@ def choose_targets(gs: Mapping[str, Any], intent: str) -> list[int]:
     candidates.sort(key=lambda item: item.score, reverse=True)
     top = candidates[:MAX_TARGETS]
     return [item.index for item in top]
-
-
-def _has_x_token(tokens: set[str]) -> bool:
-    if "x" in tokens:
-        return True
-    for token in tokens:
-        if token.startswith("x") and token[SLICE_AFTER_FIRST_CHAR:].isdigit():
-            return True
-    return False
 
 
 def _structured_targets(card: Mapping[str, Any]) -> bool | None:
@@ -213,18 +201,6 @@ def _score_from_category(category: str) -> int:
     if category == "econ":
         return CATEGORY_SCORE_ECON
     return CATEGORY_SCORE_DEFAULT
-
-
-def _majority_suit(cards: list[dict]) -> str | None:
-    counts: dict[str, int] = {}
-    for card in cards:
-        suit = card_suit(card)
-        if not suit:
-            continue
-        counts[suit] = counts.get(suit, COUNT_INITIAL) + COUNT_INCREMENT
-    if not counts:
-        return None
-    return max(counts.items(), key=lambda item: item[TUPLE_VALUE_INDEX])[TUPLE_KEY_INDEX]
 
 
 def _is_hidden_or_debuffed(card: Mapping[str, Any]) -> bool:

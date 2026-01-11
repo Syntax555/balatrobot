@@ -3,8 +3,13 @@ from __future__ import annotations
 import enum
 from typing import Any, Mapping
 
-from balatro_ai.cards import card_rank, card_suit, card_tokens
+from balatro_ai.cards import card_rank, card_tokens
 from balatro_ai.gs import gs_hand_cards, gs_jokers
+from balatro_ai.hand_stats import (
+    max_rank_count_from_ranks,
+    max_straight_window_count_from_ranks,
+    max_suit_count,
+)
 from balatro_ai.joker_order import joker_text
 
 
@@ -116,15 +121,7 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
 
 
 def _flush_conf(hand: list[dict]) -> float:
-    counts: dict[str, int] = {}
-    for card in hand:
-        suit = card_suit(card)
-        if not suit:
-            continue
-        counts[suit] = counts.get(suit, INTENT_COUNT_INITIAL) + INTENT_COUNT_INCREMENT
-    if not counts:
-        return CONFIDENCE_NONE
-    max_count = max(counts.values())
+    max_count = max_suit_count(hand)
     if max_count >= FLUSH_MIN_SUITS_IN_HAND:
         return max_count / HAND_SIZE_FOR_CONFIDENCE
     return CONFIDENCE_NONE
@@ -132,33 +129,20 @@ def _flush_conf(hand: list[dict]) -> float:
 
 def _pairs_conf(hand: list[dict]) -> float:
     ranks = [card_rank(card) for card in hand]
-    counts: dict[int, int] = {}
-    for rank in ranks:
-        if rank <= RANK_UNKNOWN:
-            continue
-        counts[rank] = counts.get(rank, INTENT_COUNT_INITIAL) + INTENT_COUNT_INCREMENT
-    if not counts:
-        return CONFIDENCE_NONE
-    max_dup = max(counts.values())
+    max_dup = max_rank_count_from_ranks(ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN)
     if max_dup >= PAIRS_MIN_DUPLICATE_COUNT:
         return min(CONFIDENCE_MAX, max_dup / PAIRS_CONFIDENCE_DIVISOR)
     return CONFIDENCE_NONE
 
 
 def _straight_conf(hand: list[dict]) -> float:
-    ranks = {card_rank(card) for card in hand}
-    ranks.discard(RANK_UNKNOWN)
-    if not ranks:
-        return CONFIDENCE_NONE
-    if ACE_HIGH_RANK in ranks:
-        ranks.add(ACE_LOW_RANK)
-    unique = sorted(ranks)
-    max_count = INTENT_COUNT_INITIAL
-    for start in unique:
-        end = start + STRAIGHT_WINDOW_SPAN
-        count = sum(INTENT_COUNT_INCREMENT for rank in unique if start <= rank <= end)
-        if count > max_count:
-            max_count = count
+    max_count = max_straight_window_count_from_ranks(
+        (card_rank(card) for card in hand),
+        window_span=STRAIGHT_WINDOW_SPAN,
+        ace_high_rank=ACE_HIGH_RANK,
+        ace_low_rank=ACE_LOW_RANK,
+        unknown_rank=RANK_UNKNOWN,
+    )
     if max_count >= STRAIGHT_MIN_RANKS_IN_WINDOW:
         return max_count / HAND_SIZE_FOR_CONFIDENCE
     return CONFIDENCE_NONE

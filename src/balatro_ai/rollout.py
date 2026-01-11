@@ -22,6 +22,14 @@ from balatro_ai.gs import (
     gs_round_chips,
     gs_state,
 )
+from balatro_ai.hand_stats import (
+    majority_suit_from_suits,
+    max_rank_count_from_ranks,
+    max_straight_window_count_from_ranks,
+    max_suit_count,
+    rank_counts_from_ranks,
+    suit_counts_from_suits,
+)
 from balatro_ai.poker_eval import HandType, evaluate_candidate
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
@@ -448,49 +456,30 @@ def _candidate_sizes(hand_cards: list[dict], intent: BuildIntent) -> list[int]:
 
 
 def _max_suit_count(hand_cards: list[dict]) -> int:
-    counts: dict[str, int] = {}
-    for card in hand_cards:
-        suit = card_suit(card)
-        if not suit:
-            continue
-        counts[suit] = counts.get(suit, ZERO) + ONE
-    return max(counts.values()) if counts else ZERO
+    return max_suit_count(hand_cards)
 
 
 def _max_dup_count(hand_cards: list[dict]) -> int:
-    counts: dict[int, int] = {}
-    for rank in (card_rank(card) for card in hand_cards):
-        if rank <= RANK_UNKNOWN:
-            continue
-        counts[rank] = counts.get(rank, ZERO) + ONE
-    return max(counts.values()) if counts else ZERO
+    return max_rank_count_from_ranks(
+        (card_rank(card) for card in hand_cards),
+        include_unknown=False,
+        unknown_rank=RANK_UNKNOWN,
+    )
 
 
 def _max_straight_window(hand_cards: list[dict]) -> int:
-    ranks = {card_rank(card) for card in hand_cards}
-    ranks.discard(RANK_UNKNOWN)
-    if not ranks:
-        return ZERO
-    if ACE_HIGH_RANK in ranks:
-        ranks.add(ACE_LOW_RANK)
-    unique = sorted(ranks)
-    max_count = ZERO
-    for start in unique:
-        end = start + STRAIGHT_WINDOW_SPAN
-        count = sum(ONE for rank in unique if start <= rank <= end)
-        if count > max_count:
-            max_count = count
-    return max_count
+    return max_straight_window_count_from_ranks(
+        (card_rank(card) for card in hand_cards),
+        window_span=STRAIGHT_WINDOW_SPAN,
+        ace_high_rank=ACE_HIGH_RANK,
+        ace_low_rank=ACE_LOW_RANK,
+        unknown_rank=RANK_UNKNOWN,
+    )
 
 
 def _discard_for_flush(hand_cards: list[dict]) -> list[int]:
     suits = [card_suit(card) for card in hand_cards]
-    counts: dict[str, int] = {}
-    for suit in suits:
-        if not suit:
-            continue
-        counts[suit] = counts.get(suit, ZERO) + ONE
-    majority = max(counts.items(), key=lambda item: item[ONE])[FIRST_INDEX] if counts else None
+    majority = majority_suit_from_suits(suits)
     off_suit = [i for i, suit in enumerate(suits) if suit != majority]
     if off_suit:
         return off_suit
@@ -515,9 +504,7 @@ def _discard_for_straight(hand_cards: list[dict]) -> list[int]:
 
 def _discard_for_pairs(hand_cards: list[dict]) -> list[int]:
     ranks = [card_rank(card) for card in hand_cards]
-    counts: dict[int, int] = {}
-    for rank in ranks:
-        counts[rank] = counts.get(rank, ZERO) + ONE
+    counts = rank_counts_from_ranks(ranks)
     indices = [i for i, rank in enumerate(ranks) if counts.get(rank, ZERO) == ONE]
     if indices:
         return indices
@@ -587,15 +574,9 @@ def _safe_int(value: Any) -> int:
 
 def _priority_indices(hand_cards: list[dict]) -> list[int]:
     suits = [card_suit(card) for card in hand_cards]
-    suit_counts: dict[str, int] = {}
-    for suit in suits:
-        if not suit:
-            continue
-        suit_counts[suit] = suit_counts.get(suit, ZERO) + ONE
+    suit_counts = suit_counts_from_suits(suits)
     ranks = [card_rank(card) for card in hand_cards]
-    rank_counts: dict[int, int] = {}
-    for rank in ranks:
-        rank_counts[rank] = rank_counts.get(rank, ZERO) + ONE
+    rank_counts = rank_counts_from_ranks(ranks)
     def score_index(idx: int) -> tuple[int, int, int]:
         suit = suits[idx]
         suit_score = suit_counts.get(suit, ZERO) if suit else ZERO

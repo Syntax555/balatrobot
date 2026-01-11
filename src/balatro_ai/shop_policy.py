@@ -18,6 +18,7 @@ from balatro_ai.gs import (
     safe_get,
 )
 from balatro_ai.joker_rules import joker_rule
+from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
@@ -339,12 +340,7 @@ def _affordable(money: int, reserve: int, cost: int) -> bool:
 
 
 def _has_x_token(tokens: set[str]) -> bool:
-    if "x" in tokens:
-        return True
-    for token in tokens:
-        if token.startswith("x") and token[SLICE_AFTER_FIRST_CHAR:].isdigit():
-            return True
-    return False
+    return has_x_token(tokens, slice_after_first_char=SLICE_AFTER_FIRST_CHAR)
 
 
 def _score_from_category(category: str) -> int:
