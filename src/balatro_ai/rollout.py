@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import logging
 import math
 import os
 import tempfile
 import uuid
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any, Iterable, Mapping, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable, Mapping
 
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent, infer_intent
@@ -35,6 +36,8 @@ from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
+
+logger = logging.getLogger(__name__)
 
 
 JSONRPC_UNSUPPORTED_ACTION_CODE = -32601
@@ -112,6 +115,14 @@ def rollout_step(
     if not hand_cards:
         return rpc.gamestate()
     intent = _intent_from_ctx(gs, ctx)
+    logger.debug(
+        "rollout_step: intent=%s hand=%s hands_left=%s discards_left=%s money=%s",
+        intent.value,
+        len(hand_cards),
+        gs_hands_left(gs),
+        gs_discards_left(gs),
+        gs_money(gs),
+    )
     play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs), intent, cfg.rollout_k)
     discard_candidates = _generate_discard_candidates(hand_cards, intent, cfg, gs)
     save_path = _save_path()
@@ -120,15 +131,22 @@ def rollout_step(
     try:
         rpc.save(save_path)
     except BalatroRPCError:
+        logger.debug(
+            "rollout_step: save failed -> fallback (play_candidates=%s discard_candidates=%s)",
+            len(play_candidates),
+            len(discard_candidates),
+        )
         fallback = _fallback_action_on_save_error(
             play_candidates,
             discard_candidates,
             hand_cards,
             intent,
         )
+        logger.debug("rollout_step: fallback action=%s params=%s", fallback.kind, fallback.params)
         return _apply_action(rpc, fallback)
     try:
         candidates = [candidate.action for candidate in play_candidates] + discard_candidates
+        logger.debug("rollout_step: evaluating %s candidates (save_path=%s)", len(candidates), save_path)
         best = _evaluate_candidates(
             rpc,
             save_path,
@@ -139,9 +157,15 @@ def rollout_step(
             before_money,
         )
         if best is None:
+            logger.debug("rollout_step: no best candidate returned")
             if play_candidates:
+                logger.debug(
+                    "rollout_step: defaulting to best heuristic play=%s",
+                    play_candidates[FIRST_INDEX],
+                )
                 return _apply_action(rpc, play_candidates[FIRST_INDEX].action)
             return rpc.gamestate()
+        logger.debug("rollout_step: best action=%s reward=%.2f", best.action, best.reward)
         rpc.load(save_path)
         return _apply_action(rpc, best.action)
     finally:
@@ -175,6 +199,11 @@ def _fallback_action_on_save_error(
 ) -> Action:
     best_play = play_candidates[FIRST_INDEX] if play_candidates else None
     best_discard = _best_discard_candidate(discard_candidates, hand_cards, intent)
+    logger.debug(
+        "_fallback_action_on_save_error: best_play=%s best_discard=%s",
+        best_play,
+        best_discard,
+    )
     if best_discard is not None and (best_play is None or best_discard.score > best_play.score):
         return best_discard.action
     if best_play is not None:
@@ -220,6 +249,12 @@ def _generate_play_candidates(
     hand_size = len(hand_cards)
     priority = _priority_indices(hand_cards)
     eval_cache: dict[tuple[int, ...], Mapping[str, Any]] = {}
+    logger.debug(
+        "_generate_play_candidates: intent=%s hand_size=%s rollout_k=%s",
+        intent.value,
+        hand_size,
+        rollout_k,
+    )
     for size in _candidate_sizes(hand_cards, intent):
         if size > hand_size:
             continue
@@ -241,7 +276,20 @@ def _generate_play_candidates(
                 _ScoredCandidate(action=Action(kind="play", params={"cards": list(combo)}), score=score)
             )
     candidates.sort(key=lambda candidate: candidate.score, reverse=True)
-    return candidates[: max(MIN_ROLLOUT_CANDIDATES, rollout_k)]
+    selected = candidates[: max(MIN_ROLLOUT_CANDIDATES, rollout_k)]
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "_generate_play_candidates: generated=%s selected=%s",
+            len(candidates),
+            len(selected),
+        )
+        for candidate in selected:
+            logger.debug(
+                "play option: cards=%s score=%s",
+                candidate.action.params.get("cards"),
+                candidate.score,
+            )
+    return selected
 
 
 def _generate_discard_candidates(
@@ -251,9 +299,11 @@ def _generate_discard_candidates(
     gs: Mapping[str, Any],
 ) -> list[Action]:
     if gs_discards_left(gs) <= ZERO:
+        logger.debug("_generate_discard_candidates: discards_left=0 -> none")
         return []
     indices = _discard_priority_indices(hand_cards, intent)
     if not indices:
+        logger.debug("_generate_discard_candidates: no discard priority indices -> none")
         return []
     max_candidates = max(ZERO, cfg.discard_m)
     results: list[Action] = []
@@ -261,7 +311,25 @@ def _generate_discard_candidates(
         for combo in combinations(indices, size):
             results.append(Action(kind="discard", params={"cards": list(combo)}))
             if len(results) >= max_candidates:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "_generate_discard_candidates: selected=%s (max=%s) indices=%s",
+                        len(results),
+                        max_candidates,
+                        indices,
+                    )
+                    for action in results:
+                        logger.debug("discard option: cards=%s", action.params.get("cards"))
                 return results
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "_generate_discard_candidates: selected=%s (max=%s) indices=%s",
+            len(results),
+            max_candidates,
+            indices,
+        )
+        for action in results:
+            logger.debug("discard option: cards=%s", action.params.get("cards"))
     return results
 
 
@@ -275,6 +343,7 @@ def _evaluate_candidates(
     before_money: int,
 ) -> _EvalResult | None:
     best: _EvalResult | None = None
+    logger.debug("_evaluate_candidates: intent=%s actions=%s", intent.value, len(actions))
     for action in actions:
         try:
             rpc.load(save_path)
@@ -294,9 +363,19 @@ def _evaluate_candidates(
         except BalatroRPCError:
             reward = EVAL_FAILURE_REWARD
             terminal = False
+        prev_best = best.reward if best is not None else float("-inf")
         if best is None or reward > best.reward:
             best = _EvalResult(action=action, reward=reward)
+        logger.debug(
+            "eval option: kind=%s params=%s reward=%.2f terminal=%s best=%.2f",
+            action.kind,
+            action.params,
+            reward,
+            terminal,
+            best.reward if best is not None else prev_best,
+        )
         if terminal:
+            logger.debug("eval early stop (terminal reached): best=%s", best)
             return best
     return best
 
@@ -312,7 +391,14 @@ def _evaluate_discard_candidate(
     gs2 = _apply_action(rpc, action)
     state = gs_state(gs2)
     if state in {"ROUND_EVAL", "GAME_OVER"}:
-        return _reward(gs2, before_chips, before_money), True
+        reward = _reward(gs2, before_chips, before_money)
+        logger.debug(
+            "_evaluate_discard_candidate: immediate terminal state=%s reward=%.2f cards=%s",
+            state,
+            reward,
+            action.params.get("cards"),
+        )
+        return reward, True
     hand_cards = gs_hand_cards(gs2)
     if not hand_cards:
         return _reward(gs2, before_chips, before_money), False
@@ -321,7 +407,16 @@ def _evaluate_discard_candidate(
         return _reward(gs2, before_chips, before_money), False
     best_play = play_candidates[FIRST_INDEX].action
     gs3 = _apply_action(rpc, best_play)
-    return _reward(gs3, before_chips, before_money), gs_state(gs3) == "ROUND_EVAL"
+    reward = _reward(gs3, before_chips, before_money)
+    terminal = gs_state(gs3) == "ROUND_EVAL"
+    logger.debug(
+        "_evaluate_discard_candidate: discard=%s followup_play=%s reward=%.2f terminal=%s",
+        action.params.get("cards"),
+        best_play.params.get("cards"),
+        reward,
+        terminal,
+    )
+    return reward, terminal
 
 
 def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) -> float:
@@ -346,8 +441,10 @@ def _intent_from_ctx(gs: Mapping[str, Any], ctx: "PolicyContext") -> BuildIntent
     memory_intent = ctx.memory.get("intent")
     intent = _coerce_intent(memory_intent)
     if intent is not None:
+        logger.debug("_intent_from_ctx: using memory intent=%s", intent.value)
         return intent
     inferred, _ = infer_intent(gs)
+    logger.debug("_intent_from_ctx: inferred intent=%s", inferred.value)
     return inferred
 
 

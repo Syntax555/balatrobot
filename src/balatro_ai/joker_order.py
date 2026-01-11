@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, TYPE_CHECKING
+import logging
+from typing import TYPE_CHECKING, Any, Mapping
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
@@ -10,6 +11,8 @@ from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
+
+logger = logging.getLogger(__name__)
 
 
 _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
@@ -59,16 +62,28 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: "PolicyContext") -> Action 
     """Return a rearrange action when jokers should be reordered."""
     state = gs_state(gs)
     if state not in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}:
+        logger.debug("maybe_reorder_jokers: state=%s not eligible", state)
         return None
     jokers = gs_jokers(gs)
     if len(jokers) < 2:
+        logger.debug("maybe_reorder_jokers: state=%s jokers=%s (no reorder needed)", state, len(jokers))
         return None
     permutation = compute_joker_permutation(jokers)
     if permutation == list(range(len(jokers))):
+        logger.debug("maybe_reorder_jokers: already ordered (perm=%s)", permutation)
         return None
     perm_hash = tuple(permutation)
     if ctx.memory.get("last_joker_perm_hash") == perm_hash:
+        logger.debug("maybe_reorder_jokers: repeated perm hash (perm=%s) -> skip", permutation)
         return None
+    if logger.isEnabledFor(logging.DEBUG):
+        buckets = [classify_joker_bucket(joker_text(j), card_key(j)) for j in jokers]
+        logger.debug(
+            "maybe_reorder_jokers: state=%s buckets=%s perm=%s",
+            state,
+            buckets,
+            permutation,
+        )
     ctx.memory["last_joker_perm_hash"] = perm_hash
     return Action(kind="rearrange", params={"jokers": permutation})
 

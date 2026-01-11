@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import logging
 from typing import Any, Mapping
 
 from balatro_ai.cards import card_rank, card_tokens
@@ -11,6 +12,8 @@ from balatro_ai.hand_stats import (
     max_suit_count,
 )
 from balatro_ai.joker_order import joker_text
+
+logger = logging.getLogger(__name__)
 
 
 class BuildIntent(str, enum.Enum):
@@ -61,15 +64,34 @@ def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     """Infer a build intent and confidence from the game state."""
     joker_intent = _intent_from_jokers(gs)
     hand_intent, hand_conf = _intent_from_hand(gs)
+    logger.debug(
+        "infer_intent: joker=%s hand=%s hand_conf=%.2f",
+        joker_intent,
+        hand_intent.value,
+        hand_conf,
+    )
     if joker_intent is not None:
         if (
             hand_conf >= HAND_CONFIDENCE_OVERRIDE_THRESHOLD
             and hand_conf > joker_intent[SECOND_INDEX]
         ):
+            logger.debug(
+                "infer_intent: using HAND override (hand_conf=%.2f >= %.2f and > joker_conf=%.2f)",
+                hand_conf,
+                HAND_CONFIDENCE_OVERRIDE_THRESHOLD,
+                joker_intent[SECOND_INDEX],
+            )
             return hand_intent, hand_conf
+        logger.debug(
+            "infer_intent: using JOKER intent (joker_conf=%.2f >= hand_conf=%.2f)",
+            joker_intent[SECOND_INDEX],
+            hand_conf,
+        )
         return joker_intent
     if hand_conf > CONFIDENCE_NONE:
+        logger.debug("infer_intent: using HAND intent (hand_conf=%.2f)", hand_conf)
         return hand_intent, hand_conf
+    logger.debug("infer_intent: defaulting to HIGH_CARD (no confidence)")
     return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
 
 
@@ -80,9 +102,12 @@ def _intent_from_jokers(gs: Mapping[str, Any]) -> tuple[BuildIntent, float] | No
         BuildIntent.PAIRS: INTENT_COUNT_INITIAL,
     }
     for joker in gs_jokers(gs):
-        tokens = card_tokens(joker_text(joker))
+        text = joker_text(joker)
+        tokens = card_tokens(text)
         if not tokens:
             continue
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("intent_from_jokers: joker=%r tokens=%s", text, sorted(tokens))
         if "flush" in tokens:
             counts[BuildIntent.FLUSH] += INTENT_COUNT_INCREMENT
         if "straight" in tokens:
@@ -94,8 +119,16 @@ def _intent_from_jokers(gs: Mapping[str, Any]) -> tuple[BuildIntent, float] | No
         key=lambda item: (item[SECOND_INDEX], _intent_priority(item[FIRST_INDEX])),
     )
     if best_intent[SECOND_INDEX] <= INTENT_COUNT_INITIAL:
+        logger.debug("intent_from_jokers: no hits (counts=%s)", counts)
         return None
     confidence = _joker_confidence(best_intent[SECOND_INDEX])
+    logger.debug(
+        "intent_from_jokers: best=%s count=%s confidence=%.2f counts=%s",
+        best_intent[FIRST_INDEX].value,
+        best_intent[SECOND_INDEX],
+        confidence,
+        counts,
+    )
     return best_intent[FIRST_INDEX], confidence
 
 
@@ -106,6 +139,12 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     flush_conf = _flush_conf(hand)
     straight_conf = _straight_conf(hand)
     pairs_conf = _pairs_conf(hand)
+    logger.debug(
+        "intent_from_hand: flush=%.2f straight=%.2f pairs=%.2f",
+        flush_conf,
+        straight_conf,
+        pairs_conf,
+    )
     intents = [
         (BuildIntent.FLUSH, flush_conf),
         (BuildIntent.STRAIGHT, straight_conf),
@@ -116,7 +155,9 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
         key=lambda item: (item[SECOND_INDEX], _intent_priority(item[FIRST_INDEX])),
     )
     if best[SECOND_INDEX] <= CONFIDENCE_NONE:
+        logger.debug("intent_from_hand: no confidence")
         return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
+    logger.debug("intent_from_hand: best=%s conf=%.2f", best[FIRST_INDEX].value, best[SECOND_INDEX])
     return best
 
 

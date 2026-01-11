@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -18,6 +19,8 @@ if __package__ is None:
 from balatro_ai.config import Config
 from balatro_ai.logging_utils import configure_logging
 from balatro_ai.runner import BotRunner
+
+logger = logging.getLogger(__name__)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,6 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         auto_start=args.auto_start,
     )
     configure_logging(config.log_level)
+    logger.debug("Starting BotRunner base_url=%s config=%s", base_url, config)
     runner = BotRunner(config=config, base_url=base_url)
     return runner.run()
 

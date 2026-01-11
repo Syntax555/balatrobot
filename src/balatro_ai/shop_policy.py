@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
-from typing import Any, Mapping, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Mapping
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
@@ -22,6 +23,8 @@ from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
     from balatro_ai.policy import PolicyContext
+
+logger = logging.getLogger(__name__)
 
 
 _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
@@ -91,29 +94,52 @@ class ShopPolicy:
         shop_mem = _shop_memory(ctx)
         pending = shop_mem.get("pending_buy")
         if pending:
+            logger.debug("ShopPolicy: pending_buy=%s", pending)
             action = _pending_action(pending, gs)
             if action is not None:
+                logger.debug(
+                    "ShopPolicy: executing pending action=%s params=%s",
+                    action.kind,
+                    action.params,
+                )
                 shop_mem.pop("pending_buy", None)
                 return action
+            logger.debug("ShopPolicy: pending_buy invalidated (identity mismatch or bad params)")
             shop_mem.pop("pending_buy", None)
         money = gs_money(gs)
         ante = gs_ante(gs)
         reserve = _reserve(cfg, ante)
         reroll_cost = gs_reroll_cost(gs)
+        logger.debug(
+            "ShopPolicy: money=%s ante=%s reserve=%s reroll_cost=%s rerolls_used=%s",
+            money,
+            ante,
+            reserve,
+            reroll_cost,
+            shop_mem.get("rerolls_used", REROLL_USED_DEFAULT),
+        )
         candidates = _collect_shop_candidates(gs, ante, money, reserve)
         best = _best_candidate(candidates)
         if best is None or best.score <= SCORE_NONE:
+            logger.debug(
+                "ShopPolicy: no good voucher/joker candidates (best=%s). Considering packs/reroll/next_round.",
+                best,
+            )
             pack_candidates = _collect_pack_candidates(gs, ante, money, reserve)
             best_pack = _best_candidate(pack_candidates)
             if best_pack is not None and best_pack.score > SCORE_NONE:
+                logger.debug("ShopPolicy: choosing pack candidate=%s", best_pack)
                 best = best_pack
             else:
                 if _can_reroll(cfg, money, reserve, reroll_cost, shop_mem):
                     shop_mem["rerolls_used"] = (
                         shop_mem.get("rerolls_used", REROLL_USED_DEFAULT) + REROLL_USED_INCREMENT
                     )
+                    logger.debug("ShopPolicy: reroll (rerolls_used=%s)", shop_mem["rerolls_used"])
                     return Action(kind="reroll", params={})
+                logger.debug("ShopPolicy: next_round (no reroll allowed or affordable)")
                 return Action(kind="next_round", params={})
+        logger.debug("ShopPolicy: best candidate=%s", best)
         if best.kind == "card" and _jokers_full(gs):
             worst_index = _worst_joker_index(gs, ante)
             if worst_index is not None:
@@ -124,8 +150,16 @@ class ShopPolicy:
                     "index": best.index,
                     "identity": identity,
                 }
+                logger.debug(
+                    "ShopPolicy: jokers full -> sell worst_joker=%s then buy card idx=%s identity=%s",
+                    worst_index,
+                    best.index,
+                    identity,
+                )
                 return Action(kind="sell", params={"joker": worst_index})
-        return _buy_action(best)
+        action = _buy_action(best)
+        logger.debug("ShopPolicy: buy action=%s params=%s", action.kind, action.params)
+        return action
 
 
 def _reserve(cfg: Config, ante: int) -> int:
@@ -146,14 +180,51 @@ def _collect_shop_candidates(
     for index, voucher in enumerate(gs_shop_vouchers(gs)):
         cost = _item_cost(voucher)
         if not _affordable(money, reserve, cost):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "Shop voucher skipped (unaffordable): idx=%s cost=%s money=%s reserve=%s text=%r",
+                    index,
+                    cost,
+                    money,
+                    reserve,
+                    _item_text(voucher),
+                )
             continue
         score = _score_voucher(voucher)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "Shop voucher option: idx=%s cost=%s score=%s key=%s text=%r",
+                index,
+                cost,
+                score,
+                card_key(voucher),
+                _item_text(voucher),
+            )
         candidates.append(_Candidate(kind="voucher", index=index, score=score, cost=cost))
     for index, card in enumerate(gs_shop_cards(gs)):
         cost = _item_cost(card)
         if not _affordable(money, reserve, cost):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "Shop joker skipped (unaffordable): idx=%s cost=%s money=%s reserve=%s key=%s text=%r",
+                    index,
+                    cost,
+                    money,
+                    reserve,
+                    card_key(card),
+                    _item_text(card),
+                )
             continue
         score = _score_joker(card, ante)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "Shop joker option: idx=%s cost=%s score=%s key=%s text=%r",
+                index,
+                cost,
+                score,
+                card_key(card),
+                _item_text(card),
+            )
         candidates.append(_Candidate(kind="card", index=index, score=score, cost=cost))
     return candidates
 
@@ -166,12 +237,32 @@ def _collect_pack_candidates(
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
     pack_score = _score_pack(ante)
+    logger.debug("Shop pack base score: ante=%s pack_score=%s", ante, pack_score)
     if pack_score <= SCORE_NONE:
         return candidates
     for index, pack in enumerate(gs_shop_packs(gs)):
         cost = _item_cost(pack)
         if not _affordable(money, reserve, cost):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "Shop pack skipped (unaffordable): idx=%s cost=%s money=%s reserve=%s key=%s text=%r",
+                    index,
+                    cost,
+                    money,
+                    reserve,
+                    card_key(pack),
+                    _item_text(pack),
+                )
             continue
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "Shop pack option: idx=%s cost=%s score=%s key=%s text=%r",
+                index,
+                cost,
+                pack_score,
+                card_key(pack),
+                _item_text(pack),
+            )
         candidates.append(_Candidate(kind="pack", index=index, score=pack_score, cost=cost))
     return candidates
 
