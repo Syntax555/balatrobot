@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from balatro_ai.actions import Action
-from balatro_ai.build_intent import BuildIntent, infer_dynamic_intent
+from balatro_ai.build_intent import BuildIntent
 from balatro_ai.config import Config
 from balatro_ai.gs import (
     gs_ante,
@@ -17,6 +17,7 @@ from balatro_ai.gs import (
     gs_state,
     gs_won,
 )
+from balatro_ai.intent_manager import IntentManager
 from balatro_ai.pacing import BackoffPacer
 from balatro_ai.policy import Policy, PolicyContext
 from balatro_ai.rollout import rollout_step
@@ -30,9 +31,6 @@ _PACE_BUMP = "bump"
 _PACE_BUMP_HARD = "bump_hard"
 _HARD_BACKOFF_FACTOR = 2.5
 _RETRYABLE_RPC_CODES = {-32098, -32097, -32000}
-
-_INTENT_SWITCH_MIN_CONFIDENCE = 0.55
-_INTENT_SWITCH_MIN_DELTA = 0.15
 
 
 class BotRunner:
@@ -51,6 +49,7 @@ class BotRunner:
             run_memory={},
             round_memory={},
         )
+        self._intent_manager = IntentManager()
         self._pacer = BackoffPacer(
             min_delay=0.1,
             max_delay=2.0,
@@ -338,23 +337,26 @@ class BotRunner:
             return state in {"SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
         return state in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
 
-    def maybe_update_intent(self, current_deck: list[dict], gs: Mapping[str, Any]) -> None:
+    def maybe_update_intent(self, current_deck: list[dict], gs: Mapping[str, Any], *, reason: str) -> None:
         """Re-evaluate and update the run intent if it changes meaningfully."""
-        suggested, confidence = infer_dynamic_intent(gs, current_deck)
-        current = self._context.run_memory.get("intent")
-        current_intent = current if isinstance(current, BuildIntent) else None
-        current_confidence = self._context.run_memory.get("intent_confidence")
-        if not isinstance(current_confidence, (float, int)) or isinstance(current_confidence, bool):
-            current_confidence = 0.0
-        current_confidence = float(current_confidence)
+        current_intent = _coerce_intent(self._context.run_memory.get("intent"))
+        evaluation = self._intent_manager.evaluate(gs, current_deck)
+
+        scores = {intent.value: score for intent, score in evaluation.scores.items()}
+        raw_values = {intent.value: value for intent, value in evaluation.raw_values.items()}
+        baseline_values = {intent.value: value for intent, value in evaluation.baseline_values.items()}
+        self._context.run_memory["intent_scores"] = scores
+        self._context.run_memory["intent_raw_values"] = raw_values
+        self._context.run_memory["intent_baseline_values"] = baseline_values
+        self._context.run_memory["intent_confidence"] = evaluation.confidence
 
         if current_intent is None:
-            self._context.run_memory["intent"] = suggested
-            self._context.run_memory["intent_confidence"] = confidence
+            self._context.run_memory["intent"] = evaluation.intent
             self._logger.info(
-                "Intent %s (%.2f)",
-                suggested.value,
-                confidence,
+                "Intent %s (conf=%.2f reason=%s)",
+                evaluation.intent.value,
+                evaluation.confidence,
+                reason,
                 extra={
                     "state": gs_state(gs),
                     "ante": gs_ante(gs),
@@ -365,40 +367,43 @@ class BotRunner:
             )
             return
 
-        if suggested != current_intent:
-            delta = confidence - current_confidence
-            if confidence >= _INTENT_SWITCH_MIN_CONFIDENCE and delta >= _INTENT_SWITCH_MIN_DELTA:
-                self._context.run_memory["intent"] = suggested
-                self._context.run_memory["intent_confidence"] = confidence
-                self._logger.info(
-                    "Intent %s -> %s (%.2f -> %.2f)",
-                    current_intent.value,
-                    suggested.value,
-                    current_confidence,
-                    confidence,
-                    extra={
-                        "state": gs_state(gs),
-                        "ante": gs_ante(gs),
-                        "round": gs_round_num(gs),
-                        "money": gs_money(gs),
-                        "action_kind": "intent",
-                    },
-                )
-            return
-
-        if confidence != current_confidence:
-            self._context.run_memory["intent_confidence"] = confidence
+        if self._intent_manager.should_switch(current=current_intent, evaluation=evaluation):
+            from_score = evaluation.scores.get(current_intent, 0.0)
+            to_score = evaluation.scores.get(evaluation.intent, 0.0)
+            self._context.run_memory["intent"] = evaluation.intent
+            self._logger.info(
+                "Switching intent from %s to %s (%.3f -> %.3f conf=%.2f reason=%s)",
+                current_intent.value,
+                evaluation.intent.value,
+                from_score,
+                to_score,
+                evaluation.confidence,
+                reason,
+                extra={
+                    "state": gs_state(gs),
+                    "ante": gs_ante(gs),
+                    "round": gs_round_num(gs),
+                    "money": gs_money(gs),
+                    "action_kind": "intent",
+                },
+            )
 
     def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
         round_num = gs_round_num(gs)
         ante_num = gs_ante(gs)
         last_round = self._context.run_memory.get("round_num")
         last_ante = self._context.run_memory.get("ante_num")
+        state_name = gs_state(gs)
+        last_state = self._context.run_memory.get("runner_last_state")
+        entering_state = state_name != last_state
         if last_round != round_num or last_ante != ante_num:
             self._context.round_memory.clear()
             self._context.run_memory["round_num"] = round_num
             self._context.run_memory["ante_num"] = ante_num
-            self.maybe_update_intent(gs_deck_cards(gs), gs)
+            self.maybe_update_intent(gs_deck_cards(gs), gs, reason="round")
+        elif entering_state and state_name in {"SHOP", "BLIND_SELECT"}:
+            self.maybe_update_intent(gs_deck_cards(gs), gs, reason=f"enter:{state_name}")
+        self._context.run_memory["runner_last_state"] = state_name
 
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(
@@ -451,3 +456,14 @@ _REQUIRED_STATES: dict[str, set[str]] = {
     "pack": {"SMODS_BOOSTER_OPENED"},
     "rollout": {"SELECTING_HAND"},
 }
+
+
+def _coerce_intent(value: Any) -> BuildIntent | None:
+    if isinstance(value, BuildIntent):
+        return value
+    if isinstance(value, str):
+        try:
+            return BuildIntent[value.upper()]
+        except KeyError:
+            return None
+    return None
