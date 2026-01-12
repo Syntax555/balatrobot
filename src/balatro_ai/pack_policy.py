@@ -87,7 +87,7 @@ class PackPolicy:
         if not pack_cards:
             logger.debug("PackPolicy: no pack cards -> skip")
             return Action(kind="pack", params={"skip": True})
-        index = pick_pack_card_with_simulation(gs, cfg, pack_cards, intent)
+        index = pick_pack_card_with_simulation(gs, cfg, pack_cards, intent, ctx=ctx)
         card = pack_cards[index]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
@@ -148,6 +148,8 @@ def pick_pack_card_with_simulation(
     cfg: Config,
     pack_cards: list[dict],
     intent: str,
+    *,
+    ctx: PolicyContext | None = None,
 ) -> int:
     """Pick a pack card index using simulation + heuristics."""
     intent_key = intent.lower() if isinstance(intent, str) else ""
@@ -163,9 +165,20 @@ def pick_pack_card_with_simulation(
 
     best_index = INDEX_INITIAL
     best_score = float("-inf")
+    trace_options: list[dict[str, Any]] = []
     for index, (card, sim_score) in enumerate(zip(pack_cards, sim_scores, strict=False)):
         heur_score, debug = _heuristic_score_pack_card(card, intent_key)
         combined = float(heur_score) + PACK_SIM_SCORE_WEIGHT * sim_score
+        trace_options.append(
+            {
+                "index": index,
+                "key": debug.get("key"),
+                "text": debug.get("text"),
+                "heuristic": heur_score,
+                "sim": float(sim_score),
+                "combined": combined,
+            }
+        )
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 "pick_pack_card sim option: idx=%s combined=%.2f heur=%s sim=%.4f key=%s text=%r",
@@ -179,6 +192,13 @@ def pick_pack_card_with_simulation(
         if combined > best_score:
             best_score = combined
             best_index = index
+    if ctx is not None:
+        ctx.round_memory["pack_trace"] = {
+            "intent": intent,
+            "seed_text": seed_text,
+            "options": trace_options,
+            "chosen": {"index": best_index, "combined": best_score},
+        }
     logger.debug("pick_pack_card_with_simulation: best_idx=%s best_score=%.2f", best_index, best_score)
     return best_index
 

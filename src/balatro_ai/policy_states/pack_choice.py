@@ -18,6 +18,9 @@ class PackChoiceDecider:
     def decide(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> Action:
         intent = _intent(ctx)
         logger.debug("PackChoiceDecider: intent=%r", intent)
+        if ctx.config.pack_rollout:
+            logger.debug("PackChoiceDecider: pack_rollout=True -> pack_rollout action")
+            return Action(kind="pack_rollout", params={})
         action = self._pack_policy.choose_action(gs, ctx.config, ctx, intent)
         logger.debug("PackChoiceDecider: action=%s params=%s", action.kind, action.params)
         return action
@@ -42,4 +45,3 @@ def _intent_to_text(intent: Any) -> str:
     if isinstance(value, str):
         return value
     return ""
-

@@ -25,7 +25,9 @@ class ShopAdvisor:
                 reorder_action.params,
             )
             return reorder_action
+        if ctx.config.shop_rollout:
+            logger.debug("ShopAdvisor: shop_rollout=True -> shop_rollout action")
+            return Action(kind="shop_rollout", params={})
         action = self._shop_policy.choose_action(gs, ctx.config, ctx)
         logger.debug("ShopAdvisor: action=%s params=%s", action.kind, action.params)
         return action
-

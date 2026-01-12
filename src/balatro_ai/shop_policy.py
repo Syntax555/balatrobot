@@ -233,10 +233,24 @@ class ShopPolicy:
             raise ValueError(f"ShopPolicy used outside SHOP state: {gs_state(gs)}")
         shop_mem = _shop_memory(ctx)
         intent = _intent(ctx) or _INTENT_HIGH_CARD
+        trace_base: dict[str, Any] = {
+            "intent": intent,
+            "ante": gs_ante(gs),
+            "round": gs_round_num(gs),
+            "money": gs_money(gs),
+            "reroll_cost": gs_reroll_cost(gs),
+            "rerolls_used": shop_mem.get("rerolls_used", REROLL_USED_DEFAULT),
+        }
         pending_actions = shop_mem.get("pending_actions")
         if isinstance(pending_actions, list) and pending_actions:
             action = _next_pending_action(pending_actions, gs, intent=intent)
             if action is not None:
+                ctx.round_memory["shop_trace"] = {
+                    **trace_base,
+                    "mode": "pending",
+                    "pending_actions": list(pending_actions),
+                    "chosen": {"kind": action.kind, "params": dict(action.params)},
+                }
                 logger.debug("ShopPolicy: executing pending action=%s params=%s", action.kind, action.params)
                 return action
             logger.debug("ShopPolicy: pending actions invalidated (item not found)")
@@ -258,6 +272,17 @@ class ShopPolicy:
             shop_mem.get("rerolls_used", REROLL_USED_DEFAULT),
         )
         shop_candidates = _collect_shop_candidates(gs, ante, money, reserve, intent, budget)
+        candidates_sorted = sorted(shop_candidates, key=lambda item: item.score, reverse=True)
+        trace_candidates = [
+            {
+                "kind": c.kind,
+                "index": c.index,
+                "score": c.score,
+                "cost": c.cost,
+                "identity": dict(c.identity),
+            }
+            for c in candidates_sorted[:12]
+        ]
         plan_result = _best_purchase_plan(
             shop_candidates,
             money=money,
@@ -272,8 +297,29 @@ class ShopPolicy:
                 _set_pending_buys(shop_mem, plan)
                 worst_index = _worst_joker_index(gs, ante, intent)
                 if worst_index is not None:
+                    ctx.round_memory["shop_trace"] = {
+                        **trace_base,
+                        "mode": "sell_for_space",
+                        "reserve": reserve,
+                        "buy_threshold": budget.buy_threshold,
+                        "plan_score": plan_score,
+                        "plan": [dict(item.identity) | {"kind": item.kind, "index": item.index} for item in plan],
+                        "candidates": trace_candidates,
+                        "chosen": {"kind": "sell", "params": {"joker": worst_index}},
+                    }
                     return Action(kind="sell", params={"joker": worst_index})
             _set_pending_buys(shop_mem, plan[1:])
+            chosen = _buy_action(plan[0])
+            ctx.round_memory["shop_trace"] = {
+                **trace_base,
+                "mode": "buy_plan",
+                "reserve": reserve,
+                "buy_threshold": budget.buy_threshold,
+                "plan_score": plan_score,
+                "plan": [dict(item.identity) | {"kind": item.kind, "index": item.index} for item in plan],
+                "candidates": trace_candidates,
+                "chosen": {"kind": chosen.kind, "params": dict(chosen.params)},
+            }
             return _buy_action(plan[0])
 
         best_shop = plan[0] if plan else None
@@ -282,15 +328,54 @@ class ShopPolicy:
             shop_mem["rerolls_used"] = shop_mem.get("rerolls_used", REROLL_USED_DEFAULT) + REROLL_USED_INCREMENT
             shop_mem.pop("pending_actions", None)
             logger.debug("ShopPolicy: reroll (rerolls_used=%s)", shop_mem["rerolls_used"])
+            ctx.round_memory["shop_trace"] = {
+                **trace_base,
+                "mode": "reroll",
+                "reserve": reserve,
+                "reroll_threshold": budget.reroll_threshold,
+                "best_score": best_score,
+                "candidates": trace_candidates,
+                "chosen": {"kind": "reroll", "params": {}},
+            }
             return Action(kind="reroll", params={})
 
         pack_candidates = _collect_pack_candidates(gs, ante, money, reserve, intent=intent)
+        packs_sorted = sorted(pack_candidates, key=lambda item: item.score, reverse=True)
+        trace_packs = [
+            {
+                "kind": c.kind,
+                "index": c.index,
+                "score": c.score,
+                "cost": c.cost,
+                "identity": dict(c.identity),
+            }
+            for c in packs_sorted[:8]
+        ]
         best_pack = _best_candidate(pack_candidates)
         if best_pack is not None and best_pack.score > SCORE_NONE:
             logger.debug("ShopPolicy: choosing pack candidate=%s", best_pack)
+            chosen = _buy_action(best_pack)
+            ctx.round_memory["shop_trace"] = {
+                **trace_base,
+                "mode": "buy_pack",
+                "reserve": reserve,
+                "best_pack": dict(best_pack.identity) | {"index": best_pack.index, "score": best_pack.score},
+                "candidates": trace_candidates,
+                "pack_candidates": trace_packs,
+                "chosen": {"kind": chosen.kind, "params": dict(chosen.params)},
+            }
             return _buy_action(best_pack)
 
         logger.debug("ShopPolicy: next_round (no good buys)")
+        ctx.round_memory["shop_trace"] = {
+            **trace_base,
+            "mode": "next_round",
+            "reserve": reserve,
+            "best_score": best_score,
+            "candidates": trace_candidates,
+            "pack_candidates": trace_packs,
+            "chosen": {"kind": "next_round", "params": {}},
+        }
         return Action(kind="next_round", params={})
 
 

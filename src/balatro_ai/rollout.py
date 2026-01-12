@@ -244,6 +244,20 @@ def rollout_step(
             hand_cards,
             intent,
         )
+        ctx.round_memory["rollout_trace"] = {
+            "intent": intent.value,
+            "mode": "save_failed",
+            "candidates": {
+                "plays": [
+                    {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                    for c in play_candidates[:10]
+                ],
+                "discards": [
+                    {"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]
+                ],
+            },
+            "chosen": {"kind": fallback.kind, "params": dict(fallback.params)},
+        }
         logger.debug("rollout_step: fallback action=%s params=%s", fallback.kind, fallback.params)
         return _apply_action(rpc, fallback)
     try:
@@ -269,13 +283,41 @@ def rollout_step(
                     "rollout_step: defaulting to best heuristic play=%s",
                     play_candidates[FIRST_INDEX],
                 )
-                return _apply_action(rpc, play_candidates[FIRST_INDEX].action)
+                fallback = play_candidates[FIRST_INDEX].action
+                ctx.round_memory["rollout_trace"] = {
+                    "intent": intent.value,
+                    "mode": "no_best",
+                    "candidates": {
+                        "plays": [
+                            {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                            for c in play_candidates[:10]
+                        ],
+                        "discards": [
+                            {"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]
+                        ],
+                    },
+                    "chosen": {"kind": fallback.kind, "params": dict(fallback.params)},
+                }
+                return _apply_action(rpc, fallback)
             return rpc.gamestate()
         logger.debug("rollout_step: best action=%s reward=%.2f", best.action, best.reward)
         try:
             rpc.load(save_path)
         except BalatroRPCError:
             logger.debug("rollout_step: load failed before applying best action -> using current state")
+        ctx.round_memory["rollout_trace"] = {
+            "intent": intent.value,
+            "mode": "evaluated",
+            "best_reward": best.reward,
+            "candidates": {
+                "plays": [
+                    {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                    for c in play_candidates[:10]
+                ],
+                "discards": [{"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]],
+            },
+            "chosen": {"kind": best.action.kind, "params": dict(best.action.params)},
+        }
         return _apply_action(rpc, best.action)
     finally:
         try:
@@ -283,6 +325,8 @@ def rollout_step(
         except OSError:
             pass
         elapsed = time.perf_counter() - started
+        if isinstance(ctx.round_memory.get("rollout_trace"), dict):
+            ctx.round_memory["rollout_trace"]["elapsed_s"] = elapsed
         logger.debug("rollout_step: done elapsed=%.3fs", elapsed)
 
 

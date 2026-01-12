@@ -111,6 +111,19 @@ def _positive_float(name: str):
     return parse
 
 
+def _nonnegative_float(name: str):
+    def parse(value: str) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError) as exc:
+            raise argparse.ArgumentTypeError(f"{name} must be a number") from exc
+        if parsed < 0.0:
+            raise argparse.ArgumentTypeError(f"{name} must be >= 0")
+        return parsed
+
+    return parse
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser for the bot."""
     parser = argparse.ArgumentParser(description="Run a BalatroBot client.")
@@ -123,6 +136,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", default=10.0, type=_positive_float("--timeout"), help="HTTP timeout seconds")
     parser.add_argument("--log-level", default="INFO", help="Logging level")
     parser.add_argument("--rollout-k", default=30, type=_positive_int("--rollout-k"), help="Rollout depth")
+    parser.add_argument(
+        "--rollout-parallel",
+        default=None,
+        help="Rollout parallelism: 0, threads, or processes (default: env BALATRO_AI_ROLLOUT_PARALLEL or 0).",
+    )
+    parser.add_argument(
+        "--rollout-workers",
+        default=None,
+        type=_nonnegative_int("--rollout-workers"),
+        help="Rollout parallel worker count (default: env BALATRO_AI_ROLLOUT_WORKERS or 0).",
+    )
+    parser.add_argument(
+        "--rollout-time-budget-s",
+        default=None,
+        type=_nonnegative_float("--rollout-time-budget-s"),
+        help="Per-step rollout evaluation time budget seconds (default: env BALATRO_AI_ROLLOUT_TIME_BUDGET_S).",
+    )
     parser.add_argument("--discard-m", default=12, type=_nonnegative_int("--discard-m"), help="Discard candidates")
     parser.add_argument("--reserve-early", default=10, type=_nonnegative_int("--reserve-early"), help="Early reserve")
     parser.add_argument("--reserve-mid", default=20, type=_nonnegative_int("--reserve-mid"), help="Mid reserve")
@@ -132,6 +162,41 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         type=_nonnegative_int("--max-rerolls-per-shop"),
         help="Maximum rerolls per shop",
+    )
+    parser.add_argument(
+        "--decision-log",
+        default=None,
+        help="If set, write JSONL decision logs to this path.",
+    )
+    parser.add_argument(
+        "--decision-log-include-state",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If enabled, include small state summaries in JSONL decision logs.",
+    )
+    parser.add_argument(
+        "--shop-rollout",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="If enabled, use save/load lookahead for SHOP decisions (slower, but can be stronger).",
+    )
+    parser.add_argument(
+        "--shop-rollout-candidates",
+        default=10,
+        type=_positive_int("--shop-rollout-candidates"),
+        help="Max number of SHOP candidate sequences to evaluate when --shop-rollout is enabled.",
+    )
+    parser.add_argument(
+        "--pack-rollout",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="If enabled, use save/load evaluation for pack selection (slower, but can be stronger).",
+    )
+    parser.add_argument(
+        "--pack-rollout-time-budget-s",
+        default=None,
+        type=_nonnegative_float("--pack-rollout-time-budget-s"),
+        help="Per-pack rollout evaluation time budget seconds.",
     )
     parser.add_argument(
         "--pause-at-menu",
@@ -160,11 +225,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         timeout=args.timeout,
         log_level=args.log_level,
         rollout_k=args.rollout_k,
+        rollout_parallel=args.rollout_parallel,
+        rollout_workers=args.rollout_workers,
+        rollout_time_budget_s=args.rollout_time_budget_s,
         discard_m=args.discard_m,
         reserve_early=args.reserve_early,
         reserve_mid=args.reserve_mid,
         reserve_late=args.reserve_late,
         max_rerolls_per_shop=args.max_rerolls_per_shop,
+        decision_log_path=args.decision_log,
+        decision_log_include_state=args.decision_log_include_state,
+        shop_rollout=args.shop_rollout,
+        shop_rollout_candidates=args.shop_rollout_candidates,
+        pack_rollout=args.pack_rollout,
+        pack_rollout_time_budget_s=args.pack_rollout_time_budget_s,
         pause_at_menu=args.pause_at_menu,
         auto_start=args.auto_start,
     )

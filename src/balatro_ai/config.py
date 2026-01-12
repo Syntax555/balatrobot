@@ -19,6 +19,22 @@ class Config:
     reserve_mid: int = 20
     reserve_late: int = 25
     max_rerolls_per_shop: int = 1
+    # Optional JSONL decision log written by the client (not the mod).
+    decision_log_path: str | None = None
+    # If True, include small state summaries in decision logs.
+    decision_log_include_state: bool = True
+    # Rollout controls (also configurable via env vars in rollout.py).
+    rollout_parallel: str | None = None
+    rollout_workers: int | None = None
+    rollout_time_budget_s: float | None = None
+    # If True, use snapshot (save/load) lookahead for SHOP actions.
+    shop_rollout: bool = False
+    # Max number of SHOP candidate sequences to evaluate.
+    shop_rollout_candidates: int = 10
+    # If True, use snapshot (save/load) evaluation for pack selection.
+    pack_rollout: bool = False
+    # Pack rollout evaluation time budget seconds.
+    pack_rollout_time_budget_s: float | None = None
     # If True, block forever at MENU (Option A) until the script is restarted.
     pause_at_menu: bool = True
     # If True, attempt to call RPC "start" from MENU using deck/stake/seed.

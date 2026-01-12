@@ -8,6 +8,7 @@ from typing import Any
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent
 from balatro_ai.config import Config
+from balatro_ai.decision_log import DecisionLogger
 from balatro_ai.gs import (
     gs_ante,
     gs_deck_cards,
@@ -18,10 +19,12 @@ from balatro_ai.gs import (
     gs_won,
 )
 from balatro_ai.intent_manager import IntentManager
+from balatro_ai.pack_rollout import pack_rollout_step
 from balatro_ai.pacing import BackoffPacer
 from balatro_ai.policy import Policy, PolicyContext
 from balatro_ai.rollout import rollout_step
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
+from balatro_ai.shop_rollout import shop_rollout_step
 
 GameState = dict[str, Any]
 
@@ -51,6 +54,10 @@ class BotRunner:
         self._client = BalatroRPC(
             base_url=base_url,
             timeout=config.timeout,
+        )
+        self._decision_logger = DecisionLogger.from_config(
+            path=config.decision_log_path,
+            include_state=config.decision_log_include_state,
         )
         self._policy = Policy()
         self._context = PolicyContext(
@@ -109,7 +116,43 @@ class BotRunner:
                     state = self._fetch_gamestate_forever()
             return 0
         finally:
-            self._client.close()
+            self.close()
+
+    def close(self) -> None:
+        if self._decision_logger is not None:
+            self._decision_logger.close()
+            self._decision_logger = None
+        self._client.close()
+
+    def run_one(
+        self,
+        *,
+        deck: str | None = None,
+        stake: str | None = None,
+        seed: str | None = None,
+        max_steps: int | None = None,
+    ) -> tuple[int, GameState, int]:
+        """Run a single seeded game and stop at GAME_OVER or max_steps.
+
+        Returns: (exit_code, final_gamestate, steps_executed)
+        """
+        self._context.run_memory.clear()
+        self._context.round_memory.clear()
+
+        state = self._client.menu()
+        state = self._client.start(
+            deck=deck or self._config.deck,
+            stake=stake or self._config.stake,
+            seed=seed,
+        )
+        self._sync_round_context(state)
+
+        steps = 0
+        limit = max_steps if isinstance(max_steps, int) and max_steps > 0 else self._config.max_steps
+        while steps < limit and gs_state(state) != "GAME_OVER":
+            state, steps, pace = self._step(state, steps)
+            self._apply_pace(pace)
+        return self._exit_code(state, steps), dict(state), steps
 
     def _fetch_gamestate_forever(self) -> GameState:
         """Fetch gamestate, retrying forever with adaptive backoff."""
@@ -170,9 +213,12 @@ class BotRunner:
             self._sync_round_context(refreshed)
             return dict(refreshed), steps, _PACE_BUMP_HARD
 
+        decision_step = steps
         try:
             action = self._policy.decide(state, self._context)
-        except Exception:
+        except Exception as exc:
+            if self._decision_logger is not None:
+                self._decision_logger.log_error(step=decision_step, gs=state, action=None, error=exc)
             self._logger.warning(
                 "Policy error. Falling back to gamestate.",
                 exc_info=True,
@@ -186,11 +232,30 @@ class BotRunner:
             )
             action = Action(kind="gamestate", params={})
         action = self._ensure_legal_action(action, state)
+        if self._decision_logger is not None:
+            self._decision_logger.log_decision(
+                step=decision_step,
+                gs=state,
+                action=action,
+                run_memory=self._context.run_memory,
+                round_memory=self._context.round_memory,
+            )
         try:
             new_state = self.execute_action(action, state)
             if action.kind != "gamestate":
                 steps += 1
+            if self._decision_logger is not None:
+                self._decision_logger.log_result(
+                    step=decision_step,
+                    before=state,
+                    action=action,
+                    after=new_state,
+                    run_memory=self._context.run_memory,
+                    round_memory=self._context.round_memory,
+                )
         except BalatroRPCError as exc:
+            if self._decision_logger is not None:
+                self._decision_logger.log_error(step=decision_step, gs=state, action=action, error=exc)
             self._log_rpc_error(state, exc)
             error_name = self._error_name(exc)
             if error_name in {"INVALID_STATE", "NOT_ALLOWED"}:
@@ -202,7 +267,9 @@ class BotRunner:
                 self._sync_round_context(refreshed)
                 return dict(refreshed), steps, _PACE_BUMP_HARD
             raise
-        except Exception:
+        except Exception as exc:
+            if self._decision_logger is not None:
+                self._decision_logger.log_error(step=decision_step, gs=state, action=action, error=exc)
             self._logger.warning(
                 "Unexpected error executing action=%s params=%s. Falling back to gamestate.",
                 action.kind,
@@ -303,6 +370,54 @@ class BotRunner:
                 if fallback.kind == "gamestate":
                     return self._client.gamestate()
                 return self._dispatch_action(fallback, gs)
+        if action.kind == "shop_rollout":
+            try:
+                return shop_rollout_step(gs, self._config, self._context, self._client)
+            except Exception:
+                self._logger.warning(
+                    "shop_rollout_step failed. Falling back to SHOP policy.",
+                    exc_info=True,
+                    extra={
+                        "state": gs_state(gs),
+                        "ante": gs_ante(gs),
+                        "round": gs_round_num(gs),
+                        "money": gs_money(gs),
+                        "action_kind": "shop_rollout_error",
+                    },
+                )
+                from balatro_ai.shop_policy import ShopPolicy
+
+                action = ShopPolicy().choose_action(gs, self._config, self._context)
+                return self._dispatch_action(action, gs)
+        if action.kind == "pack_rollout":
+            try:
+                return pack_rollout_step(gs, self._config, self._context, self._client)
+            except Exception:
+                self._logger.warning(
+                    "pack_rollout_step failed. Falling back to pack policy.",
+                    exc_info=True,
+                    extra={
+                        "state": gs_state(gs),
+                        "ante": gs_ante(gs),
+                        "round": gs_round_num(gs),
+                        "money": gs_money(gs),
+                        "action_kind": "pack_rollout_error",
+                    },
+                )
+                from balatro_ai.pack_policy import PackPolicy
+
+                intent_value = self._context.round_memory.get("intent")
+                if intent_value is None:
+                    intent_value = self._context.run_memory.get("intent")
+                intent_text = ""
+                if isinstance(intent_value, str):
+                    intent_text = intent_value
+                else:
+                    inner = getattr(intent_value, "value", None)
+                    if isinstance(inner, str):
+                        intent_text = inner
+                action = PackPolicy().choose_action(gs, self._config, self._context, intent_text)
+                return self._dispatch_action(action, gs)
         if action.kind == "gamestate":
             return self._client.gamestate()
         raise BalatroRPCError(
@@ -529,6 +644,8 @@ _REQUIRED_STATES: dict[str, set[str]] = {
     "next_round": {"SHOP"},
     "pack": {"SMODS_BOOSTER_OPENED"},
     "rollout": {"SELECTING_HAND"},
+    "shop_rollout": {"SHOP"},
+    "pack_rollout": {"SMODS_BOOSTER_OPENED"},
 }
 
 
