@@ -273,6 +273,15 @@ def _rung_seed_budget(rung: int, *, min_seeds: int, max_seeds: int, rungs: int) 
     return max(1, seeds)
 
 
+def _runs_by_seed(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    by_seed: dict[str, dict[str, Any]] = {}
+    for run in runs:
+        seed = run.get("seed")
+        if isinstance(seed, str) and seed:
+            by_seed[seed] = dict(run)
+    return by_seed
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     seeds = _seeds(args)
@@ -303,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
 
     history: list[dict[str, Any]] = []
     best: dict[str, Any] | None = None
+    candidate_runs: dict[str, list[dict[str, Any]]] = {}
 
     for rung in range(rungs):
         budget = _rung_seed_budget(
@@ -315,13 +325,20 @@ def main(argv: list[str] | None = None) -> int:
             cfg = _build_cfg(args, cand.params)
             runner = BotRunner(config=cfg, base_url=base_url)
             try:
-                runs = _run_seeds(
-                    runner,
-                    deck=args.deck,
-                    stake=args.stake,
-                    seeds=rung_seeds,
-                    max_steps=cfg.max_steps,
-                )
+                prior = candidate_runs.get(cand.key, [])
+                by_seed = _runs_by_seed(prior)
+                missing = [s for s in rung_seeds if s not in by_seed]
+                if missing:
+                    new_runs = _run_seeds(
+                        runner,
+                        deck=args.deck,
+                        stake=args.stake,
+                        seeds=missing,
+                        max_steps=cfg.max_steps,
+                    )
+                    by_seed.update(_runs_by_seed(new_runs))
+                runs = [by_seed[s] for s in rung_seeds if s in by_seed]
+                candidate_runs[cand.key] = runs
             finally:
                 runner.close()
             score = _objective(runs)
