@@ -196,12 +196,12 @@ return {
 
           -- Highlight the target cards in hand
           if args.targets and #args.targets > 0 then
-            -- Clear existing highlights
-            for _, hand_card in ipairs(G.hand.cards) do
-              hand_card.highlighted = false
+            -- Clear existing highlights using proper CardArea method
+            for i = #G.hand.highlighted, 1, -1 do
+              G.hand:remove_from_highlighted(G.hand.highlighted[i], true)
             end
 
-            -- Highlight target cards
+            -- Highlight target cards using proper CardArea method
             for _, target_idx in ipairs(args.targets) do
               local hand_pos = target_idx + 1 -- Convert 0-based to 1-based
               if not G.hand.cards[hand_pos] then
@@ -211,8 +211,7 @@ return {
                 })
                 return true
               end
-              G.hand.cards[hand_pos].highlighted = true
-              G.hand.highlighted[#G.hand.highlighted + 1] = G.hand.cards[hand_pos]
+              G.hand:add_to_highlighted(G.hand.cards[hand_pos], true)
             end
           end
         end
@@ -320,17 +319,35 @@ return {
         trigger = "condition",
         blocking = false,
         func = function()
-          -- Calculate expected hand size
-          -- If deck has fewer cards than hand limit, hand will only have deck_size cards
+          -- Wait for state transition to complete (ensures hand is fully dealt)
+          if not G.STATE_COMPLETE then
+            return false
+          end
+
+          -- Calculate expected hand size for initial load
+          -- After cards are destroyed (mega packs), hand may have fewer cards
           local hand_limit = G.hand.config and G.hand.config.card_limit or 8
           local deck_size = G.deck and G.deck.config and G.deck.config.card_count or 52
           local expected_hand_size = math.min(deck_size, hand_limit)
 
-          -- Wait for hand to be fully loaded and positioned
+          -- Calculate minimum required cards based on target indices
+          local min_required = 1
+          if args.targets and #args.targets > 0 then
+            for _, target_idx in ipairs(args.targets) do
+              local required = target_idx + 1 -- 0-based to 1-based
+              if required > min_required then
+                min_required = required
+              end
+            end
+          end
+
+          -- Wait for hand to be ready:
+          -- - At least expected_hand_size cards (initial load), OR
+          -- - At least min_required cards (for mega packs after cards destroyed)
           local hand_ready = G.hand
             and not G.hand.REMOVED
             and G.hand.cards
-            and #G.hand.cards == expected_hand_size
+            and (#G.hand.cards >= expected_hand_size or #G.hand.cards >= min_required)
             and G.hand.T -- Table area exists
             and G.hand.T.x -- Positioned
 

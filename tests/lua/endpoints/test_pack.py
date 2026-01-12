@@ -401,6 +401,38 @@ class TestPackEndpointMegaPack:
         gamestate = assert_gamestate_response(result, state="SHOP")
         assert "pack" not in gamestate
 
+    def test_mega_pack_both_selections_with_targets(self, client: httpx.Client) -> None:
+        """Test mega pack where both selections require targets.
+
+        Pack contents (seed VEBROR8):
+          [0] c_wheel_of_fortune
+          [1] c_sun
+          [2] c_star
+          [3] c_hanged_man - requires 2 targets (first selection)
+          [4] c_chariot - requires 1 target (second selection)
+        """
+        load_fixture(
+            client,
+            "pack",
+            "seed-VEBROR8--state-SMODS_BOOSTER_OPENED--pack.key-p_arcana_mega_1",
+        )
+
+        result = api(client, "pack", {"card": 3, "targets": [0, 1]})
+        gamestate = assert_gamestate_response(result, state="SMODS_BOOSTER_OPENED")
+
+        # After first selection, pack should still be open (mega packs allow 2 selections)
+        # The Hanged Man was removed, so cards shifted:
+        # [0] c_wheel_of_fortune, [1] c_sun, [2] c_star, [3] c_chariot
+        assert "pack" in gamestate
+        assert len(gamestate["pack"]["cards"]) == 4
+
+        # Second selection: card index 3 is now c_chariot (requires 1 target)
+        result = api(client, "pack", {"card": 3, "targets": [0]})
+        gamestate = assert_gamestate_response(result, state="SHOP")
+
+        # After second selection, pack should be closed
+        assert "pack" not in gamestate
+
 
 # =============================================================================
 # Skip Tests
