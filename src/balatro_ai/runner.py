@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import threading
 from collections.abc import Mapping
 from typing import Any
 
@@ -77,6 +76,7 @@ class BotRunner:
         """Run the bot loop indefinitely."""
         steps = 0
         limit_logged = False
+        menu_paused_logged = False
         try:
             state = self._fetch_gamestate_forever()
             self._sync_round_context(state)
@@ -87,10 +87,16 @@ class BotRunner:
                     and self._config.pause_at_menu
                     and not self._config.auto_start
                 ):
-                    self._logger.info(
-                        "At MENU with pause_at_menu=True. Waiting indefinitely.",
-                    )
-                    threading.Event().wait()
+                    if not menu_paused_logged:
+                        self._logger.info(
+                            "At MENU with pause_at_menu=True. Pausing actions until MENU changes "
+                            "(use --auto-start to start automatically, or --no-pause-at-menu to act immediately).",
+                        )
+                        menu_paused_logged = True
+                    state, changed, idle_pace = self._idle_tick_safe(state)
+                    self._apply_pace(idle_pace if not changed else _PACE_RESET)
+                    continue
+                menu_paused_logged = False
                 if state_name in _IDLE_STATES or steps >= self._config.max_steps:
                     if steps >= self._config.max_steps and not limit_logged:
                         self._logger.warning(

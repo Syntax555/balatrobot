@@ -202,7 +202,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--pause-at-menu",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="If enabled, wait forever at MENU until script restart.",
+        help="If enabled, pause actions at MENU until the game leaves MENU (polling gamestate).",
     )
     parser.add_argument(
         "--auto-start",
