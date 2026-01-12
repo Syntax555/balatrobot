@@ -26,6 +26,15 @@ from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 GameState = dict[str, Any]
 
 _IDLE_STATES = {"MENU", "GAME_OVER"}
+_KNOWN_STATES = {
+    "MENU",
+    "BLIND_SELECT",
+    "SELECTING_HAND",
+    "ROUND_EVAL",
+    "SHOP",
+    "SMODS_BOOSTER_OPENED",
+    "GAME_OVER",
+}
 _PACE_RESET = "reset"
 _PACE_BUMP = "bump"
 _PACE_BUMP_HARD = "bump_hard"
@@ -144,7 +153,38 @@ class BotRunner:
         self._pacer.sleep()
 
     def _step(self, state: Mapping[str, Any], steps: int) -> tuple[GameState, int, str]:
-        action = self._policy.decide(state, self._context)
+        state_name = gs_state(state)
+        if not isinstance(state_name, str) or state_name not in _KNOWN_STATES:
+            self._logger.warning(
+                "Unknown game state %s. Polling gamestate until it stabilizes.",
+                state_name or "UNKNOWN",
+                extra={
+                    "state": state_name,
+                    "ante": gs_ante(state),
+                    "round": gs_round_num(state),
+                    "money": gs_money(state),
+                    "action_kind": "unknown_state",
+                },
+            )
+            refreshed = self._fetch_gamestate_forever()
+            self._sync_round_context(refreshed)
+            return dict(refreshed), steps, _PACE_BUMP_HARD
+
+        try:
+            action = self._policy.decide(state, self._context)
+        except Exception:
+            self._logger.warning(
+                "Policy error. Falling back to gamestate.",
+                exc_info=True,
+                extra={
+                    "state": state_name,
+                    "ante": gs_ante(state),
+                    "round": gs_round_num(state),
+                    "money": gs_money(state),
+                    "action_kind": "policy_error",
+                },
+            )
+            action = Action(kind="gamestate", params={})
         action = self._ensure_legal_action(action, state)
         try:
             new_state = self.execute_action(action, state)
@@ -162,6 +202,23 @@ class BotRunner:
                 self._sync_round_context(refreshed)
                 return dict(refreshed), steps, _PACE_BUMP_HARD
             raise
+        except Exception:
+            self._logger.warning(
+                "Unexpected error executing action=%s params=%s. Falling back to gamestate.",
+                action.kind,
+                action.params,
+                exc_info=True,
+                extra={
+                    "state": state_name,
+                    "ante": gs_ante(state),
+                    "round": gs_round_num(state),
+                    "money": gs_money(state),
+                    "action_kind": "execute_error",
+                },
+            )
+            refreshed = self._fetch_gamestate_forever()
+            self._sync_round_context(refreshed)
+            return dict(refreshed), steps, _PACE_BUMP_HARD
         self._sync_round_context(new_state)
         pace = _PACE_RESET if gs_state(new_state) != gs_state(state) else _PACE_BUMP
         return dict(new_state), steps, pace
@@ -228,7 +285,24 @@ class BotRunner:
         if action.kind == "load":
             return self._client.load(path=self._require_param(params, "path"))
         if action.kind == "rollout":
-            return rollout_step(gs, self._config, self._context, self._client)
+            try:
+                return rollout_step(gs, self._config, self._context, self._client)
+            except Exception:
+                self._logger.warning(
+                    "rollout_step failed. Falling back to safe action.",
+                    exc_info=True,
+                    extra={
+                        "state": gs_state(gs),
+                        "ante": gs_ante(gs),
+                        "round": gs_round_num(gs),
+                        "money": gs_money(gs),
+                        "action_kind": "rollout_error",
+                    },
+                )
+                fallback = self._fallback_not_allowed(gs)
+                if fallback.kind == "gamestate":
+                    return self._client.gamestate()
+                return self._dispatch_action(fallback, gs)
         if action.kind == "gamestate":
             return self._client.gamestate()
         raise BalatroRPCError(
