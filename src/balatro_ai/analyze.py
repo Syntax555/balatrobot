@@ -35,8 +35,8 @@ def _is_game_over_result(rec: dict[str, Any]) -> bool:
     return isinstance(after, dict) and after.get("state") == "GAME_OVER"
 
 
-def _current_blind_name(after: dict[str, Any]) -> str | None:
-    blinds = after.get("blinds")
+def _current_blind_name(state: dict[str, Any]) -> str | None:
+    blinds = state.get("blinds")
     if not isinstance(blinds, dict):
         return None
     for key in ("small", "big", "boss"):
@@ -47,48 +47,83 @@ def _current_blind_name(after: dict[str, Any]) -> str | None:
     return None
 
 
+def _boss_name(state: dict[str, Any]) -> str | None:
+    blinds = state.get("blinds")
+    if not isinstance(blinds, dict):
+        return None
+    boss = blinds.get("boss")
+    if not isinstance(boss, dict):
+        return None
+    name = boss.get("name")
+    return name if isinstance(name, str) and name.strip() else None
+
+
+def _loss_reason(state: dict[str, Any]) -> str:
+    if bool(state.get("won")) is True:
+        return "won"
+    hands_left = state.get("hands_left")
+    chips = state.get("chips")
+    blind_score = state.get("blind_score")
+    if isinstance(hands_left, int) and isinstance(chips, int) and isinstance(blind_score, int):
+        if hands_left <= 0 and chips < blind_score:
+            return "out_of_hands"
+        if chips < blind_score:
+            return "insufficient_chips"
+    return "unknown"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     path = Path(args.log)
-    results_by_run: dict[str, dict[str, Any]] = {}
+    runs: dict[str, dict[str, Any]] = {}
 
     for rec in _iter_records(path):
         run_id = rec.get("run_id")
         if not isinstance(run_id, str) or not run_id:
             continue
+        slot = runs.setdefault(run_id, {"run_id": run_id})
+        if rec.get("event") == "run_start":
+            for key in ("seed", "deck", "stake"):
+                if key in rec and slot.get(key) is None:
+                    slot[key] = rec.get(key)
+        if rec.get("event") == "run_end":
+            state = rec.get("state")
+            if isinstance(state, dict):
+                slot["final_state"] = state
+                slot["seed"] = slot.get("seed") or rec.get("seed") or state.get("seed")
         if _is_game_over_result(rec):
             after = rec.get("after") or {}
-            if not isinstance(after, dict):
-                continue
-            results_by_run[run_id] = {
-                "seed": rec.get("seed"),
-                "won": bool(after.get("won")) if isinstance(after.get("won"), bool) else False,
-                "ante": after.get("ante"),
-                "round": after.get("round"),
-                "money": after.get("money"),
-                "blind": _current_blind_name(after),
-                "boss": (after.get("blinds") or {}).get("boss", {}).get("name")
-                if isinstance(after.get("blinds"), dict)
-                else None,
-            }
+            if isinstance(after, dict):
+                slot["final_state"] = after
+                slot["seed"] = slot.get("seed") or rec.get("seed") or after.get("seed")
 
-    wins = sum(1 for r in results_by_run.values() if r.get("won"))
+    finalized = [r for r in runs.values() if isinstance(r.get("final_state"), dict)]
+    wins = 0
     blind_losses = Counter()
     boss_losses = Counter()
-    for r in results_by_run.values():
-        if r.get("won"):
+    reason_counts = Counter()
+
+    for r in finalized:
+        state = r["final_state"]
+        won = bool(state.get("won")) if isinstance(state.get("won"), bool) else False
+        if won:
+            wins += 1
+        reason = _loss_reason(state)
+        reason_counts[reason] += 1
+        if won:
             continue
-        blind = r.get("blind")
-        boss = r.get("boss")
+        blind = _current_blind_name(state) or state.get("state")
+        boss = _boss_name(state)
         if isinstance(blind, str) and blind:
             blind_losses[blind] += 1
         if isinstance(boss, str) and boss:
             boss_losses[boss] += 1
 
     payload = {
-        "runs": len(results_by_run),
+        "runs": len(finalized),
         "wins": wins,
-        "win_rate": (wins / len(results_by_run)) if results_by_run else 0.0,
+        "win_rate": (wins / len(finalized)) if finalized else 0.0,
+        "loss_reasons": dict(reason_counts),
         "losses_by_current_blind": dict(blind_losses),
         "losses_by_boss": dict(boss_losses),
     }

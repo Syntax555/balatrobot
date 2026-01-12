@@ -5,19 +5,18 @@ from collections.abc import Mapping
 from typing import Any
 
 from balatro_ai.actions import Action
-from balatro_ai.build_intent import BuildIntent
 from balatro_ai.config import Config
 from balatro_ai.decision_log import DecisionLogger
+from balatro_ai.determinism import determinism_probe
 from balatro_ai.gs import (
     gs_ante,
-    gs_deck_cards,
     gs_hand_cards,
     gs_money,
     gs_round_num,
+    gs_seed,
     gs_state,
     gs_won,
 )
-from balatro_ai.intent_manager import IntentManager
 from balatro_ai.pack_rollout import pack_rollout_step
 from balatro_ai.pacing import BackoffPacer
 from balatro_ai.policy import Policy, PolicyContext
@@ -64,13 +63,16 @@ class BotRunner:
             run_memory={},
             round_memory={},
         )
-        self._intent_manager = IntentManager()
         self._pacer = BackoffPacer(
             min_delay=0.1,
             max_delay=2.0,
             factor=1.5,
             jitter=0.05,
         )
+        self._rollouts_checked = False
+        self._rollouts_allowed = True
+        self._rollouts_disabled_reason: str | None = None
+        self._rollouts_checked_kinds: set[str] = set()
 
     def run(self) -> int:
         """Run the bot loop indefinitely."""
@@ -151,6 +153,12 @@ class BotRunner:
             stake=stake or self._config.stake,
             seed=seed,
         )
+        if self._decision_logger is not None:
+            self._decision_logger.begin_run(
+                seed=gs_seed(state) or seed,
+                deck=deck or self._config.deck,
+                stake=stake or self._config.stake,
+            )
         self._sync_round_context(state)
 
         steps = 0
@@ -158,6 +166,8 @@ class BotRunner:
         while steps < limit and gs_state(state) != "GAME_OVER":
             state, steps, pace = self._step(state, steps)
             self._apply_pace(pace)
+        if self._decision_logger is not None:
+            self._decision_logger.end_run(final_state=dict(state))
         return self._exit_code(state, steps), dict(state), steps
 
     def _fetch_gamestate_forever(self) -> GameState:
@@ -306,11 +316,22 @@ class BotRunner:
         if action.kind == "menu":
             return self._client.menu()
         if action.kind == "start":
-            return self._client.start(
+            state = self._client.start(
                 deck=self._require_param(params, "deck"),
                 stake=self._require_param(params, "stake"),
                 seed=params.get("seed"),
             )
+            self._rollouts_checked = False
+            self._rollouts_allowed = True
+            self._rollouts_disabled_reason = None
+            self._rollouts_checked_kinds.clear()
+            if self._decision_logger is not None:
+                self._decision_logger.begin_run(
+                    seed=gs_seed(state) or params.get("seed"),
+                    deck=params.get("deck"),
+                    stake=params.get("stake"),
+                )
+            return state
         if action.kind == "select":
             return self._client.select()
         if action.kind == "skip":
@@ -358,6 +379,11 @@ class BotRunner:
         if action.kind == "load":
             return self._client.load(path=self._require_param(params, "path"))
         if action.kind == "rollout":
+            if not self._rollouts_safe(gs, kind="hand"):
+                fallback = self._fallback_not_allowed(gs)
+                if fallback.kind == "gamestate":
+                    return self._client.gamestate()
+                return self._dispatch_action(fallback, gs)
             try:
                 return rollout_step(gs, self._config, self._context, self._client)
             except Exception:
@@ -377,6 +403,11 @@ class BotRunner:
                     return self._client.gamestate()
                 return self._dispatch_action(fallback, gs)
         if action.kind == "shop_rollout":
+            if not self._rollouts_safe(gs, kind="shop"):
+                from balatro_ai.shop_policy import ShopPolicy
+
+                action = ShopPolicy().choose_action(gs, self._config, self._context)
+                return self._dispatch_action(action, gs)
             try:
                 return shop_rollout_step(gs, self._config, self._context, self._client)
             except Exception:
@@ -396,6 +427,21 @@ class BotRunner:
                 action = ShopPolicy().choose_action(gs, self._config, self._context)
                 return self._dispatch_action(action, gs)
         if action.kind == "pack_rollout":
+            if not self._rollouts_safe(gs, kind="pack"):
+                from balatro_ai.pack_policy import PackPolicy
+
+                intent_value = self._context.round_memory.get("intent")
+                if intent_value is None:
+                    intent_value = self._context.run_memory.get("intent")
+                intent_text = ""
+                if isinstance(intent_value, str):
+                    intent_text = intent_value
+                else:
+                    inner = getattr(intent_value, "value", None)
+                    if isinstance(inner, str):
+                        intent_text = inner
+                action = PackPolicy().choose_action(gs, self._config, self._context, intent_text)
+                return self._dispatch_action(action, gs)
             try:
                 return pack_rollout_step(gs, self._config, self._context, self._client)
             except Exception:
@@ -532,73 +578,51 @@ class BotRunner:
             return state in {"SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
         return state in {"SHOP", "SELECTING_HAND", "SMODS_BOOSTER_OPENED"}
 
-    def maybe_update_intent(self, current_deck: list[dict], gs: Mapping[str, Any], *, reason: str) -> None:
-        """Re-evaluate and update the run intent if it changes meaningfully."""
-        current_intent = _coerce_intent(self._context.run_memory.get("intent"))
-        evaluation = self._intent_manager.evaluate(gs, current_deck)
-
-        scores = {intent.value: score for intent, score in evaluation.scores.items()}
-        raw_values = {intent.value: value for intent, value in evaluation.raw_values.items()}
-        baseline_values = {intent.value: value for intent, value in evaluation.baseline_values.items()}
-        self._context.run_memory["intent_scores"] = scores
-        self._context.run_memory["intent_raw_values"] = raw_values
-        self._context.run_memory["intent_baseline_values"] = baseline_values
-        self._context.run_memory["intent_confidence"] = evaluation.confidence
-
-        if current_intent is None:
-            self._context.run_memory["intent"] = evaluation.intent
-            self._logger.info(
-                "Intent %s (conf=%.2f reason=%s)",
-                evaluation.intent.value,
-                evaluation.confidence,
-                reason,
-                extra={
-                    "state": gs_state(gs),
-                    "ante": gs_ante(gs),
-                    "round": gs_round_num(gs),
-                    "money": gs_money(gs),
-                    "action_kind": "intent",
-                },
-            )
-            return
-
-        if self._intent_manager.should_switch(current=current_intent, evaluation=evaluation):
-            from_score = evaluation.scores.get(current_intent, 0.0)
-            to_score = evaluation.scores.get(evaluation.intent, 0.0)
-            self._context.run_memory["intent"] = evaluation.intent
-            self._logger.info(
-                "Switching intent from %s to %s (%.3f -> %.3f conf=%.2f reason=%s)",
-                current_intent.value,
-                evaluation.intent.value,
-                from_score,
-                to_score,
-                evaluation.confidence,
-                reason,
-                extra={
-                    "state": gs_state(gs),
-                    "ante": gs_ante(gs),
-                    "round": gs_round_num(gs),
-                    "money": gs_money(gs),
-                    "action_kind": "intent",
-                },
-            )
-
     def _sync_round_context(self, gs: Mapping[str, Any]) -> None:
         round_num = gs_round_num(gs)
         ante_num = gs_ante(gs)
         last_round = self._context.run_memory.get("round_num")
         last_ante = self._context.run_memory.get("ante_num")
-        state_name = gs_state(gs)
-        last_state = self._context.run_memory.get("runner_last_state")
-        entering_state = state_name != last_state
         if last_round != round_num or last_ante != ante_num:
             self._context.round_memory.clear()
             self._context.run_memory["round_num"] = round_num
             self._context.run_memory["ante_num"] = ante_num
-            self.maybe_update_intent(gs_deck_cards(gs), gs, reason="round")
-        elif entering_state and state_name in {"SHOP", "BLIND_SELECT"}:
-            self.maybe_update_intent(gs_deck_cards(gs), gs, reason=f"enter:{state_name}")
-        self._context.run_memory["runner_last_state"] = state_name
+        # Intent is updated centrally by Policy.decide(), not here.
+
+    def _rollouts_safe(self, gs: Mapping[str, Any], *, kind: str) -> bool:
+        if not self._config.determinism_check:
+            return True
+        if not self._rollouts_allowed:
+            return False
+        if kind in self._rollouts_checked_kinds:
+            return True
+        try:
+            ok, reason = determinism_probe(
+                rpc=self._client,
+                gs=dict(gs),
+                kind=kind,
+            )
+        except Exception as exc:
+            ok, reason = False, f"probe_error:{type(exc).__name__}"
+        self._rollouts_checked = True
+        if ok:
+            self._rollouts_checked_kinds.add(kind)
+            if not self._context.run_memory.get("rollouts_determinism_checked"):
+                self._context.run_memory["rollouts_determinism_checked"] = True
+                self._context.run_memory["rollouts_deterministic"] = True
+                self._logger.info("Determinism probe passed; save/load rollouts enabled.")
+            return True
+
+        self._rollouts_allowed = False
+        self._rollouts_disabled_reason = reason or "non_deterministic"
+        self._context.run_memory["rollouts_determinism_checked"] = True
+        self._context.run_memory["rollouts_deterministic"] = False
+        self._context.run_memory["rollouts_disabled_reason"] = self._rollouts_disabled_reason
+        self._logger.warning(
+            "Disabling save/load rollouts due to non-deterministic behavior (%s).",
+            self._rollouts_disabled_reason,
+        )
+        return False
 
     def _log_action(self, state: Mapping[str, Any], action: Action) -> None:
         self._logger.info(
@@ -653,14 +677,3 @@ _REQUIRED_STATES: dict[str, set[str]] = {
     "shop_rollout": {"SHOP"},
     "pack_rollout": {"SMODS_BOOSTER_OPENED"},
 }
-
-
-def _coerce_intent(value: Any) -> BuildIntent | None:
-    if isinstance(value, BuildIntent):
-        return value
-    if isinstance(value, str):
-        try:
-            return BuildIntent[value.upper()]
-        except KeyError:
-            return None
-    return None

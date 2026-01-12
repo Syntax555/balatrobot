@@ -137,6 +137,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-level", default="INFO", help="Logging level")
     parser.add_argument("--rollout-k", default=30, type=_positive_int("--rollout-k"), help="Rollout depth")
     parser.add_argument(
+        "--hand-rollout",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If enabled, use save/load rollouts to choose play/discard in SELECTING_HAND.",
+    )
+    parser.add_argument(
         "--rollout-parallel",
         default=None,
         help="Rollout parallelism: 0, threads, or processes (default: env BALATRO_AI_ROLLOUT_PARALLEL or 0).",
@@ -187,6 +193,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Max number of SHOP candidate sequences to evaluate when --shop-rollout is enabled.",
     )
     parser.add_argument(
+        "--shop-rollout-time-budget-s",
+        default=None,
+        type=_nonnegative_float("--shop-rollout-time-budget-s"),
+        help="Per-SHOP rollout evaluation time budget seconds.",
+    )
+    parser.add_argument(
         "--pack-rollout",
         action=argparse.BooleanOptionalAction,
         default=False,
@@ -197,6 +209,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         type=_nonnegative_float("--pack-rollout-time-budget-s"),
         help="Per-pack rollout evaluation time budget seconds.",
+    )
+    parser.add_argument(
+        "--determinism-check",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If enabled, probe save/load determinism and disable rollouts if unsafe.",
     )
     parser.add_argument(
         "--pause-at-menu",
@@ -225,6 +243,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         timeout=args.timeout,
         log_level=args.log_level,
         rollout_k=args.rollout_k,
+        hand_rollout=args.hand_rollout,
         rollout_parallel=args.rollout_parallel,
         rollout_workers=args.rollout_workers,
         rollout_time_budget_s=args.rollout_time_budget_s,
@@ -237,8 +256,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         decision_log_include_state=args.decision_log_include_state,
         shop_rollout=args.shop_rollout,
         shop_rollout_candidates=args.shop_rollout_candidates,
+        shop_rollout_time_budget_s=args.shop_rollout_time_budget_s,
         pack_rollout=args.pack_rollout,
         pack_rollout_time_budget_s=args.pack_rollout_time_budget_s,
+        determinism_check=args.determinism_check,
         pause_at_menu=args.pause_at_menu,
         auto_start=args.auto_start,
     )

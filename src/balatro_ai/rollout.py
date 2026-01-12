@@ -87,6 +87,9 @@ REWARD_INITIAL = 0.0
 REWARD_ROUND_EVAL_BONUS = 1_000_000.0
 REWARD_GAME_OVER_PENALTY = 1_000_000.0
 REWARD_CHIPS_DELTA_WEIGHT = 50.0
+REWARD_PROGRESS_WEIGHT = 5_000.0
+REWARD_BEAT_BLIND_BONUS = 25_000.0
+REWARD_BUST_PENALTY = 250_000.0
 REWARD_HANDS_LEFT_WEIGHT = 50.0
 REWARD_DISCARDS_LEFT_WEIGHT = 10.0
 REWARD_BLIND_SCORE_MIN = 1
@@ -704,6 +707,12 @@ def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) 
     if blind_score and before_chips is not None and round_chips is not None:
         delta = round_chips - before_chips
         reward += REWARD_CHIPS_DELTA_WEIGHT * delta / max(REWARD_BLIND_SCORE_MIN, blind_score)
+        progress = round_chips / max(REWARD_BLIND_SCORE_MIN, blind_score)
+        reward += REWARD_PROGRESS_WEIGHT * progress
+        if progress >= 1.0:
+            reward += REWARD_BEAT_BLIND_BONUS
+        if gs_hands_left(gs) <= 0 and progress < 1.0 and state not in {"ROUND_EVAL", "GAME_OVER"}:
+            reward -= REWARD_BUST_PENALTY
     reward += REWARD_HANDS_LEFT_WEIGHT * gs_hands_left(gs)
     reward += REWARD_DISCARDS_LEFT_WEIGHT * gs_discards_left(gs)
     reward += float(gs_money(gs) - before_money)

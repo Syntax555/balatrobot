@@ -379,6 +379,127 @@ class ShopPolicy:
         return Action(kind="next_round", params={})
 
 
+@dataclass(frozen=True)
+class ShopRolloutCandidate:
+    """A candidate action sequence for snapshot-based SHOP evaluation."""
+
+    actions: list[Action]
+    heuristic_score: float
+    detail: dict[str, Any]
+
+
+def generate_shop_rollout_candidates(
+    gs: Mapping[str, Any],
+    cfg: Config,
+    ctx: PolicyContext,
+    *,
+    limit: int,
+) -> list[ShopRolloutCandidate]:
+    """Generate safe, shallow candidate sequences to evaluate from a SHOP snapshot."""
+    if gs_state(gs) != "SHOP":
+        return []
+    max_items = max(1, int(limit))
+    intent = _intent(ctx) or _INTENT_HIGH_CARD
+    shop_mem = _shop_memory(ctx)
+
+    candidates: list[ShopRolloutCandidate] = []
+
+    base_action = ShopPolicy().choose_action(gs, cfg, ctx)
+    candidates.append(
+        ShopRolloutCandidate(
+            actions=[base_action],
+            heuristic_score=0.0,
+            detail={"source": "policy"},
+        )
+    )
+
+    candidates.append(
+        ShopRolloutCandidate(
+            actions=[Action(kind="next_round", params={})],
+            heuristic_score=-1.0,
+            detail={"source": "baseline"},
+        )
+    )
+
+    money = gs_money(gs)
+    ante = gs_ante(gs)
+    reserve = _budget(cfg, gs, intent, _reserve(cfg, ante)).reserve
+    reroll_cost = gs_reroll_cost(gs)
+    if _can_reroll(cfg, money, reserve, reroll_cost, shop_mem):
+        candidates.append(
+            ShopRolloutCandidate(
+                actions=[Action(kind="reroll", params={})],
+                heuristic_score=0.0,
+                detail={"source": "baseline"},
+            )
+        )
+
+    budget = _budget(cfg, gs, intent, _reserve(cfg, ante))
+    shop_candidates = _collect_shop_candidates(gs, ante, money, budget.reserve, intent, budget)
+    shop_candidates = sorted(shop_candidates, key=lambda c: c.score, reverse=True)
+    pack_candidates = _collect_pack_candidates(gs, ante, money, budget.reserve, intent=intent)
+    pack_candidates = sorted(pack_candidates, key=lambda c: c.score, reverse=True)
+
+    for cand in (shop_candidates[:6] + pack_candidates[:4])[: max_items]:
+        if cand.kind == "voucher":
+            candidates.append(
+                ShopRolloutCandidate(
+                    actions=[Action(kind="buy", params={"voucher": cand.index})],
+                    heuristic_score=float(cand.score),
+                    detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+                )
+            )
+            continue
+        if cand.kind == "pack":
+            candidates.append(
+                ShopRolloutCandidate(
+                    actions=[Action(kind="buy", params={"pack": cand.index})],
+                    heuristic_score=float(cand.score),
+                    detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+                )
+            )
+            continue
+        if cand.kind == "card" and _jokers_full(gs):
+            worst = _worst_joker_index(gs, ante, intent)
+            if worst is not None:
+                candidates.append(
+                    ShopRolloutCandidate(
+                        actions=[
+                            Action(kind="sell", params={"joker": worst}),
+                            Action(kind="buy", params={"card": cand.index}),
+                        ],
+                        heuristic_score=float(cand.score),
+                        detail={
+                            "source": "candidate",
+                            "kind": cand.kind,
+                            "identity": dict(cand.identity),
+                            "sell_for_space": worst,
+                        },
+                    )
+                )
+                continue
+        candidates.append(
+            ShopRolloutCandidate(
+                actions=[Action(kind="buy", params={"card": cand.index})],
+                heuristic_score=float(cand.score),
+                detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+            )
+        )
+
+    # Deduplicate and cap.
+    seen: set[str] = set()
+    unique: list[ShopRolloutCandidate] = []
+    for cand in candidates:
+        key = "|".join(f"{a.kind}:{sorted(a.params.items())}" for a in cand.actions)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(cand)
+        if len(unique) >= max_items:
+            break
+    return unique
+
+
 def _reserve(cfg: Config, ante: int) -> int:
     if ante <= ANTE_EARLY_MAX:
         return cfg.reserve_early
@@ -396,9 +517,10 @@ def _collect_shop_candidates(
     budget: _Budget,
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
+    jokers = gs_jokers(gs)
     for index, voucher in enumerate(gs_shop_vouchers(gs)):
         cost = _item_cost(voucher)
-        score = _score_voucher(voucher, intent=intent, ante=ante, cost=cost, budget=budget)
+        score = _score_voucher(voucher, intent=intent, ante=ante, cost=cost, budget=budget, existing_jokers=jokers)
         if not _affordable(money, reserve, cost, score=score):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -707,6 +829,7 @@ def _score_voucher(
     ante: int,
     cost: int,
     budget: _Budget,
+    existing_jokers: list[dict],
 ) -> int:
     key = card_key(voucher) or ""
     text = _item_text(voucher)
@@ -731,8 +854,43 @@ def _score_voucher(
     if medium_hits:
         score += VOUCHER_SCORE_MEDIUM_BASE + VOUCHER_SCORE_MEDIUM_PER_HIT * len(medium_hits)
 
+    score += _voucher_synergy_bonus(key, tokens=tokens, intent=intent, existing_jokers=existing_jokers)
     score += _cost_adjust(score, cost=cost, budget=budget, ante=ante)
     return score
+
+
+def _voucher_synergy_bonus(
+    key: str,
+    *,
+    tokens: set[str],
+    intent: str,
+    existing_jokers: list[dict],
+) -> int:
+    if not existing_jokers:
+        return 0
+    existing_tags: set[str] = set()
+    for joker in existing_jokers:
+        joker_key = card_key(joker) or ""
+        if not joker_key:
+            continue
+        joker_tokens = _tokens(_item_text(joker))
+        existing_tags |= set(_joker_tags(joker_key, joker_tokens))
+
+    rule = _VOUCHER_RULES.get(key)
+    voucher_tags: set[str] = set()
+    if isinstance(rule, Mapping):
+        tags = rule.get("tags")
+        if isinstance(tags, (set, frozenset)):
+            voucher_tags |= set(tags)
+
+    bonus = 0
+    if _TAG_REROLL_VOUCHER in voucher_tags and _TAG_REROLL_ENGINE in existing_tags:
+        bonus += 25
+    if intent == _INTENT_FLUSH and _TAG_TAROT_SHOP in voucher_tags and _TAG_SUIT_FOCUS in existing_tags:
+        bonus += 10
+    if _TAG_PLANET_SHOP in voucher_tags and (_TAG_FLUSH_PAYOFF in existing_tags or _TAG_STRAIGHT_PAYOFF in existing_tags):
+        bonus += 8
+    return bonus
 
 
 def _score_joker(

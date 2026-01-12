@@ -6,6 +6,7 @@ from typing import Any
 
 from balatro_ai.actions import Action
 from balatro_ai.joker_order import maybe_reorder_jokers
+from balatro_ai.gs import gs_hand_cards
 from balatro_ai.policy_context import DecisionFrame, PolicyContext
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,12 @@ class HandSelector:
                     reorder_action.params,
                 )
                 return reorder_action
-        logger.debug("HandSelector: -> rollout")
-        return Action(kind="rollout", params={})
-
+        if ctx.config.hand_rollout:
+            logger.debug("HandSelector: hand_rollout=True -> rollout")
+            return Action(kind="rollout", params={})
+        cards = gs_hand_cards(gs)
+        count = min(5, len(cards))
+        if count <= 0:
+            return Action(kind="gamestate", params={})
+        logger.debug("HandSelector: hand_rollout=False -> play first %s", count)
+        return Action(kind="play", params={"cards": list(range(count))})

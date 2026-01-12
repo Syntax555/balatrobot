@@ -62,6 +62,31 @@ class DecisionLogger:
         finally:
             self._fp = None
 
+    def begin_run(self, *, seed: str | None = None, deck: str | None = None, stake: str | None = None) -> str:
+        self._run_id = uuid.uuid4().hex
+        self._write(
+            {
+                "event": "run_start",
+                "run_id": self._run_id,
+                "ts": time.time(),
+                "seed": seed,
+                "deck": deck,
+                "stake": stake,
+            }
+        )
+        return self._run_id
+
+    def end_run(self, *, final_state: Mapping[str, Any] | None = None) -> None:
+        self._write(
+            {
+                "event": "run_end",
+                "run_id": self._run_id,
+                "ts": time.time(),
+                "seed": gs_seed(final_state or {}),
+                "state": _state_summary(final_state or {}) if self._cfg.include_state and final_state is not None else None,
+            }
+        )
+
     def log_decision(
         self,
         *,
