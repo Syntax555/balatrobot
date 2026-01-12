@@ -101,8 +101,16 @@ return {
 
     -- Validate card index is in range
     if not area.cards[pos] then
+      local msg
+      if args.card then
+        msg = "Card index out of range. Index: " .. args.card .. ", Available cards: " .. area.count
+      elseif args.voucher then
+        msg = "Voucher index out of range. Index: " .. args.voucher .. ", Available: " .. area.count
+      else
+        msg = "Pack index out of range. Index: " .. args.pack .. ", Available: " .. area.count
+      end
       send_response({
-        message = "Card index out of range. Index: " .. args.card .. ", Available cards: " .. area.count,
+        message = msg,
         name = BB_ERROR_NAMES.BAD_REQUEST,
       })
       return
