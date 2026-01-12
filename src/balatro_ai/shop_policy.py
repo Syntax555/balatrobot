@@ -21,7 +21,7 @@ from balatro_ai.gs import (
     gs_state,
     safe_get,
 )
-from balatro_ai.joker_rules import joker_rule
+from balatro_ai.joker_rules import JOKER_CATEGORY_BASE_SCORES, joker_rule
 from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
@@ -59,11 +59,6 @@ VOUCHER_SCORE_HIGH_PER_HIT = 5
 VOUCHER_SCORE_MEDIUM_BASE = 30
 VOUCHER_SCORE_MEDIUM_PER_HIT = 3
 
-JOKER_SCORE_XMULT = 100
-JOKER_SCORE_MULT = 50
-JOKER_SCORE_CHIPS = 20
-JOKER_SCORE_ECON = 0
-JOKER_SCORE_DEFAULT = 0
 JOKER_ECON_LATE_PENALTY = 20
 
 PACK_SCORE_EARLY = 10
@@ -100,37 +95,116 @@ _INTENT_STRAIGHT = "STRAIGHT"
 _INTENT_PAIRS = "PAIRS"
 _INTENT_HIGH_CARD = "HIGH_CARD"
 
-_CONSUMABLE_SUIT_CONVERT = {"c_star", "c_moon", "c_sun", "c_world", "c_sigil"}
-_CONSUMABLE_STRAIGHT_SUPPORT = {"c_strength"}
-_CONSUMABLE_PAIRS_SUPPORT = {"c_death"}
+_TAG_SUIT_FOCUS = "suit_focus"
+_TAG_FLUSH_PAYOFF = "flush_payoff"
+_TAG_STRAIGHT_PAYOFF = "straight_payoff"
+_TAG_STRAIGHT_SUPPORT_JOKER = "straight_support_joker"
+_TAG_PAIRS_PAYOFF = "pairs_payoff"
+_TAG_SMEARED = "smeared"
+_TAG_REROLL_ENGINE = "reroll_engine"
 
-_PLANET_FLUSH = {"c_jupiter", "c_ceres", "c_eris"}
-_PLANET_STRAIGHT = {"c_saturn", "c_neptune"}
-_PLANET_PAIRS = {"c_mercury", "c_venus", "c_uranus", "c_earth", "c_mars", "c_planet_x"}
-_PLANET_HIGH_CARD = {"c_pluto"}
+_TAG_SUIT_CONVERT = "suit_convert"
+_TAG_STRAIGHT_SUPPORT_CONSUMABLE = "straight_support_consumable"
+_TAG_PAIRS_SUPPORT_CONSUMABLE = "pairs_support_consumable"
 
-_JOKER_SUIT_FOCUS = {"j_smeared", "j_ancient", "j_seeing_double", "j_idol", "j_castle"}
-_JOKER_FLUSH_PAYOFF = {"j_droll", "j_crafty", "j_tribe"}
-_JOKER_STRAIGHT_PAYOFF = {"j_crazy", "j_devious", "j_runner", "j_order"}
-_JOKER_STRAIGHT_SUPPORT = {"j_four_fingers", "j_shortcut"}
-_JOKER_PAIRS_PAYOFF = {"j_jolly", "j_mad", "j_zany", "j_sly", "j_clever", "j_wily"}
+_TAG_REROLL_VOUCHER = "reroll_voucher"
+_TAG_TAROT_SHOP = "tarot_shop"
+_TAG_PLANET_SHOP = "planet_shop"
 
-_VOUCHER_HIGH = {
-    "v_antimatter",
-    "v_clearance_sale",
-    "v_liquidation",
-    "v_overstock_norm",
-    "v_overstock_plus",
-    "v_seed_money",
-    "v_money_tree",
-    "v_grabber",
-    "v_nacho_tong",
-    "v_wasteful",
-    "v_recyclomancy",
-    "v_paint_brush",
-    "v_palette",
+# Consumable/planet scoring is expressed as per-intent scores with a default ("*") fallback.
+_CONSUMABLE_RULES: dict[str, dict[str, Any]] = {
+    # Suit conversion (Tarot/Spectral): strong for FLUSH intent.
+    "c_star": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    "c_moon": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    "c_sun": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    "c_world": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    "c_sigil": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    # Straight/pairs shaping (Tarot).
+    "c_strength": {
+        "tags": frozenset({_TAG_STRAIGHT_SUPPORT_CONSUMABLE}),
+        "score": {_INTENT_STRAIGHT: 80, "*": 10},
+    },
+    "c_death": {"tags": frozenset({_TAG_PAIRS_SUPPORT_CONSUMABLE}), "score": {_INTENT_PAIRS: 80, "*": 15}},
+    # Planets: hand-type scaling.
+    "c_jupiter": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
+    "c_ceres": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
+    "c_eris": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
+    "c_saturn": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_STRAIGHT: 70, "*": 10}},
+    "c_neptune": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_STRAIGHT: 70, "*": 10}},
+    "c_mercury": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_venus": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_uranus": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_earth": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_mars": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_planet_x": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
+    "c_pluto": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_HIGH_CARD: 40, "*": 10}},
+    # Raw economy (Tarot).
+    "c_hermit": {"tags": frozenset(), "score": {"*": 35}},
+    "c_temperance": {"tags": frozenset(), "score": {"*": 25}},
 }
-_VOUCHER_REROLL = {"v_reroll_surplus", "v_reroll_glut"}
+
+_VOUCHER_RULES: dict[str, dict[str, Any]] = {
+    "v_blank": {"base": -50},
+    "v_antimatter": {"base": 80},
+    "v_clearance_sale": {"base": 80},
+    "v_liquidation": {"base": 80},
+    "v_overstock_norm": {"base": 80},
+    "v_overstock_plus": {"base": 80},
+    "v_seed_money": {"base": 80},
+    "v_money_tree": {"base": 80},
+    "v_grabber": {"base": 80},
+    "v_nacho_tong": {"base": 80},
+    "v_wasteful": {"base": 80, "intent": {_INTENT_STRAIGHT: 25}},
+    "v_recyclomancy": {"base": 80, "intent": {_INTENT_STRAIGHT: 25}},
+    "v_paint_brush": {"base": 80},
+    "v_palette": {"base": 80},
+    "v_reroll_surplus": {"base": 40, "tags": frozenset({_TAG_REROLL_VOUCHER})},
+    "v_reroll_glut": {"base": 40, "tags": frozenset({_TAG_REROLL_VOUCHER})},
+    "v_tarot_merchant": {"intent": {_INTENT_FLUSH: 15}, "tags": frozenset({_TAG_TAROT_SHOP})},
+    "v_tarot_tycoon": {"intent": {_INTENT_FLUSH: 15}, "tags": frozenset({_TAG_TAROT_SHOP})},
+    "v_planet_merchant": {
+        "intent": {_INTENT_FLUSH: 10, _INTENT_STRAIGHT: 10, _INTENT_PAIRS: 10},
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+    },
+    "v_planet_tycoon": {
+        "intent": {_INTENT_FLUSH: 10, _INTENT_STRAIGHT: 10, _INTENT_PAIRS: 10},
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+    },
+}
+
+_JOKER_INTENT_TAG_WEIGHTS: dict[str, dict[str, int]] = {
+    _INTENT_FLUSH: {
+        _TAG_FLUSH_PAYOFF: 60,
+        _TAG_SUIT_FOCUS: 45,
+        _TAG_STRAIGHT_PAYOFF: -15,
+        _TAG_STRAIGHT_SUPPORT_JOKER: -15,
+    },
+    _INTENT_STRAIGHT: {
+        _TAG_STRAIGHT_PAYOFF: 60,
+        _TAG_STRAIGHT_SUPPORT_JOKER: 45,
+        _TAG_SUIT_FOCUS: -45,
+    },
+    _INTENT_PAIRS: {
+        _TAG_PAIRS_PAYOFF: 55,
+        _TAG_FLUSH_PAYOFF: -10,
+        _TAG_STRAIGHT_PAYOFF: -10,
+    },
+    _INTENT_HIGH_CARD: {
+        _TAG_SUIT_FOCUS: -5,
+        _TAG_FLUSH_PAYOFF: -5,
+        _TAG_STRAIGHT_PAYOFF: -5,
+    },
+}
+
+_PACK_TYPE_RULES: dict[str, dict[str, Any]] = {
+    # Defaults are intentionally small modifiers; the baseline is ante-driven.
+    "buffoon": {"bonus": 4},
+    "standard": {"bonus": 0},
+    "arcana": {"bonus": 1},
+    "celestial": {"bonus": 1},
+    "spectral": {"bonus": 2},
+    "other": {"bonus": 0},
+}
 
 
 @dataclass(frozen=True)
@@ -210,7 +284,7 @@ class ShopPolicy:
             logger.debug("ShopPolicy: reroll (rerolls_used=%s)", shop_mem["rerolls_used"])
             return Action(kind="reroll", params={})
 
-        pack_candidates = _collect_pack_candidates(gs, ante, money, reserve)
+        pack_candidates = _collect_pack_candidates(gs, ante, money, reserve, intent=intent)
         best_pack = _best_candidate(pack_candidates)
         if best_pack is not None and best_pack.score > SCORE_NONE:
             logger.debug("ShopPolicy: choosing pack candidate=%s", best_pack)
@@ -313,11 +387,13 @@ def _collect_pack_candidates(
     ante: int,
     money: int,
     reserve: int,
+    *,
+    intent: str,
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    pack_score = _score_pack(ante)
-    logger.debug("Shop pack base score: ante=%s pack_score=%s", ante, pack_score)
-    if pack_score <= SCORE_NONE:
+    pack_base = _score_pack(ante)
+    logger.debug("Shop pack base score: ante=%s pack_score=%s", ante, pack_base)
+    if pack_base <= SCORE_NONE:
         return candidates
     for index, pack in enumerate(gs_shop_packs(gs)):
         cost = _item_cost(pack)
@@ -333,12 +409,15 @@ def _collect_pack_candidates(
                     _item_text(pack),
                 )
             continue
+        score = _score_pack_item(pack, ante=ante, intent=intent)
+        if score <= SCORE_NONE:
+            continue
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 "Shop pack option: idx=%s cost=%s score=%s key=%s text=%r",
                 index,
                 cost,
-                pack_score,
+                score,
                 card_key(pack),
                 _item_text(pack),
             )
@@ -346,7 +425,7 @@ def _collect_pack_candidates(
             _Candidate(
                 kind="pack",
                 index=index,
-                score=pack_score,
+                score=score,
                 cost=cost,
                 identity=_item_identity(pack),
             )
@@ -474,6 +553,68 @@ def _tokens(text: str) -> set[str]:
     return card_tokens(text)
 
 
+def _score_by_intent(score_map: Any, intent: str) -> int:
+    if not isinstance(score_map, Mapping):
+        return 0
+    value = score_map.get(intent, score_map.get("*", 0))
+    return value if isinstance(value, int) else 0
+
+
+def _pack_type(key: str) -> str:
+    lowered = (key or "").lower()
+    if lowered.startswith("p_buffoon"):
+        return "buffoon"
+    if lowered.startswith("p_standard"):
+        return "standard"
+    if lowered.startswith("p_arcana"):
+        return "arcana"
+    if lowered.startswith("p_celestial"):
+        return "celestial"
+    if lowered.startswith("p_spectral"):
+        return "spectral"
+    return "other"
+
+
+def _consumable_tags(key: str, tokens: set[str]) -> frozenset[str]:
+    tags: set[str] = set()
+    rule = _CONSUMABLE_RULES.get(key)
+    if isinstance(rule, Mapping):
+        rule_tags = rule.get("tags")
+        if isinstance(rule_tags, (set, frozenset)):
+            tags |= set(rule_tags)
+    return frozenset(tags)
+
+
+def _joker_tags(key: str | None, tokens: set[str]) -> frozenset[str]:
+    tags: set[str] = set()
+    rule = joker_rule(key)
+    if rule is not None:
+        tags |= set(rule.tags)
+    # Token inference: keeps new content usable without adding explicit rules.
+    if tokens & _SUIT_TOKENS:
+        tags.add(_TAG_SUIT_FOCUS)
+    if "flush" in tokens:
+        tags.add(_TAG_FLUSH_PAYOFF)
+    if "straight" in tokens:
+        tags.add(_TAG_STRAIGHT_PAYOFF)
+    if {"pair", "pairs", "kind"} & tokens:
+        tags.add(_TAG_PAIRS_PAYOFF)
+    return frozenset(tags)
+
+
+def _item_tags(key: str, tokens: set[str]) -> frozenset[str]:
+    if key.startswith("j_"):
+        return _joker_tags(key, tokens)
+    if key.startswith("c_"):
+        return _consumable_tags(key, tokens)
+    return frozenset()
+
+
+def _joker_intent_tag_bonus(tags: frozenset[str], intent: str) -> int:
+    weights = _JOKER_INTENT_TAG_WEIGHTS.get(intent) or _JOKER_INTENT_TAG_WEIGHTS[_INTENT_HIGH_CARD]
+    return sum(weights.get(tag, 0) for tag in tags)
+
+
 def _score_voucher(
     voucher: Mapping[str, Any],
     *,
@@ -487,22 +628,16 @@ def _score_voucher(
     tokens = _tokens(text)
     score = SCORE_NONE
 
-    if key in _VOUCHER_HIGH:
-        score += 80
-    if key in _VOUCHER_REROLL:
-        score += 40
-    if key == "v_blank":
-        score -= 50
-    if key in {"v_tarot_merchant", "v_tarot_tycoon"} and intent == _INTENT_FLUSH:
-        score += 15
-    if key in {"v_planet_merchant", "v_planet_tycoon"} and intent in {
-        _INTENT_FLUSH,
-        _INTENT_STRAIGHT,
-        _INTENT_PAIRS,
-    }:
-        score += 10
-    if key in {"v_wasteful", "v_recyclomancy"} and intent == _INTENT_STRAIGHT:
-        score += 25
+    rule = _VOUCHER_RULES.get(key)
+    if rule is not None:
+        base = rule.get("base")
+        if isinstance(base, int):
+            score += base
+        intent_map = rule.get("intent")
+        if isinstance(intent_map, Mapping):
+            bonus = intent_map.get(intent, 0)
+            if isinstance(bonus, int):
+                score += bonus
 
     high_hits = tokens & _VOUCHER_VERY_HIGH
     if high_hits:
@@ -524,12 +659,13 @@ def _score_joker(
 ) -> int:
     key = card_key(joker)
     rule = joker_rule(key)
-    tokens = _tokens(_item_text(joker))
+    text = _item_text(joker)
+    tokens = _tokens(text)
+
+    score = SCORE_NONE
     if rule is not None:
-        score = _score_from_category(rule.category)
+        score += rule.resolved_base_score(category_scores=JOKER_CATEGORY_BASE_SCORES)
         if rule.category == "econ" and ante >= ANTE_ECON_PENALTY_MIN:
-            text = _item_text(joker)
-            tokens = _tokens(text)
             xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
             mult = bool(tokens & _MULT_TOKENS)
             chips = bool(tokens & _CHIPS_TOKENS)
@@ -537,18 +673,17 @@ def _score_joker(
                 score -= JOKER_ECON_LATE_PENALTY
         score += _intent_adjust_for_joker(key, tokens=tokens, intent=intent, existing_jokers=existing_jokers)
         return score
-    text = _item_text(joker)
-    score = SCORE_NONE
+
     xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
     mult = bool(tokens & _MULT_TOKENS)
     chips = bool(tokens & _CHIPS_TOKENS)
     econ = "$" in text or bool(tokens & _ECON_TOKENS)
     if xmult:
-        score += JOKER_SCORE_XMULT
+        score += JOKER_CATEGORY_BASE_SCORES["xmult"]
     if mult:
-        score += JOKER_SCORE_MULT
+        score += JOKER_CATEGORY_BASE_SCORES["mult"]
     if chips:
-        score += JOKER_SCORE_CHIPS
+        score += JOKER_CATEGORY_BASE_SCORES["chips"]
     if econ:
         score += 10
     if econ and ante >= ANTE_ECON_PENALTY_MIN and not (xmult or mult or chips):
@@ -567,6 +702,17 @@ def _score_pack(ante: int) -> int:
     return PACK_SCORE_NONE
 
 
+def _score_pack_item(pack: Mapping[str, Any], *, ante: int, intent: str) -> int:
+    base = _score_pack(ante)
+    if base <= SCORE_NONE:
+        return SCORE_NONE
+    key = card_key(pack) or ""
+    kind = _pack_type(key)
+    rule = _PACK_TYPE_RULES.get(kind) or _PACK_TYPE_RULES["other"]
+    bonus = rule.get("bonus", 0) if isinstance(rule, Mapping) else 0
+    return base + (bonus if isinstance(bonus, int) else 0)
+
+
 def _affordable(money: int, reserve: int, cost: int, *, score: int = SCORE_NONE) -> bool:
     if cost == SCORE_NONE:
         return True
@@ -580,15 +726,7 @@ def _has_x_token(tokens: set[str]) -> bool:
 
 
 def _score_from_category(category: str) -> int:
-    if category == "xmult":
-        return JOKER_SCORE_XMULT
-    if category == "mult":
-        return JOKER_SCORE_MULT
-    if category == "chips":
-        return JOKER_SCORE_CHIPS
-    if category == "econ":
-        return JOKER_SCORE_ECON
-    return JOKER_SCORE_DEFAULT
+    return JOKER_CATEGORY_BASE_SCORES.get(category, JOKER_CATEGORY_BASE_SCORES["default"])
 
 
 def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
@@ -736,39 +874,14 @@ def _score_shop_card(
 
 def _score_consumable(card: Mapping[str, Any], *, intent: str) -> int:
     key = card_key(card) or ""
-    score = 0
 
-    if key in _CONSUMABLE_SUIT_CONVERT:
-        if intent == _INTENT_FLUSH:
-            score += 90
-        elif intent == _INTENT_STRAIGHT:
-            score -= 10
-        else:
-            score += 15
-    if key in _CONSUMABLE_STRAIGHT_SUPPORT:
-        score += 80 if intent == _INTENT_STRAIGHT else 10
-    if key in _CONSUMABLE_PAIRS_SUPPORT:
-        score += 80 if intent == _INTENT_PAIRS else 15
-
-    if key in _PLANET_FLUSH:
-        score += 70 if intent == _INTENT_FLUSH else 10
-    if key in _PLANET_STRAIGHT:
-        score += 70 if intent == _INTENT_STRAIGHT else 10
-    if key in _PLANET_PAIRS:
-        score += 60 if intent == _INTENT_PAIRS else 5
-    if key in _PLANET_HIGH_CARD:
-        score += 40 if intent == _INTENT_HIGH_CARD else 10
-
-    if key == "c_hermit":
-        score += 35
-    if key == "c_temperance":
-        score += 25
-
-    if score != 0:
-        return score
+    rule = _CONSUMABLE_RULES.get(key)
+    if isinstance(rule, Mapping):
+        return _score_by_intent(rule.get("score"), intent)
 
     text = _item_text(card)
     tokens = _tokens(text)
+    score = 0
     if "$" in text or tokens & _ECON_TOKENS:
         score += 20
     if tokens & _SUIT_TOKENS and intent == _INTENT_FLUSH:
@@ -788,46 +901,14 @@ def _intent_adjust_for_joker(
     existing_jokers: list[dict],
 ) -> int:
     bonus = 0
+    rule = joker_rule(key)
+    if rule is not None:
+        bonus += rule.flat_bonus
+        bonus += rule.bonus_for_intent(intent)
+
     key_text = key or ""
-
-    is_suit_focus = key_text in _JOKER_SUIT_FOCUS or bool(tokens & _SUIT_TOKENS)
-    is_flush_payoff = key_text in _JOKER_FLUSH_PAYOFF or "flush" in tokens
-    is_straight_payoff = key_text in _JOKER_STRAIGHT_PAYOFF or "straight" in tokens
-    is_straight_support = key_text in _JOKER_STRAIGHT_SUPPORT
-    is_pairs_payoff = key_text in _JOKER_PAIRS_PAYOFF or bool(tokens & {"pair", "pairs", "kind"})
-
-    if intent == _INTENT_FLUSH:
-        if is_flush_payoff:
-            bonus += 60
-        if is_suit_focus:
-            bonus += 45
-        if is_straight_payoff or is_straight_support:
-            bonus -= 15
-        if key_text == "j_smeared":
-            bonus += 60
-    elif intent == _INTENT_STRAIGHT:
-        if is_straight_payoff:
-            bonus += 60
-        if is_straight_support:
-            bonus += 45
-        if is_suit_focus:
-            bonus -= 45
-        if key_text == "j_smeared":
-            bonus -= 40
-    elif intent == _INTENT_PAIRS:
-        if is_pairs_payoff:
-            bonus += 55
-        if is_flush_payoff or is_straight_payoff:
-            bonus -= 10
-    else:
-        if is_suit_focus or is_flush_payoff or is_straight_payoff:
-            bonus -= 5
-
-    if key_text == "j_chaos":
-        bonus += 20
-    if key_text == "j_flash":
-        bonus += 10
-
+    tags = _joker_tags(key_text, tokens)
+    bonus += _joker_intent_tag_bonus(tags, intent)
     bonus += _synergy_bonus_with_existing({"key": key_text, "label": ""}, intent=intent, existing_jokers=existing_jokers)
     return bonus
 
@@ -841,18 +922,35 @@ def _synergy_bonus_with_existing(
     key = card_key(item) or ""
     if not key:
         return 0
-    existing_keys = {card_key(joker) or "" for joker in existing_jokers}
+    tokens = _tokens(_item_text(item))
+    tags = _item_tags(key, tokens)
+
+    existing_tags: set[str] = set()
+    for joker in existing_jokers:
+        joker_key = card_key(joker) or ""
+        if not joker_key:
+            continue
+        joker_tokens = _tokens(_item_text(joker))
+        existing_tags |= set(_joker_tags(joker_key, joker_tokens))
     score = 0
 
-    if intent == _INTENT_FLUSH and key in _CONSUMABLE_SUIT_CONVERT and existing_keys & _JOKER_FLUSH_PAYOFF:
+    if intent == _INTENT_FLUSH and _TAG_SUIT_CONVERT in tags and _TAG_FLUSH_PAYOFF in existing_tags:
         score += 50
-    if intent == _INTENT_FLUSH and key in _JOKER_FLUSH_PAYOFF and existing_keys & _JOKER_SUIT_FOCUS:
+    if intent == _INTENT_FLUSH and _TAG_FLUSH_PAYOFF in tags and _TAG_SUIT_FOCUS in existing_tags:
         score += 35
-    if intent == _INTENT_STRAIGHT and key in _CONSUMABLE_STRAIGHT_SUPPORT and existing_keys & _JOKER_STRAIGHT_PAYOFF:
+    if (
+        intent == _INTENT_STRAIGHT
+        and _TAG_STRAIGHT_SUPPORT_CONSUMABLE in tags
+        and _TAG_STRAIGHT_PAYOFF in existing_tags
+    ):
         score += 35
-    if intent == _INTENT_STRAIGHT and key in _JOKER_STRAIGHT_SUPPORT and existing_keys & _JOKER_STRAIGHT_PAYOFF:
+    if (
+        intent == _INTENT_STRAIGHT
+        and _TAG_STRAIGHT_SUPPORT_JOKER in tags
+        and _TAG_STRAIGHT_PAYOFF in existing_tags
+    ):
         score += 25
-    if intent == _INTENT_PAIRS and key in _CONSUMABLE_PAIRS_SUPPORT and existing_keys & _JOKER_PAIRS_PAYOFF:
+    if intent == _INTENT_PAIRS and _TAG_PAIRS_SUPPORT_CONSUMABLE in tags and _TAG_PAIRS_PAYOFF in existing_tags:
         score += 35
 
     return score
@@ -916,18 +1014,34 @@ def _pair_synergy(a: _Candidate, b: _Candidate, *, intent: str, ante: int) -> in
     if not a_key or not b_key:
         return 0
 
+    a_tokens = _tokens(a.identity.get("label", ""))
+    b_tokens = _tokens(b.identity.get("label", ""))
+    a_tags = _item_tags(a_key, a_tokens)
+    b_tags = _item_tags(b_key, b_tokens)
+
     if intent == _INTENT_FLUSH:
-        if {a_key, b_key} & _CONSUMABLE_SUIT_CONVERT and {a_key, b_key} & _JOKER_FLUSH_PAYOFF:
+        if (_TAG_SUIT_CONVERT in a_tags and _TAG_FLUSH_PAYOFF in b_tags) or (
+            _TAG_SUIT_CONVERT in b_tags and _TAG_FLUSH_PAYOFF in a_tags
+        ):
             return 60
-        if "j_smeared" in {a_key, b_key} and {a_key, b_key} & _JOKER_FLUSH_PAYOFF:
+        if (_TAG_SMEARED in a_tags and _TAG_FLUSH_PAYOFF in b_tags) or (
+            _TAG_SMEARED in b_tags and _TAG_FLUSH_PAYOFF in a_tags
+        ):
             return 40
     if intent == _INTENT_STRAIGHT:
-        if {a_key, b_key} & _CONSUMABLE_STRAIGHT_SUPPORT and {a_key, b_key} & _JOKER_STRAIGHT_PAYOFF:
+        if (_TAG_STRAIGHT_SUPPORT_CONSUMABLE in a_tags and _TAG_STRAIGHT_PAYOFF in b_tags) or (
+            _TAG_STRAIGHT_SUPPORT_CONSUMABLE in b_tags and _TAG_STRAIGHT_PAYOFF in a_tags
+        ):
             return 40
-        if {a_key, b_key} <= (_JOKER_STRAIGHT_SUPPORT | _JOKER_STRAIGHT_PAYOFF):
+        if (
+            (_TAG_STRAIGHT_SUPPORT_JOKER in a_tags or _TAG_STRAIGHT_PAYOFF in a_tags)
+            and (_TAG_STRAIGHT_SUPPORT_JOKER in b_tags or _TAG_STRAIGHT_PAYOFF in b_tags)
+        ):
             return 25
     if intent == _INTENT_PAIRS:
-        if {a_key, b_key} & _CONSUMABLE_PAIRS_SUPPORT and {a_key, b_key} & _JOKER_PAIRS_PAYOFF:
+        if (_TAG_PAIRS_SUPPORT_CONSUMABLE in a_tags and _TAG_PAIRS_PAYOFF in b_tags) or (
+            _TAG_PAIRS_SUPPORT_CONSUMABLE in b_tags and _TAG_PAIRS_PAYOFF in a_tags
+        ):
             return 40
 
     if ante >= ANTE_ECON_PENALTY_MIN:
@@ -938,13 +1052,15 @@ def _pair_synergy(a: _Candidate, b: _Candidate, *, intent: str, ante: int) -> in
 def _voucher_card_synergy(voucher: _Candidate, card: _Candidate, *, intent: str) -> int:
     v_key = voucher.identity.get("key", "")
     c_key = card.identity.get("key", "")
-    if v_key in _VOUCHER_REROLL and c_key in {"j_flash", "j_chaos"}:
+    v_rule = _VOUCHER_RULES.get(v_key, {})
+    v_tags = v_rule.get("tags", frozenset()) if isinstance(v_rule, Mapping) else frozenset()
+
+    c_tokens = _tokens(card.identity.get("label", ""))
+    c_tags = _item_tags(c_key, c_tokens)
+
+    if _TAG_REROLL_VOUCHER in v_tags and _TAG_REROLL_ENGINE in c_tags:
         return 20
-    if (
-        v_key in {"v_tarot_merchant", "v_tarot_tycoon"}
-        and intent == _INTENT_FLUSH
-        and c_key in _CONSUMABLE_SUIT_CONVERT
-    ):
+    if _TAG_TAROT_SHOP in v_tags and intent == _INTENT_FLUSH and _TAG_SUIT_CONVERT in c_tags:
         return 15
     return 0
 
