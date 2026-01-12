@@ -5,15 +5,17 @@ from collections.abc import Mapping
 from typing import Any
 
 from balatro_ai.actions import Action
-from balatro_ai.joker_order import maybe_reorder_jokers
 from balatro_ai.gs import gs_hand_cards
+from balatro_ai.joker_order import maybe_reorder_jokers
 from balatro_ai.policy_context import DecisionFrame, PolicyContext
 
 logger = logging.getLogger(__name__)
 
 
 class HandSelector:
-    def decide(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> Action:
+    def decide(
+        self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
+    ) -> Action:
         if frame.entering:
             reorder_action = maybe_reorder_jokers(gs, ctx)
             if reorder_action is not None:

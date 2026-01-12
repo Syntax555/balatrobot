@@ -60,7 +60,9 @@ class IntentManager:
     def __init__(self, *, trials: int = DEFAULT_TRIALS) -> None:
         self._trials = max(1, int(trials))
 
-    def evaluate(self, gs: dict[str, Any] | Any, deck_cards: list[dict] | None) -> IntentEvaluation:
+    def evaluate(
+        self, gs: dict[str, Any] | Any, deck_cards: list[dict] | None
+    ) -> IntentEvaluation:
         playable = _sorted_playing_cards(deck_cards or [])
         if len(playable) < 2:
             scores = {intent: 0.0 for intent in BuildIntent}
@@ -86,7 +88,9 @@ class IntentManager:
         for intent in BuildIntent:
             seed = _stable_seed(f"{seed_base}|{intent.value}")
             rng = random.Random(seed)
-            raw_values[intent] = _simulate_deck_value(playable, jokers, intent, self._trials, rng)
+            raw_values[intent] = _simulate_deck_value(
+                playable, jokers, intent, self._trials, rng
+            )
             baseline_rng = random.Random(seed)
             baseline_values[intent] = _simulate_deck_value(
                 baseline_deck, jokers, intent, self._trials, baseline_rng
@@ -104,7 +108,9 @@ class IntentManager:
         second_score = scores.get(second, 0.0)
         gap = best_score - second_score
         confidence = _confidence_from_gap(gap)
-        if best != BuildIntent.HIGH_CARD and (best_score <= 0.0 or gap < MIN_SWITCH_GAP):
+        if best != BuildIntent.HIGH_CARD and (
+            best_score <= 0.0 or gap < MIN_SWITCH_GAP
+        ):
             best = BuildIntent.HIGH_CARD
             confidence = 0.0
         return IntentEvaluation(
@@ -252,7 +258,9 @@ def _joker_bias_by_intent(jokers: list[dict]) -> dict[BuildIntent, float]:
             counts[BuildIntent.PAIRS] += 1
         if _matches_high_card(tokens):
             counts[BuildIntent.HIGH_CARD] += 1
-    return {intent: float(count) * JOKER_BIAS_PER_MATCH for intent, count in counts.items()}
+    return {
+        intent: float(count) * JOKER_BIAS_PER_MATCH for intent, count in counts.items()
+    }
 
 
 def _matches_pairs(tokens: set[str]) -> bool:
@@ -268,7 +276,9 @@ def _matches_high_card(tokens: set[str]) -> bool:
 
 
 def _is_playing_card(card: Any) -> bool:
-    return isinstance(card, dict) and card_rank(card) > 0 and card_suit(card) is not None
+    return (
+        isinstance(card, dict) and card_rank(card) > 0 and card_suit(card) is not None
+    )
 
 
 def _sorted_playing_cards(cards: list[dict]) -> list[dict]:

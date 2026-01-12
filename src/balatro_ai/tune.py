@@ -22,15 +22,23 @@ class TrialResult:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Random-search tuner for Balatro AI parameters (requires running BalatroBot).")
+    parser = argparse.ArgumentParser(
+        description="Random-search tuner for Balatro AI parameters (requires running BalatroBot)."
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=12346)
     parser.add_argument("--deck", default="RED")
     parser.add_argument("--stake", default="WHITE")
-    parser.add_argument("--seed", action="append", default=[], help="Game seed (repeatable).")
-    parser.add_argument("--count", type=int, default=10, help="Generate N seeds (TUNE-0001...).")
+    parser.add_argument(
+        "--seed", action="append", default=[], help="Game seed (repeatable)."
+    )
+    parser.add_argument(
+        "--count", type=int, default=10, help="Generate N seeds (TUNE-0001...)."
+    )
     parser.add_argument("--seed-prefix", default="TUNE")
-    parser.add_argument("--trials", type=int, default=20, help="Number of random configs to evaluate.")
+    parser.add_argument(
+        "--trials", type=int, default=20, help="Number of random configs to evaluate."
+    )
     parser.add_argument("--rng-seed", default="tune", help="RNG seed for the tuner.")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--timeout", type=float, default=20.0)
@@ -173,4 +181,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -7,7 +7,14 @@ from typing import Any
 from balatro_ai.actions import Action
 from balatro_ai.build_intent import BuildIntent
 from balatro_ai.cards import card_key, card_rank, card_suit, card_text
-from balatro_ai.gs import gs_ante, gs_deck_cards, gs_jokers, gs_money, gs_round_num, gs_state
+from balatro_ai.gs import (
+    gs_ante,
+    gs_deck_cards,
+    gs_jokers,
+    gs_money,
+    gs_round_num,
+    gs_state,
+)
 from balatro_ai.intent_manager import IntentManager
 from balatro_ai.policy_context import DecisionFrame, PolicyContext
 from balatro_ai.policy_states import (
@@ -41,7 +48,9 @@ class Policy:
         self._shop_advisor = ShopAdvisor()
         self._pack_choice = PackChoiceDecider()
         self._default = DefaultDecider()
-        self._dispatch: dict[str, Callable[[Mapping[str, Any], PolicyContext, DecisionFrame], Action]] = {
+        self._dispatch: dict[
+            str, Callable[[Mapping[str, Any], PolicyContext, DecisionFrame], Action]
+        ] = {
             "MENU": self.decide_in_menu,
             "BLIND_SELECT": self.decide_in_blind_select,
             "SELECTING_HAND": self.decide_in_selecting_hand,
@@ -54,7 +63,9 @@ class Policy:
         """Decide the next action based on the current game state."""
         state = gs_state(gs)
         last_state = ctx.run_memory.get("last_state")
-        frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+        frame = DecisionFrame(
+            state=state, last_state=last_state, entering=state != last_state
+        )
         self._transitions.before_decide(frame, ctx)
         self._maybe_update_intent(gs, ctx, frame)
         logger.debug(
@@ -71,7 +82,16 @@ class Policy:
         ctx.run_memory["last_state"] = state
         return action
 
-    def _maybe_update_intent(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> None:
+    def _make_frame(self, gs: Mapping[str, Any], ctx: PolicyContext) -> DecisionFrame:
+        state = gs_state(gs)
+        last_state = ctx.run_memory.get("last_state")
+        return DecisionFrame(
+            state=state, last_state=last_state, entering=state != last_state
+        )
+
+    def _maybe_update_intent(
+        self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
+    ) -> None:
         if frame.entering and frame.state in _INTENT_RESET_STATES:
             for key in (
                 "intent",
@@ -116,13 +136,17 @@ class Policy:
 
         current_intent = _coerce_intent(ctx.run_memory.get("intent"))
         evaluation = self._intent_manager.evaluate(gs, deck_cards)
-        probabilities = self._intent_manager.estimate_intent_probabilities(gs, deck_cards)
+        probabilities = self._intent_manager.estimate_intent_probabilities(
+            gs, deck_cards
+        )
 
         ctx.run_memory["intent_last_round_num"] = round_num
         ctx.run_memory["intent_last_ante_num"] = ante_num
         ctx.run_memory["intent_signature"] = signature
         ctx.run_memory["intent_eval_key"] = eval_key
-        ctx.run_memory["intent_scores"] = {intent.value: score for intent, score in evaluation.scores.items()}
+        ctx.run_memory["intent_scores"] = {
+            intent.value: score for intent, score in evaluation.scores.items()
+        }
         ctx.run_memory["intent_raw_values"] = {
             intent.value: value for intent, value in evaluation.raw_values.items()
         }
@@ -144,7 +168,9 @@ class Policy:
             )
             return
 
-        if self._intent_manager.should_switch(current=current_intent, evaluation=evaluation):
+        if self._intent_manager.should_switch(
+            current=current_intent, evaluation=evaluation
+        ):
             from_score = evaluation.scores.get(current_intent, 0.0)
             to_score = evaluation.scores.get(evaluation.intent, 0.0)
             ctx.run_memory["intent"] = evaluation.intent
@@ -165,9 +191,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._menu.decide(gs, ctx, frame)
 
     def decide_in_blind_select(
@@ -177,9 +201,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._blind_select.decide(gs, ctx, frame)
 
     def decide_in_selecting_hand(
@@ -189,9 +211,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._hand_selector.decide(gs, ctx, frame)
 
     def decide_in_round_eval(
@@ -201,9 +221,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._round_eval.decide(gs, ctx, frame)
 
     def decide_in_shop(
@@ -213,9 +231,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._shop_advisor.decide(gs, ctx, frame)
 
     def decide_in_pack_choice(
@@ -225,9 +241,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._pack_choice.decide(gs, ctx, frame)
 
     def decide_in_default(
@@ -237,9 +251,7 @@ class Policy:
         frame: DecisionFrame | None = None,
     ) -> Action:
         if frame is None:
-            state = gs_state(gs)
-            last_state = ctx.run_memory.get("last_state")
-            frame = DecisionFrame(state=state, last_state=last_state, entering=state != last_state)
+            frame = self._make_frame(gs, ctx)
         return self._default.decide(gs, ctx, frame)
 
 
@@ -275,5 +287,7 @@ def _intent_signature(deck_cards: list[dict], jokers: list[dict]) -> tuple:
                 joker_keys.append(text.lower())
     joker_keys.sort()
 
-    deck_tuple = tuple(sorted((rank, suit, count) for (rank, suit), count in deck_counts.items()))
+    deck_tuple = tuple(
+        sorted((rank, suit, count) for (rank, suit), count in deck_counts.items())
+    )
     return (deck_tuple, tuple(joker_keys))

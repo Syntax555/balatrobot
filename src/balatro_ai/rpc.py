@@ -231,7 +231,9 @@ class BalatroRPC:
 
     def use(self, *, consumable: int, cards: list[int] | None = None) -> JsonObject:
         """Use a consumable card."""
-        params: JsonObject = {"consumable": self._validate_index("consumable", consumable)}
+        params: JsonObject = {
+            "consumable": self._validate_index("consumable", consumable)
+        }
         if cards is not None:
             params["cards"] = self._validate_indices("cards", cards, allow_empty=True)
         return self.call("use", params)
@@ -284,7 +286,9 @@ class BalatroRPC:
             params=payload.get("params"),
         )
 
-    def _parse_response(self, response: httpx.Response, payload: Mapping[str, Any]) -> JsonObject:
+    def _parse_response(
+        self, response: httpx.Response, payload: Mapping[str, Any]
+    ) -> JsonObject:
         if not response.is_success:
             raise BalatroRPCError(
                 code=-32000,
@@ -336,7 +340,9 @@ class BalatroRPC:
             params=params,
         )
 
-    def _invalid_params(self, reason: str, params: Mapping[str, Any] | None) -> BalatroRPCError:
+    def _invalid_params(
+        self, reason: str, params: Mapping[str, Any] | None
+    ) -> BalatroRPCError:
         return BalatroRPCError(
             code=-32602,
             message="Invalid params",

@@ -9,7 +9,9 @@ from typing import Any
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Analyze Balatro AI decision logs (JSONL).")
+    parser = argparse.ArgumentParser(
+        description="Analyze Balatro AI decision logs (JSONL)."
+    )
     parser.add_argument("--log", required=True, help="Path to a JSONL decision log.")
     return parser
 
@@ -64,7 +66,11 @@ def _loss_reason(state: dict[str, Any]) -> str:
     hands_left = state.get("hands_left")
     chips = state.get("chips")
     blind_score = state.get("blind_score")
-    if isinstance(hands_left, int) and isinstance(chips, int) and isinstance(blind_score, int):
+    if (
+        isinstance(hands_left, int)
+        and isinstance(chips, int)
+        and isinstance(blind_score, int)
+    ):
         if hands_left <= 0 and chips < blind_score:
             return "out_of_hands"
         if chips < blind_score:

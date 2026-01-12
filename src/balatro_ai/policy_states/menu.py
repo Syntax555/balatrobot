@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 class MenuDecider:
-    def decide(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> Action:
+    def decide(
+        self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
+    ) -> Action:
         if ctx.config.auto_start:
-            if ctx.config.seed is None and not ctx.run_memory.get("warned_seed_missing"):
+            if ctx.config.seed is None and not ctx.run_memory.get(
+                "warned_seed_missing"
+            ):
                 ctx.run_memory["warned_seed_missing"] = True
                 logger.warning(
                     "Starting without a seed; this run may be non-reproducible (set --seed for replay/benchmarks)."

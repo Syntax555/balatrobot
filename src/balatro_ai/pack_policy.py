@@ -81,7 +81,9 @@ class PackPolicy:
     ) -> Action:
         """Choose an action in SMODS_BOOSTER_OPENED state."""
         if gs_state(gs) != "SMODS_BOOSTER_OPENED":
-            raise ValueError(f"PackPolicy used outside SMODS_BOOSTER_OPENED: {gs_state(gs)}")
+            raise ValueError(
+                f"PackPolicy used outside SMODS_BOOSTER_OPENED: {gs_state(gs)}"
+            )
         pack_cards = gs_pack_cards(gs)
         logger.debug("PackPolicy: intent=%r pack_cards=%s", intent, len(pack_cards))
         if not pack_cards:
@@ -107,7 +109,7 @@ class PackPolicy:
         return Action(kind="pack", params={"card": index})
 
 
-def pack_card_text(c: dict) -> str:
+def pack_card_text(c: Mapping[str, Any]) -> str:
     """Return lowercase text for a pack card, preferring label then key."""
     if not isinstance(c, Mapping):
         return ""
@@ -120,7 +122,9 @@ def pick_pack_card(pack_cards: list[dict], intent: str) -> int:
     best_score = BEST_SCORE_INITIAL
     intent_key = intent.lower() if isinstance(intent, str) else ""
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("pick_pack_card: intent_key=%r cards=%s", intent_key, len(pack_cards))
+        logger.debug(
+            "pick_pack_card: intent_key=%r cards=%s", intent_key, len(pack_cards)
+        )
     for index, card in enumerate(pack_cards):
         score, debug = _heuristic_score_pack_card(card, intent_key)
         if logger.isEnabledFor(logging.DEBUG):
@@ -159,14 +163,18 @@ def pick_pack_card_with_simulation(
     deck_cards = gs_deck_cards(gs)
     seed = gs_seed(gs) or cfg.seed or ""
     seed_text = f"{seed}|{cfg.deck}|{cfg.stake}|{intent_key}"
-    sim_scores = evaluate_pack_choice(deck_cards, pack_cards, intent, seed_text=seed_text)
+    sim_scores = evaluate_pack_choice(
+        deck_cards, pack_cards, intent, seed_text=seed_text
+    )
     if not any(abs(score) > 1e-12 for score in sim_scores):
         return pick_pack_card(pack_cards, intent)
 
     best_index = INDEX_INITIAL
     best_score = float("-inf")
     trace_options: list[dict[str, Any]] = []
-    for index, (card, sim_score) in enumerate(zip(pack_cards, sim_scores, strict=False)):
+    for index, (card, sim_score) in enumerate(
+        zip(pack_cards, sim_scores, strict=False)
+    ):
         heur_score, debug = _heuristic_score_pack_card(card, intent_key)
         combined = float(heur_score) + PACK_SIM_SCORE_WEIGHT * sim_score
         trace_options.append(
@@ -199,7 +207,11 @@ def pick_pack_card_with_simulation(
             "options": trace_options,
             "chosen": {"index": best_index, "combined": best_score},
         }
-    logger.debug("pick_pack_card_with_simulation: best_idx=%s best_score=%.2f", best_index, best_score)
+    logger.debug(
+        "pick_pack_card_with_simulation: best_idx=%s best_score=%.2f",
+        best_index,
+        best_score,
+    )
     return best_index
 
 
@@ -246,7 +258,9 @@ def target_limit(card: Mapping[str, Any]) -> int:
     return MAX_TARGETS
 
 
-def choose_targets(gs: Mapping[str, Any], intent: str, *, max_targets: int = MAX_TARGETS) -> list[int]:
+def choose_targets(
+    gs: Mapping[str, Any], intent: str, *, max_targets: int = MAX_TARGETS
+) -> list[int]:
     """Choose up to `max_targets` target indices from the hand."""
     hand_cards = gs_hand_cards(gs)
     if not hand_cards:
@@ -329,7 +343,9 @@ def _is_hidden_or_debuffed(card: Mapping[str, Any]) -> bool:
     return False
 
 
-def _heuristic_score_pack_card(card: dict, intent_key: str) -> tuple[int, dict[str, Any]]:
+def _heuristic_score_pack_card(
+    card: dict, intent_key: str
+) -> tuple[int, dict[str, Any]]:
     text = pack_card_text(card)
     tokens = card_tokens(text)
     score = SCORE_INITIAL

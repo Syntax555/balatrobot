@@ -24,4 +24,3 @@ class DecisionFrame:
     state: str
     last_state: str | None
     entering: bool
-

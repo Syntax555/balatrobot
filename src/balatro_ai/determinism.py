@@ -26,7 +26,9 @@ from balatro_ai.pack_policy import choose_targets, needs_targets, target_limit
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
 
-def determinism_probe(*, rpc: BalatroRPC, gs: Mapping[str, Any], kind: str) -> tuple[bool, str | None]:
+def determinism_probe(
+    *, rpc: BalatroRPC, gs: Mapping[str, Any], kind: str
+) -> tuple[bool, str | None]:
     """Return (ok, reason) for whether save/load appears deterministic enough for rollouts.
 
     The probe is designed to be side-effect free: it snapshots with save(), runs a small
@@ -176,4 +178,3 @@ def _item_fingerprint(item: Mapping[str, Any]) -> tuple[Any, ...]:
 def _save_path() -> str:
     filename = f"balatrobot_determinism_{uuid.uuid4().hex}.jkr"
     return os.path.join(tempfile.gettempdir(), filename)
-

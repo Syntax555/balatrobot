@@ -12,6 +12,7 @@ from balatro_ai.build_intent import BuildIntent
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_deck_cards, gs_jokers, gs_money, gs_pack_cards, gs_state
 from balatro_ai.intent_manager import IntentManager
+from balatro_ai.intent_utils import coerce_enum, ctx_intent_text, ctx_intent_value
 from balatro_ai.pack_policy import choose_targets, needs_targets, target_limit
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
 
@@ -36,7 +37,7 @@ def pack_rollout_step(
     except BalatroRPCError:
         return _fallback_pack_action(gs, cfg, ctx, rpc)
 
-    intent = _intent_from_ctx(ctx)
+    intent = coerce_enum(BuildIntent, ctx_intent_value(ctx))
     manager = IntentManager()
     before_money = gs_money(gs)
     budget_s = cfg.pack_rollout_time_budget_s
@@ -82,14 +83,12 @@ def pack_rollout_step(
             pass
 
 
-def _fallback_pack_action(gs: Mapping[str, Any], cfg: Config, ctx: Any, rpc: BalatroRPC) -> dict:
+def _fallback_pack_action(
+    gs: Mapping[str, Any], cfg: Config, ctx: Any, rpc: BalatroRPC
+) -> dict:
     from balatro_ai.pack_policy import PackPolicy
 
-    intent_text = ""
-    intent = _intent_from_ctx(ctx)
-    if intent is not None:
-        intent_text = intent.value
-    action = PackPolicy().choose_action(gs, cfg, ctx, intent_text)
+    action = PackPolicy().choose_action(gs, cfg, ctx, ctx_intent_text(ctx) or "")
     return _apply_pack_action(rpc, action)
 
 
@@ -110,7 +109,9 @@ def _pack_candidates(gs: Mapping[str, Any], intent: BuildIntent | None) -> list[
         if needs_targets(card):
             targets = choose_targets(gs, intent_text, max_targets=target_limit(card))
             if targets:
-                out.append(Action(kind="pack", params={"card": idx, "targets": targets}))
+                out.append(
+                    Action(kind="pack", params={"card": idx, "targets": targets})
+                )
         else:
             out.append(Action(kind="pack", params={"card": idx}))
     return out
@@ -135,29 +136,6 @@ def _pack_reward(
     }
 
 
-def _intent_from_ctx(ctx: Any) -> BuildIntent | None:
-    value = None
-    if hasattr(ctx, "round_memory"):
-        value = ctx.round_memory.get("intent")
-    if value is None and hasattr(ctx, "run_memory"):
-        value = ctx.run_memory.get("intent")
-    if isinstance(value, BuildIntent):
-        return value
-    if isinstance(value, str):
-        try:
-            return BuildIntent[value.upper()]
-        except KeyError:
-            return None
-    inner = getattr(value, "value", None)
-    if isinstance(inner, str):
-        try:
-            return BuildIntent[inner.upper()]
-        except KeyError:
-            return None
-    return None
-
-
 def _save_path() -> str:
     filename = f"balatrobot_pack_rollout_{uuid.uuid4().hex}.jkr"
     return os.path.join(tempfile.gettempdir(), filename)
-

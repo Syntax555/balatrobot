@@ -34,7 +34,17 @@ _ECON_TOKENS = {"money", "interest", "discount", "coupon", "sell", "shop"}
 _CHIPS_TOKENS = {"chips", "chip", "bonus"}
 _MULT_TOKENS = {"mult", "multiplier", "if", "when", "each"}
 _XMULT_TOKENS = {"xmult", "times"}
-_SUIT_TOKENS = {"suit", "spade", "spades", "heart", "hearts", "diamond", "diamonds", "club", "clubs"}
+_SUIT_TOKENS = {
+    "suit",
+    "spade",
+    "spades",
+    "heart",
+    "hearts",
+    "diamond",
+    "diamonds",
+    "club",
+    "clubs",
+}
 
 _VOUCHER_VERY_HIGH = {
     "interest",
@@ -114,30 +124,84 @@ _TAG_PLANET_SHOP = "planet_shop"
 # Consumable/planet scoring is expressed as per-intent scores with a default ("*") fallback.
 _CONSUMABLE_RULES: dict[str, dict[str, Any]] = {
     # Suit conversion (Tarot/Spectral): strong for FLUSH intent.
-    "c_star": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
-    "c_moon": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
-    "c_sun": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
-    "c_world": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
-    "c_sigil": {"tags": frozenset({_TAG_SUIT_CONVERT}), "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15}},
+    "c_star": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15},
+    },
+    "c_moon": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15},
+    },
+    "c_sun": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15},
+    },
+    "c_world": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15},
+    },
+    "c_sigil": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 90, _INTENT_STRAIGHT: -10, "*": 15},
+    },
     # Straight/pairs shaping (Tarot).
     "c_strength": {
         "tags": frozenset({_TAG_STRAIGHT_SUPPORT_CONSUMABLE}),
         "score": {_INTENT_STRAIGHT: 80, "*": 10},
     },
-    "c_death": {"tags": frozenset({_TAG_PAIRS_SUPPORT_CONSUMABLE}), "score": {_INTENT_PAIRS: 80, "*": 15}},
+    "c_death": {
+        "tags": frozenset({_TAG_PAIRS_SUPPORT_CONSUMABLE}),
+        "score": {_INTENT_PAIRS: 80, "*": 15},
+    },
     # Planets: hand-type scaling.
-    "c_jupiter": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
-    "c_ceres": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
-    "c_eris": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_FLUSH: 70, "*": 10}},
-    "c_saturn": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_STRAIGHT: 70, "*": 10}},
-    "c_neptune": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_STRAIGHT: 70, "*": 10}},
-    "c_mercury": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_venus": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_uranus": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_earth": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_mars": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_planet_x": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_PAIRS: 60, "*": 5}},
-    "c_pluto": {"tags": frozenset({_TAG_PLANET_SHOP}), "score": {_INTENT_HIGH_CARD: 40, "*": 10}},
+    "c_jupiter": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_FLUSH: 70, "*": 10},
+    },
+    "c_ceres": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_FLUSH: 70, "*": 10},
+    },
+    "c_eris": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_FLUSH: 70, "*": 10},
+    },
+    "c_saturn": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_STRAIGHT: 70, "*": 10},
+    },
+    "c_neptune": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_STRAIGHT: 70, "*": 10},
+    },
+    "c_mercury": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_venus": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_uranus": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_earth": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_mars": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_planet_x": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_PAIRS: 60, "*": 5},
+    },
+    "c_pluto": {
+        "tags": frozenset({_TAG_PLANET_SHOP}),
+        "score": {_INTENT_HIGH_CARD: 40, "*": 10},
+    },
     # Raw economy (Tarot).
     "c_hermit": {"tags": frozenset(), "score": {"*": 35}},
     "c_temperance": {"tags": frozenset(), "score": {"*": 25}},
@@ -160,8 +224,14 @@ _VOUCHER_RULES: dict[str, dict[str, Any]] = {
     "v_palette": {"base": 80},
     "v_reroll_surplus": {"base": 40, "tags": frozenset({_TAG_REROLL_VOUCHER})},
     "v_reroll_glut": {"base": 40, "tags": frozenset({_TAG_REROLL_VOUCHER})},
-    "v_tarot_merchant": {"intent": {_INTENT_FLUSH: 15}, "tags": frozenset({_TAG_TAROT_SHOP})},
-    "v_tarot_tycoon": {"intent": {_INTENT_FLUSH: 15}, "tags": frozenset({_TAG_TAROT_SHOP})},
+    "v_tarot_merchant": {
+        "intent": {_INTENT_FLUSH: 15},
+        "tags": frozenset({_TAG_TAROT_SHOP}),
+    },
+    "v_tarot_tycoon": {
+        "intent": {_INTENT_FLUSH: 15},
+        "tags": frozenset({_TAG_TAROT_SHOP}),
+    },
     "v_planet_merchant": {
         "intent": {_INTENT_FLUSH: 10, _INTENT_STRAIGHT: 10, _INTENT_PAIRS: 10},
         "tags": frozenset({_TAG_PLANET_SHOP}),
@@ -227,7 +297,9 @@ class _Budget:
 class ShopPolicy:
     """Shop decision policy for choosing a single action."""
 
-    def choose_action(self, gs: Mapping[str, Any], cfg: Config, ctx: PolicyContext) -> Action:
+    def choose_action(
+        self, gs: Mapping[str, Any], cfg: Config, ctx: PolicyContext
+    ) -> Action:
         """Choose an action while in SHOP state."""
         if gs_state(gs) != "SHOP":
             raise ValueError(f"ShopPolicy used outside SHOP state: {gs_state(gs)}")
@@ -251,7 +323,11 @@ class ShopPolicy:
                     "pending_actions": list(pending_actions),
                     "chosen": {"kind": action.kind, "params": dict(action.params)},
                 }
-                logger.debug("ShopPolicy: executing pending action=%s params=%s", action.kind, action.params)
+                logger.debug(
+                    "ShopPolicy: executing pending action=%s params=%s",
+                    action.kind,
+                    action.params,
+                )
                 return action
             logger.debug("ShopPolicy: pending actions invalidated (item not found)")
             shop_mem.pop("pending_actions", None)
@@ -271,8 +347,12 @@ class ShopPolicy:
             reroll_cost,
             shop_mem.get("rerolls_used", REROLL_USED_DEFAULT),
         )
-        shop_candidates = _collect_shop_candidates(gs, ante, money, reserve, intent, budget)
-        candidates_sorted = sorted(shop_candidates, key=lambda item: item.score, reverse=True)
+        shop_candidates = _collect_shop_candidates(
+            gs, ante, money, reserve, intent, budget
+        )
+        candidates_sorted = sorted(
+            shop_candidates, key=lambda item: item.score, reverse=True
+        )
         trace_candidates = [
             {
                 "kind": c.kind,
@@ -303,7 +383,11 @@ class ShopPolicy:
                         "reserve": reserve,
                         "buy_threshold": budget.buy_threshold,
                         "plan_score": plan_score,
-                        "plan": [dict(item.identity) | {"kind": item.kind, "index": item.index} for item in plan],
+                        "plan": [
+                            dict(item.identity)
+                            | {"kind": item.kind, "index": item.index}
+                            for item in plan
+                        ],
                         "candidates": trace_candidates,
                         "chosen": {"kind": "sell", "params": {"joker": worst_index}},
                     }
@@ -316,7 +400,10 @@ class ShopPolicy:
                 "reserve": reserve,
                 "buy_threshold": budget.buy_threshold,
                 "plan_score": plan_score,
-                "plan": [dict(item.identity) | {"kind": item.kind, "index": item.index} for item in plan],
+                "plan": [
+                    dict(item.identity) | {"kind": item.kind, "index": item.index}
+                    for item in plan
+                ],
                 "candidates": trace_candidates,
                 "chosen": {"kind": chosen.kind, "params": dict(chosen.params)},
             }
@@ -324,10 +411,17 @@ class ShopPolicy:
 
         best_shop = plan[0] if plan else None
         best_score = plan_score if best_shop else SCORE_NONE
-        if _should_reroll(cfg, money, reserve, reroll_cost, shop_mem, best_score, budget):
-            shop_mem["rerolls_used"] = shop_mem.get("rerolls_used", REROLL_USED_DEFAULT) + REROLL_USED_INCREMENT
+        if _should_reroll(
+            cfg, money, reserve, reroll_cost, shop_mem, best_score, budget
+        ):
+            shop_mem["rerolls_used"] = (
+                shop_mem.get("rerolls_used", REROLL_USED_DEFAULT)
+                + REROLL_USED_INCREMENT
+            )
             shop_mem.pop("pending_actions", None)
-            logger.debug("ShopPolicy: reroll (rerolls_used=%s)", shop_mem["rerolls_used"])
+            logger.debug(
+                "ShopPolicy: reroll (rerolls_used=%s)", shop_mem["rerolls_used"]
+            )
             ctx.round_memory["shop_trace"] = {
                 **trace_base,
                 "mode": "reroll",
@@ -339,8 +433,12 @@ class ShopPolicy:
             }
             return Action(kind="reroll", params={})
 
-        pack_candidates = _collect_pack_candidates(gs, ante, money, reserve, intent=intent)
-        packs_sorted = sorted(pack_candidates, key=lambda item: item.score, reverse=True)
+        pack_candidates = _collect_pack_candidates(
+            gs, ante, money, reserve, intent=intent
+        )
+        packs_sorted = sorted(
+            pack_candidates, key=lambda item: item.score, reverse=True
+        )
         trace_packs = [
             {
                 "kind": c.kind,
@@ -359,7 +457,8 @@ class ShopPolicy:
                 **trace_base,
                 "mode": "buy_pack",
                 "reserve": reserve,
-                "best_pack": dict(best_pack.identity) | {"index": best_pack.index, "score": best_pack.score},
+                "best_pack": dict(best_pack.identity)
+                | {"index": best_pack.index, "score": best_pack.score},
                 "candidates": trace_candidates,
                 "pack_candidates": trace_packs,
                 "chosen": {"kind": chosen.kind, "params": dict(chosen.params)},
@@ -435,18 +534,26 @@ def generate_shop_rollout_candidates(
         )
 
     budget = _budget(cfg, gs, intent, _reserve(cfg, ante))
-    shop_candidates = _collect_shop_candidates(gs, ante, money, budget.reserve, intent, budget)
+    shop_candidates = _collect_shop_candidates(
+        gs, ante, money, budget.reserve, intent, budget
+    )
     shop_candidates = sorted(shop_candidates, key=lambda c: c.score, reverse=True)
-    pack_candidates = _collect_pack_candidates(gs, ante, money, budget.reserve, intent=intent)
+    pack_candidates = _collect_pack_candidates(
+        gs, ante, money, budget.reserve, intent=intent
+    )
     pack_candidates = sorted(pack_candidates, key=lambda c: c.score, reverse=True)
 
-    for cand in (shop_candidates[:6] + pack_candidates[:4])[: max_items]:
+    for cand in (shop_candidates[:6] + pack_candidates[:4])[:max_items]:
         if cand.kind == "voucher":
             candidates.append(
                 ShopRolloutCandidate(
                     actions=[Action(kind="buy", params={"voucher": cand.index})],
                     heuristic_score=float(cand.score),
-                    detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+                    detail={
+                        "source": "candidate",
+                        "kind": cand.kind,
+                        "identity": dict(cand.identity),
+                    },
                 )
             )
             continue
@@ -455,7 +562,11 @@ def generate_shop_rollout_candidates(
                 ShopRolloutCandidate(
                     actions=[Action(kind="buy", params={"pack": cand.index})],
                     heuristic_score=float(cand.score),
-                    detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+                    detail={
+                        "source": "candidate",
+                        "kind": cand.kind,
+                        "identity": dict(cand.identity),
+                    },
                 )
             )
             continue
@@ -482,7 +593,11 @@ def generate_shop_rollout_candidates(
             ShopRolloutCandidate(
                 actions=[Action(kind="buy", params={"card": cand.index})],
                 heuristic_score=float(cand.score),
-                detail={"source": "candidate", "kind": cand.kind, "identity": dict(cand.identity)},
+                detail={
+                    "source": "candidate",
+                    "kind": cand.kind,
+                    "identity": dict(cand.identity),
+                },
             )
         )
 
@@ -520,7 +635,14 @@ def _collect_shop_candidates(
     jokers = gs_jokers(gs)
     for index, voucher in enumerate(gs_shop_vouchers(gs)):
         cost = _item_cost(voucher)
-        score = _score_voucher(voucher, intent=intent, ante=ante, cost=cost, budget=budget, existing_jokers=jokers)
+        score = _score_voucher(
+            voucher,
+            intent=intent,
+            ante=ante,
+            cost=cost,
+            budget=budget,
+            existing_jokers=jokers,
+        )
         if not _affordable(money, reserve, cost, score=score):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -554,7 +676,9 @@ def _collect_shop_candidates(
         )
     for index, card in enumerate(gs_shop_cards(gs)):
         cost = _item_cost(card)
-        score = _score_shop_card(card, intent=intent, ante=ante, cost=cost, budget=budget, gs=gs)
+        score = _score_shop_card(
+            card, intent=intent, ante=ante, cost=cost, budget=budget, gs=gs
+        )
         if not _affordable(money, reserve, cost, score=score):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -701,7 +825,9 @@ def _next_pending_action(
         if worst_index is not None:
             return Action(kind="sell", params={"joker": worst_index})
     pending_actions.pop(0)
-    candidate = _Candidate(kind=item_kind, index=index, score=0, cost=0, identity=dict(identity))
+    candidate = _Candidate(
+        kind=item_kind, index=index, score=0, cost=0, identity=dict(identity)
+    )
     return _buy_action(candidate)
 
 
@@ -731,7 +857,9 @@ def _worst_joker_index(gs: Mapping[str, Any], ante: int, intent: str) -> int | N
     if not jokers:
         return None
     worst_index = INDEX_INITIAL
-    worst_score = _score_joker(jokers[INDEX_INITIAL], ante=ante, intent=intent, existing_jokers=jokers)
+    worst_score = _score_joker(
+        jokers[INDEX_INITIAL], ante=ante, intent=intent, existing_jokers=jokers
+    )
     for index, joker in enumerate(jokers[ENUMERATE_START:], start=ENUMERATE_START):
         score = _score_joker(joker, ante=ante, intent=intent, existing_jokers=jokers)
         if score < worst_score:
@@ -818,7 +946,10 @@ def _item_tags(key: str, tokens: set[str]) -> frozenset[str]:
 
 
 def _joker_intent_tag_bonus(tags: frozenset[str], intent: str) -> int:
-    weights = _JOKER_INTENT_TAG_WEIGHTS.get(intent) or _JOKER_INTENT_TAG_WEIGHTS[_INTENT_HIGH_CARD]
+    weights = (
+        _JOKER_INTENT_TAG_WEIGHTS.get(intent)
+        or _JOKER_INTENT_TAG_WEIGHTS[_INTENT_HIGH_CARD]
+    )
     return sum(weights.get(tag, 0) for tag in tags)
 
 
@@ -852,9 +983,13 @@ def _score_voucher(
         score += VOUCHER_SCORE_HIGH_BASE + VOUCHER_SCORE_HIGH_PER_HIT * len(high_hits)
     medium_hits = tokens & _VOUCHER_MEDIUM
     if medium_hits:
-        score += VOUCHER_SCORE_MEDIUM_BASE + VOUCHER_SCORE_MEDIUM_PER_HIT * len(medium_hits)
+        score += VOUCHER_SCORE_MEDIUM_BASE + VOUCHER_SCORE_MEDIUM_PER_HIT * len(
+            medium_hits
+        )
 
-    score += _voucher_synergy_bonus(key, tokens=tokens, intent=intent, existing_jokers=existing_jokers)
+    score += _voucher_synergy_bonus(
+        key, tokens=tokens, intent=intent, existing_jokers=existing_jokers
+    )
     score += _cost_adjust(score, cost=cost, budget=budget, ante=ante)
     return score
 
@@ -886,9 +1021,15 @@ def _voucher_synergy_bonus(
     bonus = 0
     if _TAG_REROLL_VOUCHER in voucher_tags and _TAG_REROLL_ENGINE in existing_tags:
         bonus += 25
-    if intent == _INTENT_FLUSH and _TAG_TAROT_SHOP in voucher_tags and _TAG_SUIT_FOCUS in existing_tags:
+    if (
+        intent == _INTENT_FLUSH
+        and _TAG_TAROT_SHOP in voucher_tags
+        and _TAG_SUIT_FOCUS in existing_tags
+    ):
         bonus += 10
-    if _TAG_PLANET_SHOP in voucher_tags and (_TAG_FLUSH_PAYOFF in existing_tags or _TAG_STRAIGHT_PAYOFF in existing_tags):
+    if _TAG_PLANET_SHOP in voucher_tags and (
+        _TAG_FLUSH_PAYOFF in existing_tags or _TAG_STRAIGHT_PAYOFF in existing_tags
+    ):
         bonus += 8
     return bonus
 
@@ -914,7 +1055,9 @@ def _score_joker(
             chips = bool(tokens & _CHIPS_TOKENS)
             if not (xmult or mult or chips):
                 score -= JOKER_ECON_LATE_PENALTY
-        score += _intent_adjust_for_joker(key, tokens=tokens, intent=intent, existing_jokers=existing_jokers)
+        score += _intent_adjust_for_joker(
+            key, tokens=tokens, intent=intent, existing_jokers=existing_jokers
+        )
         return score
 
     xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
@@ -931,7 +1074,9 @@ def _score_joker(
         score += 10
     if econ and ante >= ANTE_ECON_PENALTY_MIN and not (xmult or mult or chips):
         score -= JOKER_ECON_LATE_PENALTY
-    score += _intent_adjust_for_joker(key, tokens=tokens, intent=intent, existing_jokers=existing_jokers)
+    score += _intent_adjust_for_joker(
+        key, tokens=tokens, intent=intent, existing_jokers=existing_jokers
+    )
     return score
 
 
@@ -956,7 +1101,9 @@ def _score_pack_item(pack: Mapping[str, Any], *, ante: int, intent: str) -> int:
     return base + (bonus if isinstance(bonus, int) else 0)
 
 
-def _affordable(money: int, reserve: int, cost: int, *, score: int = SCORE_NONE) -> bool:
+def _affordable(
+    money: int, reserve: int, cost: int, *, score: int = SCORE_NONE
+) -> bool:
     if cost == SCORE_NONE:
         return True
     if money - cost >= reserve:
@@ -969,7 +1116,9 @@ def _has_x_token(tokens: set[str]) -> bool:
 
 
 def _score_from_category(category: str) -> int:
-    return JOKER_CATEGORY_BASE_SCORES.get(category, JOKER_CATEGORY_BASE_SCORES["default"])
+    return JOKER_CATEGORY_BASE_SCORES.get(
+        category, JOKER_CATEGORY_BASE_SCORES["default"]
+    )
 
 
 def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
@@ -983,7 +1132,9 @@ def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
     return identity
 
 
-def _find_item_index(gs: Mapping[str, Any], item_kind: str, identity: Mapping[str, Any]) -> int | None:
+def _find_item_index(
+    gs: Mapping[str, Any], item_kind: str, identity: Mapping[str, Any]
+) -> int | None:
     items: list[dict]
     if item_kind == "voucher":
         items = gs_shop_vouchers(gs)
@@ -1031,7 +1182,9 @@ def _intent_to_text(intent: Any) -> str:
     return ""
 
 
-def _budget(cfg: Config, gs: Mapping[str, Any], intent: str, base_reserve: int) -> _Budget:
+def _budget(
+    cfg: Config, gs: Mapping[str, Any], intent: str, base_reserve: int
+) -> _Budget:
     ante = gs_ante(gs)
     money = gs_money(gs)
     round_num = gs_round_num(gs)
@@ -1152,7 +1305,9 @@ def _intent_adjust_for_joker(
     key_text = key or ""
     tags = _joker_tags(key_text, tokens)
     bonus += _joker_intent_tag_bonus(tags, intent)
-    bonus += _synergy_bonus_with_existing({"key": key_text, "label": ""}, intent=intent, existing_jokers=existing_jokers)
+    bonus += _synergy_bonus_with_existing(
+        {"key": key_text, "label": ""}, intent=intent, existing_jokers=existing_jokers
+    )
     return bonus
 
 
@@ -1177,9 +1332,17 @@ def _synergy_bonus_with_existing(
         existing_tags |= set(_joker_tags(joker_key, joker_tokens))
     score = 0
 
-    if intent == _INTENT_FLUSH and _TAG_SUIT_CONVERT in tags and _TAG_FLUSH_PAYOFF in existing_tags:
+    if (
+        intent == _INTENT_FLUSH
+        and _TAG_SUIT_CONVERT in tags
+        and _TAG_FLUSH_PAYOFF in existing_tags
+    ):
         score += 50
-    if intent == _INTENT_FLUSH and _TAG_FLUSH_PAYOFF in tags and _TAG_SUIT_FOCUS in existing_tags:
+    if (
+        intent == _INTENT_FLUSH
+        and _TAG_FLUSH_PAYOFF in tags
+        and _TAG_SUIT_FOCUS in existing_tags
+    ):
         score += 35
     if (
         intent == _INTENT_STRAIGHT
@@ -1193,7 +1356,11 @@ def _synergy_bonus_with_existing(
         and _TAG_STRAIGHT_PAYOFF in existing_tags
     ):
         score += 25
-    if intent == _INTENT_PAIRS and _TAG_PAIRS_SUPPORT_CONSUMABLE in tags and _TAG_PAIRS_PAYOFF in existing_tags:
+    if (
+        intent == _INTENT_PAIRS
+        and _TAG_PAIRS_SUPPORT_CONSUMABLE in tags
+        and _TAG_PAIRS_PAYOFF in existing_tags
+    ):
         score += 35
 
     return score
@@ -1231,7 +1398,11 @@ def _best_purchase_plan(
                 continue
             if money_after_first - second.cost < reserve:
                 continue
-            combined = first.score + second.score + _pair_synergy(first, second, intent=intent, ante=ante)
+            combined = (
+                first.score
+                + second.score
+                + _pair_synergy(first, second, intent=intent, ante=ante)
+            )
             if combined > best_second_total:
                 best_second_total = combined
                 best_second = second
@@ -1272,19 +1443,22 @@ def _pair_synergy(a: _Candidate, b: _Candidate, *, intent: str, ante: int) -> in
         ):
             return 40
     if intent == _INTENT_STRAIGHT:
-        if (_TAG_STRAIGHT_SUPPORT_CONSUMABLE in a_tags and _TAG_STRAIGHT_PAYOFF in b_tags) or (
-            _TAG_STRAIGHT_SUPPORT_CONSUMABLE in b_tags and _TAG_STRAIGHT_PAYOFF in a_tags
+        if (
+            _TAG_STRAIGHT_SUPPORT_CONSUMABLE in a_tags
+            and _TAG_STRAIGHT_PAYOFF in b_tags
+        ) or (
+            _TAG_STRAIGHT_SUPPORT_CONSUMABLE in b_tags
+            and _TAG_STRAIGHT_PAYOFF in a_tags
         ):
             return 40
         if (
-            (_TAG_STRAIGHT_SUPPORT_JOKER in a_tags or _TAG_STRAIGHT_PAYOFF in a_tags)
-            and (_TAG_STRAIGHT_SUPPORT_JOKER in b_tags or _TAG_STRAIGHT_PAYOFF in b_tags)
-        ):
+            _TAG_STRAIGHT_SUPPORT_JOKER in a_tags or _TAG_STRAIGHT_PAYOFF in a_tags
+        ) and (_TAG_STRAIGHT_SUPPORT_JOKER in b_tags or _TAG_STRAIGHT_PAYOFF in b_tags):
             return 25
     if intent == _INTENT_PAIRS:
-        if (_TAG_PAIRS_SUPPORT_CONSUMABLE in a_tags and _TAG_PAIRS_PAYOFF in b_tags) or (
-            _TAG_PAIRS_SUPPORT_CONSUMABLE in b_tags and _TAG_PAIRS_PAYOFF in a_tags
-        ):
+        if (
+            _TAG_PAIRS_SUPPORT_CONSUMABLE in a_tags and _TAG_PAIRS_PAYOFF in b_tags
+        ) or (_TAG_PAIRS_SUPPORT_CONSUMABLE in b_tags and _TAG_PAIRS_PAYOFF in a_tags):
             return 40
 
     if ante >= ANTE_ECON_PENALTY_MIN:
@@ -1296,14 +1470,20 @@ def _voucher_card_synergy(voucher: _Candidate, card: _Candidate, *, intent: str)
     v_key = voucher.identity.get("key", "")
     c_key = card.identity.get("key", "")
     v_rule = _VOUCHER_RULES.get(v_key, {})
-    v_tags = v_rule.get("tags", frozenset()) if isinstance(v_rule, Mapping) else frozenset()
+    v_tags = (
+        v_rule.get("tags", frozenset()) if isinstance(v_rule, Mapping) else frozenset()
+    )
 
     c_tokens = _tokens(card.identity.get("label", ""))
     c_tags = _item_tags(c_key, c_tokens)
 
     if _TAG_REROLL_VOUCHER in v_tags and _TAG_REROLL_ENGINE in c_tags:
         return 20
-    if _TAG_TAROT_SHOP in v_tags and intent == _INTENT_FLUSH and _TAG_SUIT_CONVERT in c_tags:
+    if (
+        _TAG_TAROT_SHOP in v_tags
+        and intent == _INTENT_FLUSH
+        and _TAG_SUIT_CONVERT in c_tags
+    ):
         return 15
     return 0
 

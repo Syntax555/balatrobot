@@ -22,7 +22,9 @@ from balatro_ai.rpc import BalatroRPC
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Best-effort save/load determinism checks via BalatroBot API.")
+    parser = argparse.ArgumentParser(
+        description="Best-effort save/load determinism checks via BalatroBot API."
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=12346)
     parser.add_argument(
@@ -31,7 +33,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="roundtrip",
         help="Which check to run.",
     )
-    parser.add_argument("--save-path", default="", help="Optional explicit path to save to (otherwise uses temp).")
+    parser.add_argument(
+        "--save-path",
+        default="",
+        help="Optional explicit path to save to (otherwise uses temp).",
+    )
     return parser
 
 
@@ -123,4 +129,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

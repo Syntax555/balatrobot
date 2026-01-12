@@ -111,7 +111,6 @@ MIN_SIZE_MEDIUM = 3
 MIN_SIZE_STRONG = 4
 
 
-
 @dataclass(frozen=True)
 class _ScoredCandidate:
     action: Action
@@ -222,13 +221,17 @@ def rollout_step(
         gs_money(gs),
     )
     try:
-        play_candidates = _generate_play_candidates(hand_cards, gs_jokers(gs), intent, cfg.rollout_k)
+        play_candidates = _generate_play_candidates(
+            hand_cards, gs_jokers(gs), intent, cfg.rollout_k
+        )
         discard_candidates = _generate_discard_candidates(hand_cards, intent, cfg, gs)
     except Exception:
         logger.warning("rollout_step: candidate generation failed", exc_info=True)
         count = min(5, len(hand_cards))
         if count > 0:
-            return _apply_action(rpc, Action(kind="play", params={"cards": list(range(count))}))
+            return _apply_action(
+                rpc, Action(kind="play", params={"cards": list(range(count))})
+            )
         return rpc.gamestate()
     save_path = _save_path()
     before_chips = gs_round_chips(gs)
@@ -252,20 +255,35 @@ def rollout_step(
             "mode": "save_failed",
             "candidates": {
                 "plays": [
-                    {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                    {
+                        "score": c.score,
+                        "action": {
+                            "kind": c.action.kind,
+                            "params": dict(c.action.params),
+                        },
+                    }
                     for c in play_candidates[:10]
                 ],
                 "discards": [
-                    {"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]
+                    {"action": {"kind": a.kind, "params": dict(a.params)}}
+                    for a in discard_candidates[:10]
                 ],
             },
             "chosen": {"kind": fallback.kind, "params": dict(fallback.params)},
         }
-        logger.debug("rollout_step: fallback action=%s params=%s", fallback.kind, fallback.params)
+        logger.debug(
+            "rollout_step: fallback action=%s params=%s", fallback.kind, fallback.params
+        )
         return _apply_action(rpc, fallback)
     try:
-        candidates = [candidate.action for candidate in play_candidates] + discard_candidates
-        logger.debug("rollout_step: evaluating %s candidates (save_path=%s)", len(candidates), save_path)
+        candidates = [
+            candidate.action for candidate in play_candidates
+        ] + discard_candidates
+        logger.debug(
+            "rollout_step: evaluating %s candidates (save_path=%s)",
+            len(candidates),
+            save_path,
+        )
         try:
             best = _evaluate_candidates(
                 rpc,
@@ -292,32 +310,52 @@ def rollout_step(
                     "mode": "no_best",
                     "candidates": {
                         "plays": [
-                            {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                            {
+                                "score": c.score,
+                                "action": {
+                                    "kind": c.action.kind,
+                                    "params": dict(c.action.params),
+                                },
+                            }
                             for c in play_candidates[:10]
                         ],
                         "discards": [
-                            {"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]
+                            {"action": {"kind": a.kind, "params": dict(a.params)}}
+                            for a in discard_candidates[:10]
                         ],
                     },
                     "chosen": {"kind": fallback.kind, "params": dict(fallback.params)},
                 }
                 return _apply_action(rpc, fallback)
             return rpc.gamestate()
-        logger.debug("rollout_step: best action=%s reward=%.2f", best.action, best.reward)
+        logger.debug(
+            "rollout_step: best action=%s reward=%.2f", best.action, best.reward
+        )
         try:
             rpc.load(save_path)
         except BalatroRPCError:
-            logger.debug("rollout_step: load failed before applying best action -> using current state")
+            logger.debug(
+                "rollout_step: load failed before applying best action -> using current state"
+            )
         ctx.round_memory["rollout_trace"] = {
             "intent": intent.value,
             "mode": "evaluated",
             "best_reward": best.reward,
             "candidates": {
                 "plays": [
-                    {"score": c.score, "action": {"kind": c.action.kind, "params": dict(c.action.params)}}
+                    {
+                        "score": c.score,
+                        "action": {
+                            "kind": c.action.kind,
+                            "params": dict(c.action.params),
+                        },
+                    }
                     for c in play_candidates[:10]
                 ],
-                "discards": [{"action": {"kind": a.kind, "params": dict(a.params)}} for a in discard_candidates[:10]],
+                "discards": [
+                    {"action": {"kind": a.kind, "params": dict(a.params)}}
+                    for a in discard_candidates[:10]
+                ],
             },
             "chosen": {"kind": best.action.kind, "params": dict(best.action.params)},
         }
@@ -362,7 +400,9 @@ def _fallback_action_on_save_error(
         best_play,
         best_discard,
     )
-    if best_discard is not None and (best_play is None or best_discard.score > best_play.score):
+    if best_discard is not None and (
+        best_play is None or best_discard.score > best_play.score
+    ):
         return best_discard.action
     if best_play is not None:
         return best_play.action
@@ -423,7 +463,9 @@ def _generate_play_candidates(
     parallel_mode = _parallel_mode()
     parallel_workers = _parallel_workers()
     use_parallel = parallel_mode != "0" and parallel_workers >= 2
-    parallel_tasks: list[tuple[tuple[int, ...], list[dict], list[dict], BuildIntent]] = []
+    parallel_tasks: list[
+        tuple[tuple[int, ...], list[dict], list[dict], BuildIntent]
+    ] = []
     for size in _candidate_sizes(hand_cards, intent):
         if size > hand_size:
             continue
@@ -436,7 +478,9 @@ def _generate_play_candidates(
         for combo in combos:
             combo_key = tuple(combo)
             if use_parallel:
-                parallel_tasks.append((combo_key, [hand_cards[i] for i in combo_key], jokers, intent))
+                parallel_tasks.append(
+                    (combo_key, [hand_cards[i] for i in combo_key], jokers, intent)
+                )
                 continue
             evaluation = eval_cache.get(combo_key)
             if evaluation is None:
@@ -453,7 +497,10 @@ def _generate_play_candidates(
                 eval_cache[combo_key] = evaluation
             score = _score_candidate(evaluation, intent)
             candidates.append(
-                _ScoredCandidate(action=Action(kind="play", params={"cards": list(combo_key)}), score=score)
+                _ScoredCandidate(
+                    action=Action(kind="play", params={"cards": list(combo_key)}),
+                    score=score,
+                )
             )
 
     if parallel_tasks:
@@ -464,7 +511,9 @@ def _generate_play_candidates(
             if parallel_mode == "processes":
                 executor: concurrent.futures.Executor = _get_process_pool(max_workers)
             else:
-                executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+                executor = concurrent.futures.ThreadPoolExecutor(
+                    max_workers=max_workers
+                )
             futures = [
                 executor.submit(_score_play_combo, combo, cards, jokers, intent)
                 for (combo, cards, jokers, intent) in parallel_tasks
@@ -473,13 +522,22 @@ def _generate_play_candidates(
                 try:
                     combo_key, score = fut.result()
                 except Exception:
-                    logger.debug("_generate_play_candidates: parallel combo eval failed", exc_info=True)
+                    logger.debug(
+                        "_generate_play_candidates: parallel combo eval failed",
+                        exc_info=True,
+                    )
                     continue
                 candidates.append(
-                    _ScoredCandidate(action=Action(kind="play", params={"cards": list(combo_key)}), score=score)
+                    _ScoredCandidate(
+                        action=Action(kind="play", params={"cards": list(combo_key)}),
+                        score=score,
+                    )
                 )
         except Exception:
-            logger.debug("_generate_play_candidates: parallel evaluation failed; falling back to sequential", exc_info=True)
+            logger.debug(
+                "_generate_play_candidates: parallel evaluation failed; falling back to sequential",
+                exc_info=True,
+            )
             for combo_key, cards, jokers, intent in parallel_tasks:
                 try:
                     evaluation = evaluate_candidate(cards, jokers)
@@ -487,7 +545,10 @@ def _generate_play_candidates(
                 except Exception:
                     score = _EVAL_FAILURE_SCORE
                 candidates.append(
-                    _ScoredCandidate(action=Action(kind="play", params={"cards": list(combo_key)}), score=score)
+                    _ScoredCandidate(
+                        action=Action(kind="play", params={"cards": list(combo_key)}),
+                        score=score,
+                    )
                 )
         finally:
             if parallel_mode != "processes" and "executor" in locals():
@@ -525,14 +586,23 @@ def _generate_discard_candidates(
         return []
     indices = _discard_priority_indices(hand_cards, intent)
     if not indices:
-        logger.debug("_generate_discard_candidates: no discard priority indices -> none")
+        logger.debug(
+            "_generate_discard_candidates: no discard priority indices -> none"
+        )
         return []
     max_candidates = max(ZERO, cfg.discard_m)
     results: list[Action] = []
     deck_cards = gs_deck_cards(gs)
-    deck_playable = [card for card in deck_cards if card_rank(card) > 0 and card_suit(card) is not None]
+    deck_playable = [
+        card
+        for card in deck_cards
+        if card_rank(card) > 0 and card_suit(card) is not None
+    ]
     deck_suits = [card_suit(card) for card in deck_playable]
-    needs_probability = bool(deck_playable) and intent in {BuildIntent.FLUSH, BuildIntent.STRAIGHT}
+    needs_probability = bool(deck_playable) and intent in {
+        BuildIntent.FLUSH,
+        BuildIntent.STRAIGHT,
+    }
     for size in range(DISCARD_MIN_SIZE, DISCARD_MAX_SIZE_EXCLUSIVE):
         combos = list(combinations(indices, size))
         if not needs_probability:
@@ -547,7 +617,11 @@ def _generate_discard_candidates(
             score = 0.0
             try:
                 if intent == BuildIntent.FLUSH:
-                    kept_suits = [card_suit(card) for idx, card in enumerate(hand_cards) if idx not in combo]
+                    kept_suits = [
+                        card_suit(card)
+                        for idx, card in enumerate(hand_cards)
+                        if idx not in combo
+                    ]
                     score = probability_complete_flush_after_draw(
                         kept_suits=kept_suits,
                         deck_suits=deck_suits,
@@ -555,7 +629,11 @@ def _generate_discard_candidates(
                         required=5,
                     )
                 elif intent == BuildIntent.STRAIGHT:
-                    kept_ranks = [card_rank(card) for idx, card in enumerate(hand_cards) if idx not in combo]
+                    kept_ranks = [
+                        card_rank(card)
+                        for idx, card in enumerate(hand_cards)
+                        if idx not in combo
+                    ]
                     score = probability_complete_straight_after_draw(
                         kept_ranks=kept_ranks,
                         deck_cards=deck_playable,
@@ -607,7 +685,9 @@ def _evaluate_candidates(
     best: _EvalResult | None = None
     started = time.perf_counter()
     budget_s = _rollout_time_budget_seconds(cfg)
-    logger.debug("_evaluate_candidates: intent=%s actions=%s", intent.value, len(actions))
+    logger.debug(
+        "_evaluate_candidates: intent=%s actions=%s", intent.value, len(actions)
+    )
     for action in actions:
         if budget_s is not None and (time.perf_counter() - started) >= budget_s:
             logger.debug(
@@ -695,7 +775,9 @@ def _evaluate_discard_candidate(
     return reward, terminal
 
 
-def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) -> float:
+def _reward(
+    gs: Mapping[str, Any], before_chips: int | None, before_money: int
+) -> float:
     reward = REWARD_INITIAL
     state = gs_state(gs)
     if state == "ROUND_EVAL":
@@ -706,12 +788,18 @@ def _reward(gs: Mapping[str, Any], before_chips: int | None, before_money: int) 
     round_chips = gs_round_chips(gs)
     if blind_score and before_chips is not None and round_chips is not None:
         delta = round_chips - before_chips
-        reward += REWARD_CHIPS_DELTA_WEIGHT * delta / max(REWARD_BLIND_SCORE_MIN, blind_score)
+        reward += (
+            REWARD_CHIPS_DELTA_WEIGHT * delta / max(REWARD_BLIND_SCORE_MIN, blind_score)
+        )
         progress = round_chips / max(REWARD_BLIND_SCORE_MIN, blind_score)
         reward += REWARD_PROGRESS_WEIGHT * progress
         if progress >= 1.0:
             reward += REWARD_BEAT_BLIND_BONUS
-        if gs_hands_left(gs) <= 0 and progress < 1.0 and state not in {"ROUND_EVAL", "GAME_OVER"}:
+        if (
+            gs_hands_left(gs) <= 0
+            and progress < 1.0
+            and state not in {"ROUND_EVAL", "GAME_OVER"}
+        ):
             reward -= REWARD_BUST_PENALTY
     reward += REWARD_HANDS_LEFT_WEIGHT * gs_hands_left(gs)
     reward += REWARD_DISCARDS_LEFT_WEIGHT * gs_discards_left(gs)
@@ -762,9 +850,15 @@ def _score_candidate(evaluation: Mapping[str, Any], intent: BuildIntent) -> int:
 
 
 def _intent_bonus(hand_type: HandType, intent: BuildIntent) -> int:
-    if intent == BuildIntent.FLUSH and hand_type in {HandType.FLUSH, HandType.STRAIGHT_FLUSH}:
+    if intent == BuildIntent.FLUSH and hand_type in {
+        HandType.FLUSH,
+        HandType.STRAIGHT_FLUSH,
+    }:
         return INTENT_BONUS_SCORE
-    if intent == BuildIntent.STRAIGHT and hand_type in {HandType.STRAIGHT, HandType.STRAIGHT_FLUSH}:
+    if intent == BuildIntent.STRAIGHT and hand_type in {
+        HandType.STRAIGHT,
+        HandType.STRAIGHT_FLUSH,
+    }:
         return INTENT_BONUS_SCORE
     if intent == BuildIntent.PAIRS and hand_type in {
         HandType.PAIR,
@@ -873,7 +967,11 @@ def _discard_for_straight(hand_cards: list[dict]) -> list[int]:
     target_set = set(target)
     indices = []
     for index, rank in enumerate(ranks):
-        normalized = ACE_LOW_RANK if rank == ACE_HIGH_RANK and ACE_LOW_RANK in target_set else rank
+        normalized = (
+            ACE_LOW_RANK
+            if rank == ACE_HIGH_RANK and ACE_LOW_RANK in target_set
+            else rank
+        )
         if normalized not in target_set:
             indices.append(index)
     if indices:

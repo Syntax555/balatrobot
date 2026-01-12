@@ -17,8 +17,9 @@ from balatro_ai.gs import (
     gs_state,
     gs_won,
 )
-from balatro_ai.pack_rollout import pack_rollout_step
+from balatro_ai.intent_utils import ctx_intent_text
 from balatro_ai.pacing import BackoffPacer
+from balatro_ai.pack_rollout import pack_rollout_step
 from balatro_ai.policy import Policy, PolicyContext
 from balatro_ai.rollout import rollout_step
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
@@ -162,7 +163,11 @@ class BotRunner:
         self._sync_round_context(state)
 
         steps = 0
-        limit = max_steps if isinstance(max_steps, int) and max_steps > 0 else self._config.max_steps
+        limit = (
+            max_steps
+            if isinstance(max_steps, int) and max_steps > 0
+            else self._config.max_steps
+        )
         while steps < limit and gs_state(state) != "GAME_OVER":
             state, steps, pace = self._step(state, steps)
             self._apply_pace(pace)
@@ -234,7 +239,9 @@ class BotRunner:
             action = self._policy.decide(state, self._context)
         except Exception as exc:
             if self._decision_logger is not None:
-                self._decision_logger.log_error(step=decision_step, gs=state, action=None, error=exc)
+                self._decision_logger.log_error(
+                    step=decision_step, gs=state, action=None, error=exc
+                )
             self._logger.warning(
                 "Policy error. Falling back to gamestate.",
                 exc_info=True,
@@ -271,7 +278,9 @@ class BotRunner:
                 )
         except BalatroRPCError as exc:
             if self._decision_logger is not None:
-                self._decision_logger.log_error(step=decision_step, gs=state, action=action, error=exc)
+                self._decision_logger.log_error(
+                    step=decision_step, gs=state, action=action, error=exc
+                )
             self._log_rpc_error(state, exc)
             error_name = self._error_name(exc)
             if error_name in {"INVALID_STATE", "NOT_ALLOWED"}:
@@ -285,7 +294,9 @@ class BotRunner:
             raise
         except Exception as exc:
             if self._decision_logger is not None:
-                self._decision_logger.log_error(step=decision_step, gs=state, action=action, error=exc)
+                self._decision_logger.log_error(
+                    step=decision_step, gs=state, action=action, error=exc
+                )
             self._logger.warning(
                 "Unexpected error executing action=%s params=%s. Falling back to gamestate.",
                 action.kind,
@@ -430,17 +441,12 @@ class BotRunner:
             if not self._rollouts_safe(gs, kind="pack"):
                 from balatro_ai.pack_policy import PackPolicy
 
-                intent_value = self._context.round_memory.get("intent")
-                if intent_value is None:
-                    intent_value = self._context.run_memory.get("intent")
-                intent_text = ""
-                if isinstance(intent_value, str):
-                    intent_text = intent_value
-                else:
-                    inner = getattr(intent_value, "value", None)
-                    if isinstance(inner, str):
-                        intent_text = inner
-                action = PackPolicy().choose_action(gs, self._config, self._context, intent_text)
+                action = PackPolicy().choose_action(
+                    gs,
+                    self._config,
+                    self._context,
+                    ctx_intent_text(self._context) or "",
+                )
                 return self._dispatch_action(action, gs)
             try:
                 return pack_rollout_step(gs, self._config, self._context, self._client)
@@ -458,17 +464,12 @@ class BotRunner:
                 )
                 from balatro_ai.pack_policy import PackPolicy
 
-                intent_value = self._context.round_memory.get("intent")
-                if intent_value is None:
-                    intent_value = self._context.run_memory.get("intent")
-                intent_text = ""
-                if isinstance(intent_value, str):
-                    intent_text = intent_value
-                else:
-                    inner = getattr(intent_value, "value", None)
-                    if isinstance(inner, str):
-                        intent_text = inner
-                action = PackPolicy().choose_action(gs, self._config, self._context, intent_text)
+                action = PackPolicy().choose_action(
+                    gs,
+                    self._config,
+                    self._context,
+                    ctx_intent_text(self._context) or "",
+                )
                 return self._dispatch_action(action, gs)
         if action.kind == "gamestate":
             return self._client.gamestate()
@@ -610,14 +611,18 @@ class BotRunner:
             if not self._context.run_memory.get("rollouts_determinism_checked"):
                 self._context.run_memory["rollouts_determinism_checked"] = True
                 self._context.run_memory["rollouts_deterministic"] = True
-                self._logger.info("Determinism probe passed; save/load rollouts enabled.")
+                self._logger.info(
+                    "Determinism probe passed; save/load rollouts enabled."
+                )
             return True
 
         self._rollouts_allowed = False
         self._rollouts_disabled_reason = reason or "non_deterministic"
         self._context.run_memory["rollouts_determinism_checked"] = True
         self._context.run_memory["rollouts_deterministic"] = False
-        self._context.run_memory["rollouts_disabled_reason"] = self._rollouts_disabled_reason
+        self._context.run_memory["rollouts_disabled_reason"] = (
+            self._rollouts_disabled_reason
+        )
         self._logger.warning(
             "Disabling save/load rollouts due to non-deterministic behavior (%s).",
             self._rollouts_disabled_reason,

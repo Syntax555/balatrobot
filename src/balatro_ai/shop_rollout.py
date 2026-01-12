@@ -11,9 +11,14 @@ from balatro_ai.actions import Action
 from balatro_ai.config import Config
 from balatro_ai.gs import gs_ante, gs_deck_cards, gs_jokers, gs_money, gs_state
 from balatro_ai.intent_manager import IntentManager
+from balatro_ai.intent_utils import ctx_intent_text
 from balatro_ai.pack_rollout import pack_rollout_step
 from balatro_ai.rpc import BalatroRPC, BalatroRPCError
-from balatro_ai.shop_policy import ShopPolicy, ShopRolloutCandidate, generate_shop_rollout_candidates
+from balatro_ai.shop_policy import (
+    ShopPolicy,
+    ShopRolloutCandidate,
+    generate_shop_rollout_candidates,
+)
 
 
 def shop_rollout_step(
@@ -39,7 +44,9 @@ def shop_rollout_step(
         return _apply_sequence(rpc, [action], cfg=cfg, ctx=ctx)
 
     try:
-        sequences = generate_shop_rollout_candidates(gs, cfg, ctx, limit=cfg.shop_rollout_candidates)
+        sequences = generate_shop_rollout_candidates(
+            gs, cfg, ctx, limit=cfg.shop_rollout_candidates
+        )
         if not sequences:
             action = ShopPolicy().choose_action(gs, cfg, ctx)
             return _apply_sequence(rpc, [action], cfg=cfg, ctx=ctx)
@@ -70,7 +77,9 @@ def shop_rollout_step(
                 detail = {"error": type(exc).__name__}
             trace_rows.append(
                 {
-                    "actions": [{"kind": a.kind, "params": dict(a.params)} for a in seq.actions],
+                    "actions": [
+                        {"kind": a.kind, "params": dict(a.params)} for a in seq.actions
+                    ],
                     "heuristic_score": seq.heuristic_score,
                     "reward": reward,
                     **seq.detail,
@@ -90,9 +99,11 @@ def shop_rollout_step(
         ctx.round_memory["shop_trace"] = {
             "mode": "snapshot",
             "ante": gs_ante(gs),
-            "intent": _intent_text(ctx),
+            "intent": ctx_intent_text(ctx),
             "candidates": trace_rows,
-            "chosen": [{"kind": a.kind, "params": dict(a.params)} for a in chosen.actions],
+            "chosen": [
+                {"kind": a.kind, "params": dict(a.params)} for a in chosen.actions
+            ],
             "elapsed_s": time.perf_counter() - started,
         }
         return _apply_sequence(rpc, chosen.actions, cfg=cfg, ctx=ctx)
@@ -103,7 +114,9 @@ def shop_rollout_step(
             pass
 
 
-def _apply_sequence(rpc: BalatroRPC, actions: list[Action], *, cfg: Config, ctx: Any) -> dict:
+def _apply_sequence(
+    rpc: BalatroRPC, actions: list[Action], *, cfg: Config, ctx: Any
+) -> dict:
     state: dict[str, Any] = {}
     for action in actions:
         state = _apply_one(rpc, action)
@@ -113,7 +126,7 @@ def _apply_sequence(rpc: BalatroRPC, actions: list[Action], *, cfg: Config, ctx:
             else:
                 from balatro_ai.pack_policy import PackPolicy
 
-                intent = _intent_text(ctx) or ""
+                intent = ctx_intent_text(ctx) or ""
                 action2 = PackPolicy().choose_action(state, cfg, ctx, intent)
                 state = rpc.pack(
                     card=action2.params.get("card"),
@@ -128,7 +141,11 @@ def _apply_sequence(rpc: BalatroRPC, actions: list[Action], *, cfg: Config, ctx:
 def _apply_one(rpc: BalatroRPC, action: Action) -> dict:
     params = action.params
     if action.kind == "buy":
-        return rpc.buy(card=params.get("card"), voucher=params.get("voucher"), pack=params.get("pack"))
+        return rpc.buy(
+            card=params.get("card"),
+            voucher=params.get("voucher"),
+            pack=params.get("pack"),
+        )
     if action.kind == "sell":
         return rpc.sell(joker=params.get("joker"), consumable=params.get("consumable"))
     if action.kind == "reroll":
@@ -149,7 +166,11 @@ def _shop_reward(
     evaluation = intent_mgr.evaluate(dict(gs), gs_deck_cards(gs))
     best_score = evaluation.scores.get(evaluation.intent, 0.0)
     # Reward improvements to predicted deck value and also preserve economy.
-    reward = (best_score - before_best_score) * 2000.0 + (money - before_money) * 1.0 + len(gs_jokers(gs)) * 0.1
+    reward = (
+        (best_score - before_best_score) * 2000.0
+        + (money - before_money) * 1.0
+        + len(gs_jokers(gs)) * 0.1
+    )
     return reward, {
         "money_delta": money - before_money,
         "best_intent": evaluation.intent.value,
@@ -158,19 +179,6 @@ def _shop_reward(
     }
 
 
-def _intent_text(ctx: Any) -> str | None:
-    value = None
-    if hasattr(ctx, "round_memory"):
-        value = ctx.round_memory.get("intent")
-    if value is None and hasattr(ctx, "run_memory"):
-        value = ctx.run_memory.get("intent")
-    if isinstance(value, str):
-        return value
-    inner = getattr(value, "value", None)
-    return inner if isinstance(inner, str) else None
-
-
 def _save_path() -> str:
     filename = f"balatrobot_shop_rollout_{uuid.uuid4().hex}.jkr"
     return os.path.join(tempfile.gettempdir(), filename)
-

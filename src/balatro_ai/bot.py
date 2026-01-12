@@ -66,7 +66,9 @@ def _upper_choice(name: str, allowed: frozenset[str]):
             raise argparse.ArgumentTypeError(f"{name} is required")
         if normalized not in allowed:
             options = ", ".join(sorted(allowed))
-            raise argparse.ArgumentTypeError(f"invalid {name} {normalized!r}; expected one of: {options}")
+            raise argparse.ArgumentTypeError(
+                f"invalid {name} {normalized!r}; expected one of: {options}"
+            )
         return normalized
 
     return parse
@@ -128,14 +130,41 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser for the bot."""
     parser = argparse.ArgumentParser(description="Run a BalatroBot client.")
     parser.add_argument("--host", default="127.0.0.1", help="BalatroBot host")
-    parser.add_argument("--port", default=12346, type=_positive_int("--port"), help="BalatroBot port")
-    parser.add_argument("--deck", default="RED", type=_upper_choice("--deck", _VALID_DECKS), help="Deck to use")
-    parser.add_argument("--stake", default="WHITE", type=_upper_choice("--stake", _VALID_STAKES), help="Stake level to use")
+    parser.add_argument(
+        "--port", default=12346, type=_positive_int("--port"), help="BalatroBot port"
+    )
+    parser.add_argument(
+        "--deck",
+        default="RED",
+        type=_upper_choice("--deck", _VALID_DECKS),
+        help="Deck to use",
+    )
+    parser.add_argument(
+        "--stake",
+        default="WHITE",
+        type=_upper_choice("--stake", _VALID_STAKES),
+        help="Stake level to use",
+    )
     parser.add_argument("--seed", default=None, help="Optional seed for the run")
-    parser.add_argument("--max-steps", default=1000, type=_positive_int("--max-steps"), help="Max steps to run")
-    parser.add_argument("--timeout", default=10.0, type=_positive_float("--timeout"), help="HTTP timeout seconds")
+    parser.add_argument(
+        "--max-steps",
+        default=1000,
+        type=_positive_int("--max-steps"),
+        help="Max steps to run",
+    )
+    parser.add_argument(
+        "--timeout",
+        default=10.0,
+        type=_positive_float("--timeout"),
+        help="HTTP timeout seconds",
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging level")
-    parser.add_argument("--rollout-k", default=30, type=_positive_int("--rollout-k"), help="Rollout depth")
+    parser.add_argument(
+        "--rollout-k",
+        default=30,
+        type=_positive_int("--rollout-k"),
+        help="Rollout depth",
+    )
     parser.add_argument(
         "--hand-rollout",
         action=argparse.BooleanOptionalAction,
@@ -159,10 +188,30 @@ def build_parser() -> argparse.ArgumentParser:
         type=_nonnegative_float("--rollout-time-budget-s"),
         help="Per-step rollout evaluation time budget seconds (default: env BALATRO_AI_ROLLOUT_TIME_BUDGET_S).",
     )
-    parser.add_argument("--discard-m", default=12, type=_nonnegative_int("--discard-m"), help="Discard candidates")
-    parser.add_argument("--reserve-early", default=10, type=_nonnegative_int("--reserve-early"), help="Early reserve")
-    parser.add_argument("--reserve-mid", default=20, type=_nonnegative_int("--reserve-mid"), help="Mid reserve")
-    parser.add_argument("--reserve-late", default=25, type=_nonnegative_int("--reserve-late"), help="Late reserve")
+    parser.add_argument(
+        "--discard-m",
+        default=12,
+        type=_nonnegative_int("--discard-m"),
+        help="Discard candidates",
+    )
+    parser.add_argument(
+        "--reserve-early",
+        default=10,
+        type=_nonnegative_int("--reserve-early"),
+        help="Early reserve",
+    )
+    parser.add_argument(
+        "--reserve-mid",
+        default=20,
+        type=_nonnegative_int("--reserve-mid"),
+        help="Mid reserve",
+    )
+    parser.add_argument(
+        "--reserve-late",
+        default=25,
+        type=_nonnegative_int("--reserve-late"),
+        help="Late reserve",
+    )
     parser.add_argument(
         "--max-rerolls-per-shop",
         default=1,

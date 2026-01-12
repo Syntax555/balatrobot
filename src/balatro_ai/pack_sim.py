@@ -91,15 +91,21 @@ def evaluate_pack_choice(
     if not intent_mode:
         return [0.0 for _ in pack_cards]
 
-    base_rng = random.Random(_stable_seed(seed_text or f"pack-sim|{intent_mode}|{len(deck_cards)}"))
+    base_rng = random.Random(
+        _stable_seed(seed_text or f"pack-sim|{intent_mode}|{len(deck_cards)}")
+    )
     base = _simulate_value(deck_cards, intent_mode, trials, base_rng)
 
     scores: list[float] = []
     for index, pack_card in enumerate(pack_cards):
         rng = random.Random(
-            _stable_seed((seed_text or "pack-sim") + f"|{intent_mode}|{len(deck_cards)}|{index}")
+            _stable_seed(
+                (seed_text or "pack-sim") + f"|{intent_mode}|{len(deck_cards)}|{index}"
+            )
         )
-        scores.append(_score_pack_card(deck_cards, pack_card, intent_mode, base, trials, rng))
+        scores.append(
+            _score_pack_card(deck_cards, pack_card, intent_mode, base, trials, rng)
+        )
     return scores
 
 
@@ -118,7 +124,9 @@ def _score_pack_card(
     chance of producing the intent hand type.
     """
     if _is_playing_card(pack_card):
-        forced = _simulate_value_with_forced_card(deck_cards, pack_card, intent_mode, trials, rng)
+        forced = _simulate_value_with_forced_card(
+            deck_cards, pack_card, intent_mode, trials, rng
+        )
         draw_prob = min(1.0, HAND_SIZE / (len(deck_cards) + 1))
         return draw_prob * (forced.value - base.value)
 
@@ -133,7 +141,9 @@ def _score_pack_card(
         destroy_count = _DESTROY_COUNT_BY_KEY.get(key, 0)
         if destroy_count > 0:
             target_suit = _majority_suit(deck_cards)
-            thinned = _destroy_off_suit(deck_cards, target_suit=target_suit, count=destroy_count)
+            thinned = _destroy_off_suit(
+                deck_cards, target_suit=target_suit, count=destroy_count
+            )
             new_hit = deck_flush_hit_probability(thinned, hand_size=HAND_SIZE)
             return HIT_WEIGHT * (new_hit - base.hit_rate)
         if key == "c_death":
@@ -144,7 +154,9 @@ def _score_pack_card(
         if key == "c_familiar":
             target_suit = _majority_suit(deck_cards)
             added = [dict(rank=rank, suit=target_suit) for rank in _FACE_RANKS]
-            new_hit = deck_flush_hit_probability([*deck_cards, *added], hand_size=HAND_SIZE)
+            new_hit = deck_flush_hit_probability(
+                [*deck_cards, *added], hand_size=HAND_SIZE
+            )
             return HIT_WEIGHT * (new_hit - base.hit_rate)
 
     if intent_mode == "straight":
@@ -161,7 +173,9 @@ def _score_pack_card(
             if not shift:
                 return 0.0
             from_rank, to_rank = shift
-            modified = _apply_rank_shift(deck_cards, from_rank=from_rank, to_rank=to_rank)
+            modified = _apply_rank_shift(
+                deck_cards, from_rank=from_rank, to_rank=to_rank
+            )
             new_hit = deck_straight_hit_probability(modified, hand_size=HAND_SIZE)
             return HIT_WEIGHT * (new_hit - base.hit_rate)
         if key == "c_familiar":
@@ -170,9 +184,12 @@ def _score_pack_card(
                 return 0.0
             suits = list(SUITS) if SUITS else ["spades", "hearts", "diamonds", "clubs"]
             added = [
-                dict(rank=rank, suit=suits[i % len(suits)]) for i, rank in enumerate(added_ranks)
+                dict(rank=rank, suit=suits[i % len(suits)])
+                for i, rank in enumerate(added_ranks)
             ]
-            new_hit = deck_straight_hit_probability([*deck_cards, *added], hand_size=HAND_SIZE)
+            new_hit = deck_straight_hit_probability(
+                [*deck_cards, *added], hand_size=HAND_SIZE
+            )
             return HIT_WEIGHT * (new_hit - base.hit_rate)
 
     if intent_mode == "pairs":
@@ -181,12 +198,17 @@ def _score_pack_card(
             if not shift:
                 return 0.0
             from_rank, to_rank = shift
-            modified = _apply_rank_shift(deck_cards, from_rank=from_rank, to_rank=to_rank)
+            modified = _apply_rank_shift(
+                deck_cards, from_rank=from_rank, to_rank=to_rank
+            )
             new = _simulate_value(modified, intent_mode, trials, rng)
             return new.value - base.value
         if key == "c_familiar":
             suits = list(SUITS) if SUITS else ["spades", "hearts", "diamonds", "clubs"]
-            added = [dict(rank=rank, suit=suits[i % len(suits)]) for i, rank in enumerate(_FACE_RANKS)]
+            added = [
+                dict(rank=rank, suit=suits[i % len(suits)])
+                for i, rank in enumerate(_FACE_RANKS)
+            ]
             new = _simulate_value([*deck_cards, *added], intent_mode, trials, rng)
             return new.value - base.value
 
@@ -209,7 +231,9 @@ def _simulate_value(
         for _ in range(max(1, trials)):
             hand = _draw_hand(deck_cards, rng)
             if intent_mode == "flush":
-                quality_sum += float(max_suit_count_from_suits(card_suit(card) for card in hand))
+                quality_sum += float(
+                    max_suit_count_from_suits(card_suit(card) for card in hand)
+                )
             else:
                 quality_sum += float(
                     max_straight_window_count_from_ranks(
@@ -260,15 +284,21 @@ def _simulate_value_with_forced_card(
     if intent_mode in {"flush", "straight"}:
         quality_sum = 0.0
         hit_rate = (
-            deck_flush_hit_probability_with_forced_card(deck_cards, forced, hand_size=HAND_SIZE)
+            deck_flush_hit_probability_with_forced_card(
+                deck_cards, forced, hand_size=HAND_SIZE
+            )
             if intent_mode == "flush"
-            else deck_straight_hit_probability_with_forced_card(deck_cards, forced, hand_size=HAND_SIZE)
+            else deck_straight_hit_probability_with_forced_card(
+                deck_cards, forced, hand_size=HAND_SIZE
+            )
         )
         for _ in range(max(1, trials)):
             others = _draw_other_cards(deck_cards, HAND_SIZE - 1, rng)
             hand = [forced, *others]
             if intent_mode == "flush":
-                quality_sum += float(max_suit_count_from_suits(card_suit(card) for card in hand))
+                quality_sum += float(
+                    max_suit_count_from_suits(card_suit(card) for card in hand)
+                )
             else:
                 quality_sum += float(
                     max_straight_window_count_from_ranks(
@@ -315,7 +345,9 @@ def _draw_hand(deck_cards: Sequence[dict], rng: random.Random) -> list[dict]:
     return rng.sample(list(deck_cards), k=HAND_SIZE)
 
 
-def _draw_other_cards(deck_cards: Sequence[dict], count: int, rng: random.Random) -> list[dict]:
+def _draw_other_cards(
+    deck_cards: Sequence[dict], count: int, rng: random.Random
+) -> list[dict]:
     if count <= 0:
         return []
     if len(deck_cards) <= count:
@@ -343,7 +375,9 @@ def _intent_quality(features: Mapping[str, Any], intent_mode: str) -> float:
     return 0.0
 
 
-def _value_from(hit: bool, quality: float, features: Mapping[str, Any], intent_mode: str) -> float:
+def _value_from(
+    hit: bool, quality: float, features: Mapping[str, Any], intent_mode: str
+) -> float:
     if not intent_mode:
         return 0.0
     if intent_mode in {"flush", "straight", "pairs"}:
@@ -395,8 +429,12 @@ def _majority_suit(deck_cards: Sequence[Mapping[str, Any]]) -> str:
     return max(ordered_suits, key=lambda s: (counts.get(s, 0), -ordered_suits.index(s)))
 
 
-def _convert_suit(deck_cards: Sequence[dict], *, target_suit: str, count: int) -> list[dict]:
-    if count <= 0 or target_suit not in (SUITS or ("spades", "hearts", "diamonds", "clubs")):
+def _convert_suit(
+    deck_cards: Sequence[dict], *, target_suit: str, count: int
+) -> list[dict]:
+    if count <= 0 or target_suit not in (
+        SUITS or ("spades", "hearts", "diamonds", "clubs")
+    ):
         return list(deck_cards)
     modified = [dict(card) for card in deck_cards]
     remaining = int(count)
@@ -411,7 +449,9 @@ def _convert_suit(deck_cards: Sequence[dict], *, target_suit: str, count: int) -
     return modified
 
 
-def _destroy_off_suit(deck_cards: Sequence[dict], *, target_suit: str, count: int) -> list[dict]:
+def _destroy_off_suit(
+    deck_cards: Sequence[dict], *, target_suit: str, count: int
+) -> list[dict]:
     if count <= 0:
         return list(deck_cards)
     remaining = int(count)
@@ -435,7 +475,9 @@ def _rank_counts(deck_cards: Sequence[Mapping[str, Any]]) -> dict[int, int]:
     return counts
 
 
-def _straight_hit_probability_from_rank_counts(rank_counts: Mapping[int, int], deck_size: int) -> float:
+def _straight_hit_probability_from_rank_counts(
+    rank_counts: Mapping[int, int], deck_size: int
+) -> float:
     if deck_size < HAND_SIZE:
         return 0.0
     denom = comb(deck_size, HAND_SIZE)
@@ -445,7 +487,9 @@ def _straight_hit_probability_from_rank_counts(rank_counts: Mapping[int, int], d
     for start in range(1, 11):
         ways = 1
         for rank in range(start, start + 5):
-            count = int(rank_counts.get(14, 0) if rank == 1 else rank_counts.get(rank, 0))
+            count = int(
+                rank_counts.get(14, 0) if rank == 1 else rank_counts.get(rank, 0)
+            )
             ways *= count
             if ways == 0:
                 break
@@ -482,7 +526,9 @@ def _best_strength_from_ranks(deck_cards: Sequence[Mapping[str, Any]]) -> list[i
     return best
 
 
-def _apply_rank_increments(deck_cards: Sequence[dict], from_ranks: Sequence[int]) -> list[dict]:
+def _apply_rank_increments(
+    deck_cards: Sequence[dict], from_ranks: Sequence[int]
+) -> list[dict]:
     modified = [dict(card) for card in deck_cards]
     remaining: dict[int, int] = {}
     for rank in from_ranks:
@@ -500,7 +546,9 @@ def _apply_rank_increments(deck_cards: Sequence[dict], from_ranks: Sequence[int]
     return modified
 
 
-def _best_rank_shift_for_straight(deck_cards: Sequence[Mapping[str, Any]]) -> tuple[int, int] | None:
+def _best_rank_shift_for_straight(
+    deck_cards: Sequence[Mapping[str, Any]],
+) -> tuple[int, int] | None:
     counts = _rank_counts(deck_cards)
     if not counts:
         return None
@@ -524,7 +572,9 @@ def _best_rank_shift_for_straight(deck_cards: Sequence[Mapping[str, Any]]) -> tu
     return best_shift
 
 
-def _best_ranks_to_add_for_straight(deck_cards: Sequence[Mapping[str, Any]], *, count: int) -> list[int]:
+def _best_ranks_to_add_for_straight(
+    deck_cards: Sequence[Mapping[str, Any]], *, count: int
+) -> list[int]:
     if count <= 0:
         return []
     counts = _rank_counts(deck_cards)
@@ -556,13 +606,18 @@ def _best_ranks_to_add_for_straight(deck_cards: Sequence[Mapping[str, Any]], *, 
     return chosen
 
 
-def _best_rank_shift_for_pairs(deck_cards: Sequence[Mapping[str, Any]]) -> tuple[int, int] | None:
+def _best_rank_shift_for_pairs(
+    deck_cards: Sequence[Mapping[str, Any]],
+) -> tuple[int, int] | None:
     counts = _rank_counts(deck_cards)
     if len(counts) < 2:
         return None
     ranks = sorted(counts.items(), key=lambda item: (-item[1], -item[0]))
     to_rank = ranks[0][0]
-    from_rank = min((rank for rank in counts if rank != to_rank), key=lambda r: (counts.get(r, 0), r))
+    from_rank = min(
+        (rank for rank in counts if rank != to_rank),
+        key=lambda r: (counts.get(r, 0), r),
+    )
     if counts.get(from_rank, 0) <= 0:
         return None
     return (from_rank, to_rank)

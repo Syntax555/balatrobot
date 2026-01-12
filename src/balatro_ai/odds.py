@@ -26,7 +26,9 @@ def _comb_cached(n: int, k: int) -> int:
     return math.comb(n, k)
 
 
-def hypergeom_at_least(*, population: int, successes: int, draws: int, k_min: int) -> float:
+def hypergeom_at_least(
+    *, population: int, successes: int, draws: int, k_min: int
+) -> float:
     """
     P(X >= k_min) where X ~ Hypergeometric(population, successes, draws).
     """
@@ -68,7 +70,9 @@ def probability_of_flush_draw(
     )
 
 
-def deck_flush_hit_probability(deck_cards: Sequence[Mapping[str, Any]], *, hand_size: int = 5) -> float:
+def deck_flush_hit_probability(
+    deck_cards: Sequence[Mapping[str, Any]], *, hand_size: int = 5
+) -> float:
     playable = [card for card in deck_cards if _is_playing_card(card)]
     n = len(playable)
     if hand_size <= 0:
@@ -112,14 +116,18 @@ def deck_flush_hit_probability_with_forced_card(
     return float(comb(suit_count, draws)) / float(denom)
 
 
-def deck_straight_hit_probability(deck_cards: Sequence[Mapping[str, Any]], *, hand_size: int = 5) -> float:
+def deck_straight_hit_probability(
+    deck_cards: Sequence[Mapping[str, Any]], *, hand_size: int = 5
+) -> float:
     """
     Exact P(hand is a straight) for a `hand_size` draw, ignoring suits.
 
     Assumes a straight requires `hand_size` distinct consecutive ranks (A can be low).
     """
     if hand_size != 5:
-        raise ValueError("deck_straight_hit_probability currently supports hand_size=5 only")
+        raise ValueError(
+            "deck_straight_hit_probability currently supports hand_size=5 only"
+        )
     playable = [card for card in deck_cards if _is_playing_card(card)]
     n = len(playable)
     if n < hand_size:
@@ -146,7 +154,9 @@ def deck_straight_hit_probability_with_forced_card(
     hand_size: int = 5,
 ) -> float:
     if hand_size != 5:
-        raise ValueError("deck_straight_hit_probability_with_forced_card currently supports hand_size=5 only")
+        raise ValueError(
+            "deck_straight_hit_probability_with_forced_card currently supports hand_size=5 only"
+        )
     draws = hand_size - 1
     playable = [card for card in deck_cards if _is_playing_card(card)]
     n = len(playable)
@@ -231,7 +241,9 @@ def probability_complete_straight_after_draw(
     hand_size: int = 5,
 ) -> float:
     if hand_size != 5:
-        raise ValueError("probability_complete_straight_after_draw currently supports hand_size=5 only")
+        raise ValueError(
+            "probability_complete_straight_after_draw currently supports hand_size=5 only"
+        )
     draws = max(0, int(draws))
     if draws <= 0:
         return 1.0 if _has_straight_from_ranks(kept_ranks) else 0.0

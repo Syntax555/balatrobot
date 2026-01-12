@@ -80,8 +80,6 @@ FIRST_INDEX = 0
 SECOND_INDEX = 1
 
 
-
-
 def infer_intent(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     """Infer a build intent and confidence from the game state."""
     joker_intent = _intent_from_jokers(gs)
@@ -203,7 +201,11 @@ def _intent_from_hand(gs: Mapping[str, Any]) -> tuple[BuildIntent, float]:
     if best[SECOND_INDEX] <= CONFIDENCE_NONE:
         logger.debug("intent_from_hand: no confidence")
         return BuildIntent.HIGH_CARD, CONFIDENCE_NONE
-    logger.debug("intent_from_hand: best=%s conf=%.2f", best[FIRST_INDEX].value, best[SECOND_INDEX])
+    logger.debug(
+        "intent_from_hand: best=%s conf=%.2f",
+        best[FIRST_INDEX].value,
+        best[SECOND_INDEX],
+    )
     return best
 
 
@@ -270,7 +272,9 @@ def _deck_flush_conf(deck_cards: list[dict]) -> float:
 
 def _pairs_conf(hand: list[dict]) -> float:
     ranks = [card_rank(card) for card in hand]
-    max_dup = max_rank_count_from_ranks(ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN)
+    max_dup = max_rank_count_from_ranks(
+        ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN
+    )
     if max_dup >= PAIRS_MIN_DUPLICATE_COUNT:
         return min(CONFIDENCE_MAX, max_dup / PAIRS_CONFIDENCE_DIVISOR)
     return CONFIDENCE_NONE
@@ -306,7 +310,9 @@ def _straight_conf(hand: list[dict]) -> float:
 def _deck_straight_conf(deck_cards: list[dict]) -> float:
     deck_size = len(deck_cards)
     ranks = [card_rank(card) for card in deck_cards]
-    counts = rank_counts_from_ranks(ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN)
+    counts = rank_counts_from_ranks(
+        ranks, include_unknown=False, unknown_rank=RANK_UNKNOWN
+    )
     if not counts:
         return DECK_CONFIDENCE_NONE
     ace_count = counts.get(ACE_HIGH_RANK, 0)
@@ -314,8 +320,7 @@ def _deck_straight_conf(deck_cards: list[dict]) -> float:
     max_window = 0
     for start in range(ACE_LOW_RANK, 11):
         window_sum = sum(
-            counts.get(rank, 0)
-            for rank in range(start, start + STRAIGHT_WINDOW_SIZE)
+            counts.get(rank, 0) for rank in range(start, start + STRAIGHT_WINDOW_SIZE)
         )
         if window_sum > max_window:
             max_window = window_sum

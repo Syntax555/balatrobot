@@ -16,7 +16,9 @@ class ShopAdvisor:
     def __init__(self, shop_policy: ShopPolicy | None = None) -> None:
         self._shop_policy = shop_policy or ShopPolicy()
 
-    def decide(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> Action:
+    def decide(
+        self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
+    ) -> Action:
         reorder_action = maybe_reorder_jokers(gs, ctx)
         if reorder_action is not None:
             logger.debug(

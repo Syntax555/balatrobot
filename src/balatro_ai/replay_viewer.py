@@ -10,13 +10,25 @@ from typing import Any
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="View Balatro AI decision logs (JSONL).")
+    parser = argparse.ArgumentParser(
+        description="View Balatro AI decision logs (JSONL)."
+    )
     parser.add_argument("--log", required=True, help="Path to a JSONL decision log.")
-    parser.add_argument("--limit", type=int, default=0, help="Max lines to print (0 = all).")
-    parser.add_argument("--event", default="", help="Filter by event type (decision/result/error).")
-    parser.add_argument("--action", default="", help="Filter by action kind (e.g., buy, reroll, rollout).")
+    parser.add_argument(
+        "--limit", type=int, default=0, help="Max lines to print (0 = all)."
+    )
+    parser.add_argument(
+        "--event", default="", help="Filter by event type (decision/result/error)."
+    )
+    parser.add_argument(
+        "--action",
+        default="",
+        help="Filter by action kind (e.g., buy, reroll, rollout).",
+    )
     parser.add_argument("--state", default="", help="Filter by state (e.g., SHOP).")
-    parser.add_argument("--stats", action="store_true", help="Print summary stats instead of entries.")
+    parser.add_argument(
+        "--stats", action="store_true", help="Print summary stats instead of entries."
+    )
     return parser
 
 
@@ -66,10 +78,14 @@ def _print_record(record: dict[str, Any]) -> None:
             state = after.get("state")
     intent = record.get("intent")
     money = None
-    after = record.get("after") if record.get("event") == "result" else record.get("state")
+    after = (
+        record.get("after") if record.get("event") == "result" else record.get("state")
+    )
     if isinstance(after, dict):
         money = after.get("money")
-    print(f"step={step} event={event} state={state} action={action_kind} intent={intent} money={money} seed={seed}")
+    print(
+        f"step={step} event={event} state={state} action={action_kind} intent={intent} money={money} seed={seed}"
+    )
     if event == "error":
         err = record.get("error") or {}
         if isinstance(err, dict):
@@ -88,7 +104,11 @@ def main(argv: list[str] | None = None) -> int:
     state = (args.state or "").strip()
     limit = int(args.limit or 0)
 
-    records = (r for r in _iter_records(path) if _match(r, event=event, action=action, state=state))
+    records = (
+        r
+        for r in _iter_records(path)
+        if _match(r, event=event, action=action, state=state)
+    )
     if args.stats:
         counts = Counter()
         action_counts = Counter()
@@ -119,4 +139,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

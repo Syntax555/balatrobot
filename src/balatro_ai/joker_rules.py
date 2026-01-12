@@ -55,21 +55,41 @@ _RULES: dict[str, JokerRule] = {
     "j_wrathful_joker": JokerRule(category="mult", effect_type="mult"),
     "j_gluttenous_joker": JokerRule(category="mult", effect_type="mult"),
     "j_gluttonous_joker": JokerRule(category="mult", effect_type="mult"),
-    "j_jolly": JokerRule(category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})),
-    "j_zany": JokerRule(category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})),
-    "j_mad": JokerRule(category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})),
-    "j_crazy": JokerRule(category="mult", effect_type="mult", tags=frozenset({"straight_payoff"})),
-    "j_droll": JokerRule(category="mult", effect_type="mult", tags=frozenset({"flush_payoff"})),
+    "j_jolly": JokerRule(
+        category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_zany": JokerRule(
+        category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_mad": JokerRule(
+        category="mult", effect_type="mult", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_crazy": JokerRule(
+        category="mult", effect_type="mult", tags=frozenset({"straight_payoff"})
+    ),
+    "j_droll": JokerRule(
+        category="mult", effect_type="mult", tags=frozenset({"flush_payoff"})
+    ),
     "j_half": JokerRule(category="mult", effect_type="mult"),
     "j_misprint": JokerRule(category="mult", effect_type="mult"),
     "j_abstract": JokerRule(category="mult", effect_type="mult"),
     "j_raised_fist": JokerRule(category="mult", effect_type="mult"),
     "j_fibonacci": JokerRule(category="mult", effect_type="mult"),
-    "j_sly": JokerRule(category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})),
-    "j_wily": JokerRule(category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})),
-    "j_clever": JokerRule(category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})),
-    "j_devious": JokerRule(category="chips", effect_type="chips", tags=frozenset({"straight_payoff"})),
-    "j_crafty": JokerRule(category="chips", effect_type="chips", tags=frozenset({"flush_payoff"})),
+    "j_sly": JokerRule(
+        category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_wily": JokerRule(
+        category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_clever": JokerRule(
+        category="chips", effect_type="chips", tags=frozenset({"pairs_payoff"})
+    ),
+    "j_devious": JokerRule(
+        category="chips", effect_type="chips", tags=frozenset({"straight_payoff"})
+    ),
+    "j_crafty": JokerRule(
+        category="chips", effect_type="chips", tags=frozenset({"flush_payoff"})
+    ),
     "j_banner": JokerRule(category="chips", effect_type="chips"),
     "j_scary_face": JokerRule(category="chips", effect_type="chips"),
     "j_stencil": JokerRule(category="xmult", effect_type="xmult"),
@@ -78,8 +98,18 @@ _RULES: dict[str, JokerRule] = {
     "j_mime": JokerRule(category="xmult", effect_type="xmult"),
     "j_dusk": JokerRule(category="xmult", effect_type="xmult"),
     "j_hack": JokerRule(category="xmult", effect_type="xmult"),
-    "j_chaos": JokerRule(category="econ", effect_type="reroll", flat_bonus=20, tags=frozenset({"reroll_engine"})),
-    "j_flash": JokerRule(category="mult", effect_type="mult_scaling", flat_bonus=10, tags=frozenset({"reroll_engine"})),
+    "j_chaos": JokerRule(
+        category="econ",
+        effect_type="reroll",
+        flat_bonus=20,
+        tags=frozenset({"reroll_engine"}),
+    ),
+    "j_flash": JokerRule(
+        category="mult",
+        effect_type="mult_scaling",
+        flat_bonus=10,
+        tags=frozenset({"reroll_engine"}),
+    ),
     "j_credit_card": JokerRule(category="econ", effect_type="econ"),
     "j_delayed_grat": JokerRule(category="econ", effect_type="econ"),
     # Utility/support jokers: keep category non-scoring (default=0) and express value via tags/intent.
@@ -102,9 +132,24 @@ _RULES: dict[str, JokerRule] = {
         base_score=0,
         tags=frozenset({"straight_support_joker"}),
     ),
-    "j_runner": JokerRule(category="utility", effect_type="straight_payoff", base_score=0, tags=frozenset({"straight_payoff"})),
-    "j_order": JokerRule(category="utility", effect_type="straight_payoff", base_score=0, tags=frozenset({"straight_payoff"})),
-    "j_tribe": JokerRule(category="utility", effect_type="flush_payoff", base_score=0, tags=frozenset({"flush_payoff"})),
+    "j_runner": JokerRule(
+        category="utility",
+        effect_type="straight_payoff",
+        base_score=0,
+        tags=frozenset({"straight_payoff"}),
+    ),
+    "j_order": JokerRule(
+        category="utility",
+        effect_type="straight_payoff",
+        base_score=0,
+        tags=frozenset({"straight_payoff"}),
+    ),
+    "j_tribe": JokerRule(
+        category="utility",
+        effect_type="flush_payoff",
+        base_score=0,
+        tags=frozenset({"flush_payoff"}),
+    ),
 }
 
 

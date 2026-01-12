@@ -8,7 +8,14 @@ from pathlib import Path
 from typing import Any
 
 from balatro_ai.config import Config
-from balatro_ai.gs import gs_ante, gs_money, gs_round_chips, gs_round_num, gs_state, gs_won
+from balatro_ai.gs import (
+    gs_ante,
+    gs_money,
+    gs_round_chips,
+    gs_round_num,
+    gs_state,
+    gs_won,
+)
 from balatro_ai.logging_utils import configure_logging
 from balatro_ai.runner import BotRunner
 
@@ -26,19 +33,37 @@ class BenchmarkResult:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run seeded Balatro AI benchmarks against a running BalatroBot.")
+    parser = argparse.ArgumentParser(
+        description="Run seeded Balatro AI benchmarks against a running BalatroBot."
+    )
     parser.add_argument("--host", default="127.0.0.1", help="BalatroBot host")
     parser.add_argument("--port", type=int, default=12346, help="BalatroBot port")
     parser.add_argument("--deck", default="RED", help="Deck enum to use")
     parser.add_argument("--stake", default="WHITE", help="Stake enum to use")
-    parser.add_argument("--seed", action="append", default=[], help="Seed (repeatable).")
-    parser.add_argument("--count", type=int, default=0, help="Generate N seeds (BENCH-0001...).")
-    parser.add_argument("--seed-prefix", default="BENCH", help="Prefix for generated seeds.")
-    parser.add_argument("--max-steps", type=int, default=1500, help="Max action steps per run.")
-    parser.add_argument("--timeout", type=float, default=20.0, help="HTTP timeout seconds.")
+    parser.add_argument(
+        "--seed", action="append", default=[], help="Seed (repeatable)."
+    )
+    parser.add_argument(
+        "--count", type=int, default=0, help="Generate N seeds (BENCH-0001...)."
+    )
+    parser.add_argument(
+        "--seed-prefix", default="BENCH", help="Prefix for generated seeds."
+    )
+    parser.add_argument(
+        "--max-steps", type=int, default=1500, help="Max action steps per run."
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=20.0, help="HTTP timeout seconds."
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging level.")
-    parser.add_argument("--out", default="", help="Optional path to write JSON results.")
-    parser.add_argument("--decision-log", default="", help="Optional JSONL decision log path for all runs.")
+    parser.add_argument(
+        "--out", default="", help="Optional path to write JSON results."
+    )
+    parser.add_argument(
+        "--decision-log",
+        default="",
+        help="Optional JSONL decision log path for all runs.",
+    )
     return parser
 
 
@@ -111,7 +136,10 @@ def main(argv: list[str] | None = None) -> int:
         "summary": {
             "runs": len(results),
             "wins": sum(1 for r in results if r.won),
-            "exit_codes": {str(code): sum(1 for r in results if r.exit_code == code) for code in sorted({r.exit_code for r in results})},
+            "exit_codes": {
+                str(code): sum(1 for r in results if r.exit_code == code)
+                for code in sorted({r.exit_code for r in results})
+            },
         },
     }
 

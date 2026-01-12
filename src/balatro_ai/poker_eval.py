@@ -39,7 +39,11 @@ def classify_hand(cards: list[dict]) -> HandType:
     has_straight = bool(straight_ranks)
     if has_flush and max_dupe >= 5:
         return HandType.FLUSH_FIVE
-    if has_flush and max_dupe >= 3 and _has_pair(counts, exclude_rank=_best_rank(counts)):
+    if (
+        has_flush
+        and max_dupe >= 3
+        and _has_pair(counts, exclude_rank=_best_rank(counts))
+    ):
         return HandType.FLUSH_HOUSE
     if max_dupe >= 5:
         return HandType.FIVE_KIND
@@ -62,7 +66,9 @@ def classify_hand(cards: list[dict]) -> HandType:
     return HandType.HIGH_CARD
 
 
-def scoring_subset(cards: list[dict], hand_type: HandType, jokers_text: str) -> list[int]:
+def scoring_subset(
+    cards: list[dict], hand_type: HandType, jokers_text: str
+) -> list[int]:
     """Return scoring card indices for a hand, honoring stone and splash."""
     count = len(cards)
     if count == 0:
@@ -313,7 +319,9 @@ def _flush_indices(suits: list[str | None], ranks: list[int], limit: int) -> lis
         suited.setdefault(suit, []).append(index)
     if not suited:
         return []
-    best_suit = max(suited.items(), key=lambda item: (len(item[1]), _rank_sum(ranks, item[1])))[0]
+    best_suit = max(
+        suited.items(), key=lambda item: (len(item[1]), _rank_sum(ranks, item[1]))
+    )[0]
     indices = suited[best_suit]
     indices.sort(key=lambda idx: ranks[idx], reverse=True)
     return indices[:limit]

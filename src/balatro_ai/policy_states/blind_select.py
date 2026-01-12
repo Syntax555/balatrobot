@@ -15,14 +15,22 @@ logger = logging.getLogger(__name__)
 
 
 class BlindSelectDecider:
-    def decide(self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame) -> Action:
+    def decide(
+        self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
+    ) -> Action:
         options = _extract_boss_blind_options(gs)
         if len(options) >= 2:
             intent = _coerce_intent(ctx.run_memory.get("intent"))
-            primary_suit = _primary_flush_suit(gs_deck_cards(gs)) if intent == BuildIntent.FLUSH else None
+            primary_suit = (
+                _primary_flush_suit(gs_deck_cards(gs))
+                if intent == BuildIntent.FLUSH
+                else None
+            )
             scored: list[tuple[float, int, dict[str, Any]]] = []
             for index, option in enumerate(options):
-                score = _boss_blind_pain_score(option, intent=intent, primary_flush_suit=primary_suit)
+                score = _boss_blind_pain_score(
+                    option, intent=intent, primary_flush_suit=primary_suit
+                )
                 scored.append((score, index, option))
             scored.sort(key=lambda item: (item[0], item[1]))
             best_score, best_index, best_option = scored[0]
@@ -165,7 +173,9 @@ def _boss_blind_pain_score(
         score += 6.0
     if intent == BuildIntent.STRAIGHT and "straight" in tokens:
         score += 6.0
-    if intent == BuildIntent.PAIRS and ("pair" in tokens or "pairs" in tokens or "kind" in tokens):
+    if intent == BuildIntent.PAIRS and (
+        "pair" in tokens or "pairs" in tokens or "kind" in tokens
+    ):
         score += 4.0
     if intent == BuildIntent.HIGH_CARD and ("high" in tokens and "card" in tokens):
         score += 4.0
@@ -199,4 +209,3 @@ def _blind_option_effect(option: Mapping[str, Any]) -> str | None:
         if isinstance(value, str) and value.strip():
             return value
     return None
-

@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from balatro_ai.actions import Action
 from balatro_ai.gs import (
@@ -48,7 +48,9 @@ class DecisionLogger:
         atexit.register(self.close)
 
     @classmethod
-    def from_config(cls, *, path: str | None, include_state: bool = True) -> DecisionLogger | None:
+    def from_config(
+        cls, *, path: str | None, include_state: bool = True
+    ) -> DecisionLogger | None:
         if not isinstance(path, str) or not path.strip():
             return None
         return cls(DecisionLogConfig(path=path, include_state=bool(include_state)))
@@ -62,7 +64,13 @@ class DecisionLogger:
         finally:
             self._fp = None
 
-    def begin_run(self, *, seed: str | None = None, deck: str | None = None, stake: str | None = None) -> str:
+    def begin_run(
+        self,
+        *,
+        seed: str | None = None,
+        deck: str | None = None,
+        stake: str | None = None,
+    ) -> str:
         self._run_id = uuid.uuid4().hex
         self._write(
             {
@@ -83,7 +91,9 @@ class DecisionLogger:
                 "run_id": self._run_id,
                 "ts": time.time(),
                 "seed": gs_seed(final_state or {}),
-                "state": _state_summary(final_state or {}) if self._cfg.include_state and final_state is not None else None,
+                "state": _state_summary(final_state or {})
+                if self._cfg.include_state and final_state is not None
+                else None,
             }
         )
 
@@ -151,7 +161,9 @@ class DecisionLogger:
             {
                 "event": "error",
                 "step": int(step),
-                "action": None if action is None else {"kind": action.kind, "params": dict(action.params)},
+                "action": None
+                if action is None
+                else {"kind": action.kind, "params": dict(action.params)},
                 "ts": time.time(),
                 "run_id": self._run_id,
                 "seed": gs_seed(gs),
@@ -198,11 +210,11 @@ def _state_summary(gs: Mapping[str, Any]) -> dict[str, Any]:
             entry = blinds.get(key)
             if not isinstance(entry, Mapping):
                 continue
-                blind_summary[key] = {
-                    "name": entry.get("name"),
-                    "status": entry.get("status"),
-                    "score": entry.get("score"),
-                }
+            blind_summary[key] = {
+                "name": entry.get("name"),
+                "status": entry.get("status"),
+                "score": entry.get("score"),
+            }
     won = gs.get("won")
     return {
         "state": gs_state(gs),
@@ -237,9 +249,10 @@ _TRACE_KEYS: tuple[str, ...] = (
 def _collect_trace(memory: Mapping[str, Any], *, pop: bool) -> dict[str, Any] | None:
     if not isinstance(memory, dict):
         return None
+    mem = cast(dict[str, Any], memory)
     out: dict[str, Any] = {}
     for key in _TRACE_KEYS:
-        if key not in memory:
+        if key not in mem:
             continue
-        out[key] = memory.pop(key, None) if pop else memory.get(key)
+        out[key] = mem.pop(key, None) if pop else mem.get(key)
     return out or None

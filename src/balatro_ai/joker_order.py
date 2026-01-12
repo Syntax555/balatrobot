@@ -118,7 +118,11 @@ def find_best_joker_sequence(
     for order in permutations(range(joker_count)):
         orders_evaluated += 1
         score = _simulate_order(list(order), effects, base_chips, base_mult)
-        if best_order is None or score > best_score or (score == best_score and order < best_order):
+        if (
+            best_order is None
+            or score > best_score
+            or (score == best_score and order < best_order)
+        ):
             best_order = order
             best_score = score
 
@@ -143,7 +147,11 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | 
         return None
     jokers = gs_jokers(gs)
     if len(jokers) < 2:
-        logger.debug("maybe_reorder_jokers: state=%s jokers=%s (no reorder needed)", state, len(jokers))
+        logger.debug(
+            "maybe_reorder_jokers: state=%s jokers=%s (no reorder needed)",
+            state,
+            len(jokers),
+        )
         return None
 
     hand_cards = gs_hand_cards(gs)
@@ -155,7 +163,9 @@ def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | 
         return None
     perm_hash = tuple(permutation)
     if ctx.memory.get("last_joker_perm_hash") == perm_hash:
-        logger.debug("maybe_reorder_jokers: repeated perm hash (perm=%s) -> skip", permutation)
+        logger.debug(
+            "maybe_reorder_jokers: repeated perm hash (perm=%s) -> skip", permutation
+        )
         return None
     logger.debug("maybe_reorder_jokers: state=%s perm=%s", state, permutation)
     ctx.memory["last_joker_perm_hash"] = perm_hash
@@ -222,7 +232,9 @@ def _joker_effect_text(joker: Mapping[str, Any]) -> str:
     return ""
 
 
-def _simulate_order(order: list[int], effects: list[JokerEffect], base_chips: int, base_mult: int) -> float:
+def _simulate_order(
+    order: list[int], effects: list[JokerEffect], base_chips: int, base_mult: int
+) -> float:
     """Simulate applying `effects` in the given order, returning chips * mult."""
     chips = float(base_chips)
     mult = float(base_mult)
@@ -234,7 +246,9 @@ def _simulate_order(order: list[int], effects: list[JokerEffect], base_chips: in
     return chips * mult
 
 
-def _best_play_subset(hand_cards: list[dict], hands_info: Mapping[str, Any] | None) -> list[dict]:
+def _best_play_subset(
+    hand_cards: list[dict], hands_info: Mapping[str, Any] | None
+) -> list[dict]:
     """Select the best-scoring subset of up to 5 cards for ordering estimates."""
     if not hand_cards:
         return []
@@ -252,7 +266,9 @@ def _best_play_subset(hand_cards: list[dict], hands_info: Mapping[str, Any] | No
     return best_subset
 
 
-def _base_hand_score(hand_cards: list[dict], hands_info: Mapping[str, Any] | None) -> tuple[int, int]:
+def _base_hand_score(
+    hand_cards: list[dict], hands_info: Mapping[str, Any] | None
+) -> tuple[int, int]:
     if not hand_cards:
         return (1, 1)
     if not isinstance(hands_info, Mapping) or not hands_info:
@@ -271,7 +287,9 @@ def _base_hand_score(hand_cards: list[dict], hands_info: Mapping[str, Any] | Non
 
     chips = best_match.get("chips") if best_match is not None else None
     mult = best_match.get("mult") if best_match is not None else None
-    parsed_chips = chips if isinstance(chips, int) and not isinstance(chips, bool) else 1
+    parsed_chips = (
+        chips if isinstance(chips, int) and not isinstance(chips, bool) else 1
+    )
     parsed_mult = mult if isinstance(mult, int) and not isinstance(mult, bool) else 1
     return (max(1, parsed_chips), max(1, parsed_mult))
 
