@@ -32,14 +32,28 @@ return {
       trigger = "condition",
       blocking = false,
       func = function()
-        local blind_pane = G.blind_select_opts[string.lower(G.GAME.blind_on_deck)]
-        local select_button = blind_pane:get_UIE_by_ID("select_blind_button")
-        local done = G.STATE == G.STATES.BLIND_SELECT and select_button ~= nil
-        if done then
-          sendDebugMessage("Return next_round() - reached BLIND_SELECT state", "BB.ENDPOINTS")
-          send_response(BB_GAMESTATE.get_gamestate())
+        -- Wait for state transition and UI to be fully initialized
+        if G.STATE ~= G.STATES.BLIND_SELECT then
+          return false
         end
-        return done
+        if not G.blind_select_opts then
+          return false
+        end
+
+        local blind_key = string.lower(G.GAME.blind_on_deck)
+        local blind_pane = G.blind_select_opts[blind_key]
+        if not blind_pane then
+          return false
+        end
+
+        local select_button = blind_pane:get_UIE_by_ID("select_blind_button")
+        if not select_button then
+          return false
+        end
+
+        sendDebugMessage("Return next_round() - reached BLIND_SELECT state", "BB.ENDPOINTS")
+        send_response(BB_GAMESTATE.get_gamestate())
+        return true
       end,
     }))
   end,
