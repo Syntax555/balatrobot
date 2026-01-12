@@ -41,6 +41,8 @@ class Config:
     pack_rollout_time_budget_s: float | None = None
     # If True, run a quick determinism probe and disable rollouts if unsafe.
     determinism_check: bool = True
+    # Intent evaluation Monte Carlo trials (higher = more stable, slower).
+    intent_trials: int = 200
     # If True, block forever at MENU (Option A) until the script is restarted.
     pause_at_menu: bool = True
     # If True, attempt to call RPC "start" from MENU using deck/stake/seed.

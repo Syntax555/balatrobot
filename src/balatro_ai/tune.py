@@ -64,8 +64,10 @@ def _objective(runs: list[dict[str, Any]]) -> float:
     ante_sum = sum(int(r.get("ante") or 0) for r in runs)
     round_sum = sum(int(r.get("round") or 0) for r in runs)
     money_sum = sum(int(r.get("money") or 0) for r in runs)
+    steps_sum = sum(int(r.get("steps") or 0) for r in runs)
     # Lexicographic-ish weighting: prioritize wins, then ante, then round, then money.
-    return wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum
+    # Tie-breaker: prefer fewer steps (usually faster).
+    return wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum - steps_sum * 0.1
 
 
 def _sample_params(rng: random.Random) -> dict[str, Any]:
@@ -75,10 +77,16 @@ def _sample_params(rng: random.Random) -> dict[str, Any]:
     max_rerolls = rng.randint(0, 3)
     rollout_k = rng.randint(12, 60)
     discard_m = rng.randint(6, 20)
+    hand_rollout = rng.random() < 0.85
+    rollout_time_budget_s = rng.choice([None, 0.15, 0.3, 0.6])
     shop_rollout = rng.random() < 0.5
     pack_rollout = rng.random() < 0.5
     shop_rollout_candidates = rng.randint(6, 16)
+    shop_rollout_time_budget_s = (
+        rng.choice([None, 0.5, 1.0, 2.0]) if shop_rollout else None
+    )
     pack_budget = rng.choice([None, 0.5, 1.0, 2.0])
+    intent_trials = rng.choice([50, 100, 150, 200, 300])
     return {
         "reserve_early": reserve_early,
         "reserve_mid": reserve_mid,
@@ -86,10 +94,14 @@ def _sample_params(rng: random.Random) -> dict[str, Any]:
         "max_rerolls_per_shop": max_rerolls,
         "rollout_k": rollout_k,
         "discard_m": discard_m,
+        "hand_rollout": hand_rollout,
+        "rollout_time_budget_s": rollout_time_budget_s,
         "shop_rollout": shop_rollout,
         "shop_rollout_candidates": shop_rollout_candidates,
+        "shop_rollout_time_budget_s": shop_rollout_time_budget_s,
         "pack_rollout": pack_rollout,
         "pack_rollout_time_budget_s": pack_budget,
+        "intent_trials": intent_trials,
     }
 
 
@@ -123,10 +135,14 @@ def main(argv: list[str] | None = None) -> int:
             max_rerolls_per_shop=params["max_rerolls_per_shop"],
             rollout_k=params["rollout_k"],
             discard_m=params["discard_m"],
+            hand_rollout=params["hand_rollout"],
+            rollout_time_budget_s=params["rollout_time_budget_s"],
             shop_rollout=params["shop_rollout"],
             shop_rollout_candidates=params["shop_rollout_candidates"],
+            shop_rollout_time_budget_s=params["shop_rollout_time_budget_s"],
             pack_rollout=params["pack_rollout"],
             pack_rollout_time_budget_s=params["pack_rollout_time_budget_s"],
+            intent_trials=params["intent_trials"],
             pause_at_menu=False,
             auto_start=False,
         )
@@ -149,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
                         "ante": gs_ante(final_state),
                         "round": gs_round_num(final_state),
                         "money": gs_money(final_state),
+                        "steps": _steps,
                     }
                 )
         finally:

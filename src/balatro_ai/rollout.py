@@ -59,6 +59,9 @@ _ROLLOUT_TIME_BUDGET_ENV = "BALATRO_AI_ROLLOUT_TIME_BUDGET_S"
 _PROCESS_POOL_LOCK = threading.Lock()
 _PROCESS_POOL: concurrent.futures.ProcessPoolExecutor | None = None
 _PROCESS_POOL_WORKERS: int | None = None
+_THREAD_POOL_LOCK = threading.Lock()
+_THREAD_POOL: concurrent.futures.ThreadPoolExecutor | None = None
+_THREAD_POOL_WORKERS: int | None = None
 
 ZERO = 0
 ONE = 1
@@ -124,13 +127,19 @@ class _EvalResult:
 
 
 def _shutdown_process_pool() -> None:
-    global _PROCESS_POOL, _PROCESS_POOL_WORKERS
+    global _PROCESS_POOL, _PROCESS_POOL_WORKERS, _THREAD_POOL, _THREAD_POOL_WORKERS
     with _PROCESS_POOL_LOCK:
         if _PROCESS_POOL is None:
             return
         _PROCESS_POOL.shutdown(wait=False, cancel_futures=True)
         _PROCESS_POOL = None
         _PROCESS_POOL_WORKERS = None
+    with _THREAD_POOL_LOCK:
+        if _THREAD_POOL is None:
+            return
+        _THREAD_POOL.shutdown(wait=False, cancel_futures=True)
+        _THREAD_POOL = None
+        _THREAD_POOL_WORKERS = None
 
 
 atexit.register(_shutdown_process_pool)
@@ -183,6 +192,17 @@ def _get_process_pool(workers: int) -> concurrent.futures.ProcessPoolExecutor:
             _PROCESS_POOL = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
             _PROCESS_POOL_WORKERS = workers
         return _PROCESS_POOL
+
+
+def _get_thread_pool(workers: int) -> concurrent.futures.ThreadPoolExecutor:
+    global _THREAD_POOL, _THREAD_POOL_WORKERS
+    with _THREAD_POOL_LOCK:
+        if _THREAD_POOL is None or _THREAD_POOL_WORKERS != workers:
+            if _THREAD_POOL is not None:
+                _THREAD_POOL.shutdown(wait=False, cancel_futures=True)
+            _THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
+            _THREAD_POOL_WORKERS = workers
+        return _THREAD_POOL
 
 
 def _score_play_combo(
@@ -511,9 +531,7 @@ def _generate_play_candidates(
             if parallel_mode == "processes":
                 executor: concurrent.futures.Executor = _get_process_pool(max_workers)
             else:
-                executor = concurrent.futures.ThreadPoolExecutor(
-                    max_workers=max_workers
-                )
+                executor = _get_thread_pool(max_workers)
             futures = [
                 executor.submit(_score_play_combo, combo, cards, jokers, intent)
                 for (combo, cards, jokers, intent) in parallel_tasks
@@ -551,8 +569,8 @@ def _generate_play_candidates(
                     )
                 )
         finally:
-            if parallel_mode != "processes" and "executor" in locals():
-                executor.shutdown(wait=True, cancel_futures=True)
+            # Thread/process pools are reused across calls for performance.
+            pass
     candidates.sort(key=lambda candidate: candidate.score, reverse=True)
     selected = candidates[: max(MIN_ROLLOUT_CANDIDATES, rollout_k)]
     if logger.isEnabledFor(logging.DEBUG):

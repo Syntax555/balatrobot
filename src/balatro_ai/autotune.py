@@ -22,10 +22,14 @@ class Params:
     max_rerolls_per_shop: int
     rollout_k: int
     discard_m: int
+    hand_rollout: bool
+    rollout_time_budget_s: float | None
     shop_rollout: bool
     shop_rollout_candidates: int
+    shop_rollout_time_budget_s: float | None
     pack_rollout: bool
     pack_rollout_time_budget_s: float | None
+    intent_trials: int
 
 
 @dataclass(frozen=True)
@@ -79,7 +83,8 @@ def _objective(runs: list[dict[str, Any]]) -> float:
     ante_sum = sum(int(r.get("ante") or 0) for r in runs)
     round_sum = sum(int(r.get("round") or 0) for r in runs)
     money_sum = sum(int(r.get("money") or 0) for r in runs)
-    return wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum
+    steps_sum = sum(int(r.get("steps") or 0) for r in runs)
+    return wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum - steps_sum * 0.1
 
 
 def _sample_params(rng: random.Random) -> Params:
@@ -89,10 +94,16 @@ def _sample_params(rng: random.Random) -> Params:
     max_rerolls = rng.randint(0, 4)
     rollout_k = rng.randint(12, 60)
     discard_m = rng.randint(6, 22)
+    hand_rollout = rng.random() < 0.85
+    rollout_time_budget_s = rng.choice([None, 0.15, 0.3, 0.6])
     shop_rollout = rng.random() < 0.35
     pack_rollout = rng.random() < 0.35
     shop_rollout_candidates = rng.randint(6, 18)
+    shop_rollout_time_budget_s = (
+        rng.choice([None, 0.5, 1.0, 2.0]) if shop_rollout else None
+    )
     pack_budget = rng.choice([None, 0.5, 1.0, 2.0])
+    intent_trials = rng.choice([50, 100, 150, 200, 300])
     return Params(
         reserve_early=reserve_early,
         reserve_mid=reserve_mid,
@@ -100,10 +111,14 @@ def _sample_params(rng: random.Random) -> Params:
         max_rerolls_per_shop=max_rerolls,
         rollout_k=rollout_k,
         discard_m=discard_m,
+        hand_rollout=hand_rollout,
+        rollout_time_budget_s=rollout_time_budget_s,
         shop_rollout=shop_rollout,
         shop_rollout_candidates=shop_rollout_candidates,
+        shop_rollout_time_budget_s=shop_rollout_time_budget_s,
         pack_rollout=pack_rollout,
         pack_rollout_time_budget_s=pack_budget,
+        intent_trials=int(intent_trials),
     )
 
 
@@ -121,12 +136,20 @@ def _mutate(best: Params, rng: random.Random) -> Params:
         max_rerolls_per_shop=bump(best.max_rerolls_per_shop, 0, 5, scale=1),
         rollout_k=bump(best.rollout_k, 8, 80, scale=8),
         discard_m=bump(best.discard_m, 4, 28, scale=4),
+        hand_rollout=best.hand_rollout if rng.random() < 0.85 else not best.hand_rollout,
+        rollout_time_budget_s=best.rollout_time_budget_s
+        if rng.random() < 0.75
+        else rng.choice([None, 0.15, 0.3, 0.6]),
         shop_rollout=best.shop_rollout if rng.random() < 0.8 else not best.shop_rollout,
         shop_rollout_candidates=bump(best.shop_rollout_candidates, 4, 24, scale=4),
+        shop_rollout_time_budget_s=best.shop_rollout_time_budget_s
+        if rng.random() < 0.75
+        else rng.choice([None, 0.5, 1.0, 2.0]),
         pack_rollout=best.pack_rollout if rng.random() < 0.8 else not best.pack_rollout,
         pack_rollout_time_budget_s=best.pack_rollout_time_budget_s
         if rng.random() < 0.75
         else rng.choice([None, 0.5, 1.0, 2.0]),
+        intent_trials=max(25, min(400, int(best.intent_trials) + rng.choice([-50, -25, 0, 25, 50]))),
     )
 
 
@@ -138,10 +161,18 @@ def _format_bot_flags(params: Params) -> list[str]:
         f"--max-rerolls-per-shop={params.max_rerolls_per_shop}",
         f"--rollout-k={params.rollout_k}",
         f"--discard-m={params.discard_m}",
+        f"--intent-trials={params.intent_trials}",
     ]
+    flags.append("--hand-rollout" if params.hand_rollout else "--no-hand-rollout")
+    if params.rollout_time_budget_s is not None:
+        flags.append(f"--rollout-time-budget-s={params.rollout_time_budget_s}")
     if params.shop_rollout:
         flags.append("--shop-rollout")
         flags.append(f"--shop-rollout-candidates={params.shop_rollout_candidates}")
+        if params.shop_rollout_time_budget_s is not None:
+            flags.append(
+                f"--shop-rollout-time-budget-s={params.shop_rollout_time_budget_s}"
+            )
     else:
         flags.append("--no-shop-rollout")
     if params.pack_rollout:
@@ -215,10 +246,14 @@ def main(argv: list[str] | None = None) -> int:
                 max_rerolls_per_shop=params.max_rerolls_per_shop,
                 rollout_k=params.rollout_k,
                 discard_m=params.discard_m,
+                hand_rollout=params.hand_rollout,
+                rollout_time_budget_s=params.rollout_time_budget_s,
                 shop_rollout=params.shop_rollout,
                 shop_rollout_candidates=params.shop_rollout_candidates,
+                shop_rollout_time_budget_s=params.shop_rollout_time_budget_s,
                 pack_rollout=params.pack_rollout,
                 pack_rollout_time_budget_s=params.pack_rollout_time_budget_s,
+                intent_trials=params.intent_trials,
                 pause_at_menu=False,
                 auto_start=False,
             )
@@ -241,6 +276,7 @@ def main(argv: list[str] | None = None) -> int:
                             "ante": gs_ante(final_state),
                             "round": gs_round_num(final_state),
                             "money": gs_money(final_state),
+                            "steps": _steps,
                         }
                     )
             finally:
@@ -287,6 +323,7 @@ def main(argv: list[str] | None = None) -> int:
                                     "ante": gs_ante(final_state),
                                     "round": gs_round_num(final_state),
                                     "money": gs_money(final_state),
+                                    "steps": _steps,
                                 }
                             )
                     finally:
@@ -318,4 +355,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

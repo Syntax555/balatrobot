@@ -40,6 +40,7 @@ class Policy:
 
     def __init__(self) -> None:
         self._intent_manager = IntentManager()
+        self._intent_trials: int | None = None
         self._transitions = TransitionManager()
         self._menu = MenuDecider()
         self._blind_select = BlindSelectDecider()
@@ -92,6 +93,11 @@ class Policy:
     def _maybe_update_intent(
         self, gs: Mapping[str, Any], ctx: PolicyContext, frame: DecisionFrame
     ) -> None:
+        desired_trials = max(1, int(getattr(ctx.config, "intent_trials", 200)))
+        if self._intent_trials != desired_trials:
+            self._intent_manager = IntentManager(trials=desired_trials)
+            self._intent_trials = desired_trials
+
         if frame.entering and frame.state in _INTENT_RESET_STATES:
             for key in (
                 "intent",

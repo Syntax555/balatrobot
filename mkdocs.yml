@@ -41,6 +41,7 @@ plugins:
           - installation.md
           - cli.md
           - api.md
+          - balatro-ai.md
           - contributing.md
       full_output: llms-full.txt
       autoclean: true
@@ -48,6 +49,7 @@ nav:
   - BalatroBot: index.md
   - Installation: installation.md
   - Example Bot: example-bot.md
+  - Balatro AI: balatro-ai.md
   - CLI Reference: cli.md
   - API Reference: api.md
   - Contributing: contributing.md

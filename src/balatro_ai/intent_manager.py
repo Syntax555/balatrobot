@@ -83,18 +83,13 @@ class IntentManager:
         jokers = gs_jokers(gs)
         joker_bias = _joker_bias_by_intent(jokers)
 
-        raw_values: dict[BuildIntent, float] = {}
-        baseline_values: dict[BuildIntent, float] = {}
-        for intent in BuildIntent:
-            seed = _stable_seed(f"{seed_base}|{intent.value}")
-            rng = random.Random(seed)
-            raw_values[intent] = _simulate_deck_value(
-                playable, jokers, intent, self._trials, rng
-            )
-            baseline_rng = random.Random(seed)
-            baseline_values[intent] = _simulate_deck_value(
-                baseline_deck, jokers, intent, self._trials, baseline_rng
-            )
+        seed = _stable_seed(seed_base)
+        rng = random.Random(seed)
+        raw_values = _simulate_deck_values(playable, jokers, self._trials, rng)
+        baseline_rng = random.Random(seed)
+        baseline_values = _simulate_deck_values(
+            baseline_deck, jokers, self._trials, baseline_rng
+        )
 
         scores: dict[BuildIntent, float] = {}
         for intent in BuildIntent:
@@ -175,58 +170,66 @@ class IntentManager:
         return (best_score - current_score) >= MIN_SWITCH_GAP
 
 
-def _simulate_deck_value(
+def _simulate_deck_values(
     deck_cards: list[dict],
     jokers: list[dict],
-    intent: BuildIntent,
     trials: int,
     rng: random.Random,
-) -> float:
+) -> dict[BuildIntent, float]:
     if len(deck_cards) < HAND_SIZE:
-        return 0.0
+        return {intent: 0.0 for intent in BuildIntent}
 
-    hits = 0
-    quality_sum = 0.0
-    high_sum = 0.0
-    for _ in range(max(1, trials)):
+    max_trials = max(1, trials)
+    flush_hits = 0
+    flush_quality_sum = 0.0
+    straight_hits = 0
+    straight_quality_sum = 0.0
+    pairs_hits = 0
+    pairs_quality_sum = 0.0
+    pairs_high_sum = 0.0
+    high_card_high_sum = 0.0
+
+    for _ in range(max_trials):
         hand = rng.sample(deck_cards, k=HAND_SIZE)
-        if intent == BuildIntent.FLUSH:
-            suits = [card_suit(card) for card in hand]
-            max_suit = max_suit_count_from_suits(suits)
-            quality_sum += float(max_suit)
-            hits += 1 if max_suit >= HAND_SIZE else 0
-        elif intent == BuildIntent.STRAIGHT:
-            ranks = [card_rank(card) for card in hand]
-            max_window = max_straight_window_count_from_ranks(
-                ranks,
-                window_span=4,
-                ace_high_rank=14,
-                ace_low_rank=1,
-                unknown_rank=0,
-            )
-            quality_sum += float(max_window)
-            hits += 1 if max_window >= HAND_SIZE else 0
-        elif intent == BuildIntent.PAIRS:
-            eval_result = evaluate_candidate(hand, jokers)
-            hand_type = eval_result["hand_type"]
-            features = eval_result["features"]
-            hits += 1 if hand_type in _PAIRS_TYPES else 0
-            quality_sum += float(features.get("max_dupe", 0))
-            high_sum += float(features.get("high_rank_sum", 0))
-        else:
-            eval_result = evaluate_candidate(hand, jokers)
-            features = eval_result["features"]
-            high_sum += float(features.get("high_rank_sum", 0))
+        suits = [card_suit(card) for card in hand]
+        ranks = [card_rank(card) for card in hand]
 
-    denom = float(max(1, trials))
-    hit_rate = hits / denom
-    avg_quality = quality_sum / denom
-    avg_high = high_sum / denom
-    if intent == BuildIntent.HIGH_CARD:
-        return HIGH_CARD_WEIGHT * avg_high
-    if intent == BuildIntent.PAIRS:
-        return (HIT_WEIGHT * hit_rate) + (QUALITY_WEIGHT * avg_quality) + avg_high
-    return (HIT_WEIGHT * hit_rate) + (QUALITY_WEIGHT * avg_quality)
+        max_suit = max_suit_count_from_suits(suits)
+        flush_quality_sum += float(max_suit)
+        flush_hits += 1 if max_suit >= HAND_SIZE else 0
+
+        max_window = max_straight_window_count_from_ranks(
+            ranks,
+            window_span=4,
+            ace_high_rank=14,
+            ace_low_rank=1,
+            unknown_rank=0,
+        )
+        straight_quality_sum += float(max_window)
+        straight_hits += 1 if max_window >= HAND_SIZE else 0
+
+        eval_result = evaluate_candidate(hand, jokers)
+        features = eval_result.get("features", {})
+        high_rank_sum = float(features.get("high_rank_sum", 0))
+        high_card_high_sum += high_rank_sum
+
+        hand_type = eval_result.get("hand_type")
+        if hand_type in _PAIRS_TYPES:
+            pairs_hits += 1
+        pairs_quality_sum += float(features.get("max_dupe", 0))
+        pairs_high_sum += high_rank_sum
+
+    denom = float(max_trials)
+    return {
+        BuildIntent.FLUSH: (HIT_WEIGHT * (flush_hits / denom))
+        + (QUALITY_WEIGHT * (flush_quality_sum / denom)),
+        BuildIntent.STRAIGHT: (HIT_WEIGHT * (straight_hits / denom))
+        + (QUALITY_WEIGHT * (straight_quality_sum / denom)),
+        BuildIntent.PAIRS: (HIT_WEIGHT * (pairs_hits / denom))
+        + (QUALITY_WEIGHT * (pairs_quality_sum / denom))
+        + (pairs_high_sum / denom),
+        BuildIntent.HIGH_CARD: HIGH_CARD_WEIGHT * (high_card_high_sum / denom),
+    }
 
 
 def _baseline_deck(deck_size: int) -> list[dict]:

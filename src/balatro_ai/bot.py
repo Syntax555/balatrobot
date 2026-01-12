@@ -266,6 +266,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="If enabled, probe save/load determinism and disable rollouts if unsafe.",
     )
     parser.add_argument(
+        "--intent-trials",
+        default=200,
+        type=_positive_int("--intent-trials"),
+        help="Intent evaluation Monte Carlo trials (higher = more stable, slower).",
+    )
+    parser.add_argument(
         "--pause-at-menu",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -309,6 +315,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         pack_rollout=args.pack_rollout,
         pack_rollout_time_budget_s=args.pack_rollout_time_budget_s,
         determinism_check=args.determinism_check,
+        intent_trials=args.intent_trials,
         pause_at_menu=args.pause_at_menu,
         auto_start=args.auto_start,
     )
