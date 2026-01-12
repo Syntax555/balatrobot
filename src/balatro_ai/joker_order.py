@@ -53,7 +53,7 @@ class JokerEffect:
 
 def classify_joker_bucket(text: str, key: str | None = None) -> int:
     """Return the bucket index for the provided joker text."""
-    rule = joker_rule(key)
+    rule = joker_rule(key, text)
     if rule is not None:
         return _category_bucket(rule.category)
     if not text:

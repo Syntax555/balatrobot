@@ -3,11 +3,13 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from balatro_ai.actions import Action
 from balatro_ai.cards import card_key, card_text, card_tokens
 from balatro_ai.config import Config
+from balatro_ai.content_keys import load_vanilla_content_keys
 from balatro_ai.gs import (
     gs_ante,
     gs_blind_score,
@@ -205,6 +207,45 @@ _CONSUMABLE_RULES: dict[str, dict[str, Any]] = {
     # Raw economy (Tarot).
     "c_hermit": {"tags": frozenset(), "score": {"*": 35}},
     "c_temperance": {"tags": frozenset(), "score": {"*": 25}},
+    # Remaining Tarots: keep explicit coverage and rough strategic value.
+    "c_fool": {"tags": frozenset(), "score": {"*": 20}},
+    "c_magician": {"tags": frozenset(), "score": {"*": 20}},
+    "c_high_priestess": {"tags": frozenset(), "score": {"*": 30}},
+    "c_empress": {"tags": frozenset(), "score": {"*": 25}},
+    "c_emperor": {"tags": frozenset(), "score": {"*": 25}},
+    "c_heirophant": {"tags": frozenset(), "score": {"*": 20}},
+    "c_lovers": {
+        "tags": frozenset({_TAG_SUIT_CONVERT}),
+        "score": {_INTENT_FLUSH: 60, "*": 15},
+    },
+    "c_chariot": {"tags": frozenset(), "score": {"*": 22}},
+    "c_justice": {"tags": frozenset(), "score": {"*": 22}},
+    "c_wheel_of_fortune": {"tags": frozenset(), "score": {"*": 30}},
+    "c_hanged_man": {"tags": frozenset(), "score": {"*": 20}},
+    "c_devil": {"tags": frozenset(), "score": {"*": 20}},
+    "c_tower": {"tags": frozenset(), "score": {"*": 18}},
+    "c_judgement": {"tags": frozenset(), "score": {"*": 45}},
+    # Spectrals: very high early/mid impact.
+    "c_familiar": {"tags": frozenset(), "score": {"*": 35}},
+    "c_grim": {"tags": frozenset(), "score": {"*": 35}},
+    "c_incantation": {"tags": frozenset(), "score": {"*": 35}},
+    "c_talisman": {"tags": frozenset(), "score": {"*": 25}},
+    "c_aura": {"tags": frozenset(), "score": {"*": 30}},
+    "c_wraith": {"tags": frozenset(), "score": {"*": 80}},
+    "c_ouija": {
+        "tags": frozenset({_TAG_PAIRS_SUPPORT_CONSUMABLE}),
+        "score": {_INTENT_PAIRS: 70, "*": 20},
+    },
+    "c_ectoplasm": {"tags": frozenset(), "score": {"*": 60}},
+    "c_immolate": {"tags": frozenset(), "score": {"*": 55}},
+    "c_ankh": {"tags": frozenset(), "score": {"*": 85}},
+    "c_deja_vu": {"tags": frozenset(), "score": {"*": 30}},
+    "c_hex": {"tags": frozenset(), "score": {"*": 75}},
+    "c_trance": {"tags": frozenset(), "score": {"*": 20}},
+    "c_medium": {"tags": frozenset(), "score": {"*": 20}},
+    "c_cryptid": {"tags": frozenset(), "score": {"*": 50}},
+    "c_soul": {"tags": frozenset(), "score": {"*": 90}},
+    "c_black_hole": {"tags": frozenset(), "score": {"*": 70}},
 }
 
 _VOUCHER_RULES: dict[str, dict[str, Any]] = {
@@ -240,7 +281,69 @@ _VOUCHER_RULES: dict[str, dict[str, Any]] = {
         "intent": {_INTENT_FLUSH: 10, _INTENT_STRAIGHT: 10, _INTENT_PAIRS: 10},
         "tags": frozenset({_TAG_PLANET_SHOP}),
     },
+    "v_telescope": {"base": 55, "tags": frozenset({_TAG_PLANET_SHOP})},
+    "v_observatory": {"base": 65, "tags": frozenset({_TAG_PLANET_SHOP})},
+    "v_omen_globe": {"base": 35},
+    "v_magic_trick": {"base": 15},
+    "v_hone": {"base": 25},
+    "v_glow_up": {"base": 40},
+    "v_illusion": {"base": 30},
+    "v_directors_cut": {"base": 25},
+    "v_retcon": {"base": 35},
+    "v_crystal_ball": {"base": 45},
+    "v_hieroglyph": {"base": 45},
+    "v_petroglyph": {"base": 40},
 }
+
+def _default_consumable_rule() -> dict[str, Any]:
+    return {"score": {"*": 0}, "tags": frozenset()}
+
+
+def _default_voucher_rule() -> dict[str, Any]:
+    return {"base": 0, "intent": {"*": 0}, "tags": frozenset()}
+
+
+@lru_cache(maxsize=1)
+def _all_consumable_rules() -> dict[str, dict[str, Any]]:
+    vanilla = load_vanilla_content_keys().consumables
+    rules = {key: _default_consumable_rule() for key in vanilla}
+    rules.update(_CONSUMABLE_RULES)
+    return rules
+
+
+@lru_cache(maxsize=1)
+def _all_voucher_rules() -> dict[str, dict[str, Any]]:
+    vanilla = load_vanilla_content_keys().vouchers
+    rules = {key: _default_voucher_rule() for key in vanilla}
+    for key, tuned in _VOUCHER_RULES.items():
+        merged = _default_voucher_rule()
+        if isinstance(tuned, Mapping):
+            merged.update(tuned)
+            intent_map = tuned.get("intent")
+            if isinstance(intent_map, Mapping):
+                merged_intent: dict[str, Any] = {"*": 0}
+                merged_intent.update(intent_map)
+                merged["intent"] = merged_intent
+        rules[key] = merged
+    return rules
+
+
+def consumable_rule(key: str | None) -> Mapping[str, Any] | None:
+    if not key:
+        return None
+    normalized = key.lower()
+    if not normalized.startswith("c_"):
+        return None
+    return _all_consumable_rules().get(normalized, _default_consumable_rule())
+
+
+def voucher_rule(key: str | None) -> Mapping[str, Any] | None:
+    if not key:
+        return None
+    normalized = key.lower()
+    if not normalized.startswith("v_"):
+        return None
+    return _all_voucher_rules().get(normalized, _default_voucher_rule())
 
 _JOKER_INTENT_TAG_WEIGHTS: dict[str, dict[str, int]] = {
     _INTENT_FLUSH: {
@@ -912,7 +1015,7 @@ def _pack_type(key: str) -> str:
 
 def _consumable_tags(key: str, tokens: set[str]) -> frozenset[str]:
     tags: set[str] = set()
-    rule = _CONSUMABLE_RULES.get(key)
+    rule = consumable_rule(key)
     if isinstance(rule, Mapping):
         rule_tags = rule.get("tags")
         if isinstance(rule_tags, (set, frozenset)):
@@ -967,16 +1070,12 @@ def _score_voucher(
     tokens = _tokens(text)
     score = SCORE_NONE
 
-    rule = _VOUCHER_RULES.get(key)
-    if rule is not None:
+    rule = voucher_rule(key)
+    if isinstance(rule, Mapping):
         base = rule.get("base")
         if isinstance(base, int):
             score += base
-        intent_map = rule.get("intent")
-        if isinstance(intent_map, Mapping):
-            bonus = intent_map.get(intent, 0)
-            if isinstance(bonus, int):
-                score += bonus
+        score += _score_by_intent(rule.get("intent"), intent)
 
     high_hits = tokens & _VOUCHER_VERY_HIGH
     if high_hits:
@@ -1011,7 +1110,7 @@ def _voucher_synergy_bonus(
         joker_tokens = _tokens(_item_text(joker))
         existing_tags |= set(_joker_tags(joker_key, joker_tokens))
 
-    rule = _VOUCHER_RULES.get(key)
+    rule = voucher_rule(key)
     voucher_tags: set[str] = set()
     if isinstance(rule, Mapping):
         tags = rule.get("tags")
@@ -1042,8 +1141,8 @@ def _score_joker(
     existing_jokers: list[dict],
 ) -> int:
     key = card_key(joker)
-    rule = joker_rule(key)
     text = _item_text(joker)
+    rule = joker_rule(key, text)
     tokens = _tokens(text)
 
     score = SCORE_NONE
@@ -1271,7 +1370,7 @@ def _score_shop_card(
 def _score_consumable(card: Mapping[str, Any], *, intent: str) -> int:
     key = card_key(card) or ""
 
-    rule = _CONSUMABLE_RULES.get(key)
+    rule = consumable_rule(key)
     if isinstance(rule, Mapping):
         return _score_by_intent(rule.get("score"), intent)
 
@@ -1469,7 +1568,7 @@ def _pair_synergy(a: _Candidate, b: _Candidate, *, intent: str, ante: int) -> in
 def _voucher_card_synergy(voucher: _Candidate, card: _Candidate, *, intent: str) -> int:
     v_key = voucher.identity.get("key", "")
     c_key = card.identity.get("key", "")
-    v_rule = _VOUCHER_RULES.get(v_key, {})
+    v_rule = voucher_rule(v_key) or {}
     v_tags = (
         v_rule.get("tags", frozenset()) if isinstance(v_rule, Mapping) else frozenset()
     )

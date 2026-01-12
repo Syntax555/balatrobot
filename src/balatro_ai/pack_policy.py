@@ -350,7 +350,7 @@ def _heuristic_score_pack_card(
     tokens = card_tokens(text)
     score = SCORE_INITIAL
     key = card_key(card)
-    rule = joker_rule(key) if key and key.startswith("j_") else None
+    rule = joker_rule(key, text) if key and key.startswith("j_") else None
     category_score = SCORE_INITIAL
     if rule is not None:
         category_score = _score_from_category(rule.category)

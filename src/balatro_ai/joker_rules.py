@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
+
+from balatro_ai.cards import card_text, card_tokens
+from balatro_ai.token_utils import has_x_token
 
 
 @dataclass(frozen=True)
@@ -46,6 +50,18 @@ _ALIASES: dict[str, str] = {
     # Historical misspelling seen in some builds.
     "j_gluttenous_joker": "j_gluttonous_joker",
 }
+
+_ECON_TOKENS = {"money", "interest", "discount", "sell", "reroll", "shop"}
+_CHIPS_TOKENS = {"chips", "chip"}
+_MULT_TOKENS = {"mult", "multiplier"}
+_XMULT_TOKENS = {"xmult"}
+
+DEFAULT_JOKER_RULE = JokerRule(
+    category="default",
+    effect_type="",
+    base_score=None,
+    tags=frozenset(),
+)
 
 
 _RULES: dict[str, JokerRule] = {
@@ -124,13 +140,15 @@ _RULES: dict[str, JokerRule] = {
         category="utility",
         effect_type="straight_support",
         base_score=0,
-        tags=frozenset({"straight_support_joker"}),
+        tags=frozenset({"straight_support_joker", "flush_payoff"}),
+        intent_bonus=(("FLUSH", 35), ("STRAIGHT", 25)),
     ),
     "j_shortcut": JokerRule(
         category="utility",
         effect_type="straight_support",
         base_score=0,
         tags=frozenset({"straight_support_joker"}),
+        intent_bonus=(("STRAIGHT", 20),),
     ),
     "j_runner": JokerRule(
         category="utility",
@@ -150,12 +168,149 @@ _RULES: dict[str, JokerRule] = {
         base_score=0,
         tags=frozenset({"flush_payoff"}),
     ),
+    "j_burglar": JokerRule(
+        category="utility",
+        effect_type="hand_support",
+        base_score=0,
+        flat_bonus=15,
+        intent_bonus=(("FLUSH", 10), ("STRAIGHT", 10), ("PAIRS", 10)),
+        tags=frozenset(),
+    ),
+    "j_blackboard": JokerRule(
+        category="xmult",
+        effect_type="xmult_conditional",
+        base_score=None,
+        intent_bonus=(("FLUSH", 30), ("STRAIGHT", -10)),
+        tags=frozenset({"suit_focus"}),
+    ),
+    "j_superposition": JokerRule(
+        category="utility",
+        effect_type="tarot_engine",
+        base_score=0,
+        flat_bonus=10,
+        intent_bonus=(("STRAIGHT", 40),),
+        tags=frozenset({"straight_payoff"}),
+    ),
+    "j_seance": JokerRule(
+        category="utility",
+        effect_type="spectral_engine",
+        base_score=0,
+        flat_bonus=12,
+        intent_bonus=(("FLUSH", 35), ("STRAIGHT", 35)),
+        tags=frozenset({"flush_payoff", "straight_payoff"}),
+    ),
+    "j_constellation": JokerRule(
+        category="xmult",
+        effect_type="xmult_scaling",
+        base_score=None,
+        flat_bonus=10,
+    ),
+    "j_card_sharp": JokerRule(
+        category="xmult",
+        effect_type="xmult_conditional",
+        base_score=None,
+        flat_bonus=8,
+    ),
+    "j_madness": JokerRule(
+        category="xmult",
+        effect_type="xmult_scaling",
+        base_score=None,
+        flat_bonus=5,
+    ),
+    "j_obelisk": JokerRule(
+        category="xmult",
+        effect_type="xmult_scaling",
+        base_score=None,
+        flat_bonus=6,
+    ),
+    "j_hologram": JokerRule(
+        category="xmult",
+        effect_type="xmult_scaling",
+        base_score=None,
+        flat_bonus=8,
+    ),
+    "j_vampire": JokerRule(
+        category="xmult",
+        effect_type="xmult_scaling",
+        base_score=None,
+        flat_bonus=6,
+    ),
+    "j_baron": JokerRule(
+        category="xmult",
+        effect_type="xmult_rank",
+        base_score=None,
+        intent_bonus=(("HIGH_CARD", 20), ("PAIRS", 10)),
+    ),
+    "j_brainstorm": JokerRule(
+        category="utility",
+        effect_type="copy_leftmost",
+        base_score=0,
+        flat_bonus=45,
+        intent_bonus=(("FLUSH", 20), ("STRAIGHT", 20), ("PAIRS", 20), ("HIGH_CARD", 20)),
+    ),
+    "j_invisible": JokerRule(
+        category="econ",
+        effect_type="duplicate",
+        base_score=0,
+        flat_bonus=30,
+    ),
+    "j_drivers_license": JokerRule(
+        category="xmult",
+        effect_type="xmult_conditional",
+        base_score=None,
+        flat_bonus=10,
+    ),
+    "j_astronomer": JokerRule(
+        category="econ",
+        effect_type="free_planets",
+        base_score=0,
+        flat_bonus=35,
+        intent_bonus=(("FLUSH", 10), ("STRAIGHT", 10), ("PAIRS", 10)),
+    ),
+    "j_cartomancer": JokerRule(
+        category="econ",
+        effect_type="tarot_engine",
+        base_score=0,
+        flat_bonus=25,
+    ),
 }
 
+def _infer_joker_rule(*, key: str, text: str | None) -> JokerRule:
+    raw = (text or "").lower()
+    tokens = card_tokens(raw) | card_tokens(key)
 
-def joker_rule(key: str | None) -> JokerRule | None:
-    """Return a rule for a known joker key."""
+    if tokens & _XMULT_TOKENS or has_x_token(tokens):
+        category = "xmult"
+    elif tokens & _MULT_TOKENS:
+        category = "mult"
+    elif tokens & _CHIPS_TOKENS:
+        category = "chips"
+    elif "$" in raw or tokens & _ECON_TOKENS:
+        category = "econ"
+    else:
+        category = "default"
+
+    if category == "default":
+        return DEFAULT_JOKER_RULE
+    return JokerRule(category=category, effect_type="", base_score=None, tags=frozenset())
+
+
+def joker_rule(key: str | None, text: str | None = None) -> JokerRule | None:
+    """Return a rule for a joker key; infer categories for unknown keys."""
     if not key:
         return None
     normalized = _ALIASES.get(key.lower(), key.lower())
-    return _RULES.get(normalized)
+    rule = _RULES.get(normalized)
+    if rule is not None:
+        return rule
+    if normalized.startswith("j_"):
+        return _infer_joker_rule(key=normalized, text=text)
+    return None
+
+
+def joker_rule_for_card(card: Mapping[str, Any]) -> JokerRule | None:
+    key_value = card.get("key")
+    key = key_value if isinstance(key_value, str) else None
+    if not key:
+        return None
+    return joker_rule(key, card_text(card))
