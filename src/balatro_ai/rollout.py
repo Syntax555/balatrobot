@@ -329,6 +329,7 @@ def _best_discard_candidate(
     hand_cards: list[dict],
     intent: BuildIntent,
 ) -> _ScoredCandidate | None:
+    """Pick the best discard action using a fast heuristic score."""
     if not discard_candidates:
         return None
     priority = _discard_priority_indices(hand_cards, intent)
@@ -356,6 +357,12 @@ def _generate_play_candidates(
     intent: BuildIntent,
     rollout_k: int,
 ) -> list[_ScoredCandidate]:
+    """Generate and score play candidates for the current hand.
+
+    This is a heuristic pre-filter step: we generate (bounded) card-index combinations,
+    evaluate each subset with `evaluate_candidate`, score it against the current intent,
+    then keep only the top-k candidates for expensive save/load rollouts.
+    """
     candidates: list[_ScoredCandidate] = []
     hand_size = len(hand_cards)
     priority = _priority_indices(hand_cards)
@@ -461,6 +468,11 @@ def _generate_discard_candidates(
     cfg: Config,
     gs: Mapping[str, Any],
 ) -> list[Action]:
+    """Generate discard candidates, optionally ranking by completion odds.
+
+    For flush/straight intents we score each discard by the probability of completing
+    the target hand type after the draw, then take the best `cfg.discard_m` options.
+    """
     if gs_discards_left(gs) <= ZERO:
         logger.debug("_generate_discard_candidates: discards_left=0 -> none")
         return []
@@ -832,6 +844,7 @@ def _discard_low_ranks(hand_cards: list[dict]) -> list[int]:
 
 
 def _best_straight_ranks(ranks: list[int]) -> list[int]:
+    """Return the best 5-rank straight window present in `ranks` (Ace can be low)."""
     unique = sorted({rank for rank in ranks if rank > RANK_UNKNOWN})
     if not unique:
         return []
@@ -854,6 +867,12 @@ def _combinations_bounded(
     max_count: int,
     priority: list[int] | None = None,
 ) -> Iterable[tuple[int, ...]]:
+    """Return up to `max_count` unique combinations of `indices` of length `size`.
+
+    If the total number of combinations is small, return all of them. Otherwise,
+    sample deterministically by taking a stride over combinations generated from a
+    few priority-biased orders.
+    """
     total = math.comb(len(indices), size)
     if total <= max_count:
         return list(combinations(indices, size))
@@ -887,16 +906,19 @@ def _safe_int(value: Any) -> int:
 
 
 def _priority_indices(hand_cards: list[dict]) -> list[int]:
+    """Return hand indices in descending "keep" priority order."""
     suits = [card_suit(card) for card in hand_cards]
     suit_counts = suit_counts_from_suits(suits)
     ranks = [card_rank(card) for card in hand_cards]
     rank_counts = rank_counts_from_ranks(ranks)
+
     def score_index(idx: int) -> tuple[int, int, int]:
         suit = suits[idx]
         suit_score = suit_counts.get(suit, ZERO) if suit else ZERO
         rank = ranks[idx]
         dup_score = rank_counts.get(rank, ZERO)
         return (dup_score, suit_score, rank)
+
     return sorted(range(len(hand_cards)), key=score_index, reverse=True)
 
 

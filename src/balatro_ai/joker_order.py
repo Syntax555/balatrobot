@@ -96,6 +96,7 @@ def find_best_joker_sequence(
         return list(range(joker_count))
 
     if joker_count > _MAX_JOKER_ORDER_SEARCH_LEN:
+        # Avoid factorial blowups; fall back to a coarse, stable heuristic ordering.
         logger.debug(
             "find_best_joker_sequence: jokers=%s exceeds max=%s -> fallback buckets",
             joker_count,
@@ -110,14 +111,14 @@ def find_best_joker_sequence(
     if all(effect.signature == (0, 0, 1.0) for effect in effects):
         return list(range(joker_count))
 
-    best_order = tuple(range(joker_count))
-    best_score = _simulate_order(list(best_order), effects, base_chips, base_mult)
     orders_evaluated = 0
+    best_order: tuple[int, ...] | None = None
+    best_score = float("-inf")
 
     for order in permutations(range(joker_count)):
         orders_evaluated += 1
         score = _simulate_order(list(order), effects, base_chips, base_mult)
-        if score > best_score or (score == best_score and order < best_order):
+        if best_order is None or score > best_score or (score == best_score and order < best_order):
             best_order = order
             best_score = score
 
@@ -131,7 +132,7 @@ def find_best_joker_sequence(
         best_score,
         best_order,
     )
-    return list(best_order)
+    return list(best_order) if best_order is not None else list(range(joker_count))
 
 
 def maybe_reorder_jokers(gs: Mapping[str, Any], ctx: PolicyContext) -> Action | None:
@@ -178,6 +179,11 @@ def _category_bucket(category: str) -> int:
 
 
 def _extract_joker_effect(joker: Mapping[str, Any]) -> JokerEffect:
+    """Extract a simple additive/multiplicative chip+mult model from joker text.
+
+    This is intentionally heuristic: it only handles common "+X chips", "+Y mult",
+    and "xZ mult" patterns to estimate ordering impact.
+    """
     effect_text = _joker_effect_text(joker)
     if not effect_text:
         return JokerEffect()
@@ -217,6 +223,7 @@ def _joker_effect_text(joker: Mapping[str, Any]) -> str:
 
 
 def _simulate_order(order: list[int], effects: list[JokerEffect], base_chips: int, base_mult: int) -> float:
+    """Simulate applying `effects` in the given order, returning chips * mult."""
     chips = float(base_chips)
     mult = float(base_mult)
     for index in order:
@@ -228,6 +235,7 @@ def _simulate_order(order: list[int], effects: list[JokerEffect], base_chips: in
 
 
 def _best_play_subset(hand_cards: list[dict], hands_info: Mapping[str, Any] | None) -> list[dict]:
+    """Select the best-scoring subset of up to 5 cards for ordering estimates."""
     if not hand_cards:
         return []
 

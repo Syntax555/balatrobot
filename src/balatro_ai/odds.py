@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
@@ -14,8 +15,14 @@ ACE_LOW_RANK = 1
 
 
 def comb(n: int, k: int) -> int:
+    """Return the binomial coefficient C(n, k), or 0 for invalid inputs."""
     if k < 0 or n < 0 or k > n:
         return 0
+    return _comb_cached(int(n), int(k))
+
+
+@functools.lru_cache(maxsize=8192)
+def _comb_cached(n: int, k: int) -> int:
     return math.comb(n, k)
 
 
@@ -289,15 +296,21 @@ def _rank_count_for_straight(rank_counts: Mapping[int, int], rank: int) -> int:
 
 
 def _straight_windows() -> list[list[int]]:
-    return [list(range(start, start + 5)) for start in range(ACE_LOW_RANK, 11)]
+    return [list(window) for window in _STRAIGHT_WINDOWS]
 
 
 def _straight_windows_including_rank(rank: int) -> list[list[int]]:
-    windows = []
-    for window in _straight_windows():
+    return [list(window) for window in _straight_windows_including_rank_cached(rank)]
+
+
+@functools.lru_cache(maxsize=32)
+def _straight_windows_including_rank_cached(rank: int) -> tuple[tuple[int, ...], ...]:
+    rank = int(rank)
+    windows: list[tuple[int, ...]] = []
+    for window in _STRAIGHT_WINDOWS:
         if rank in window or (rank == ACE_HIGH_RANK and ACE_LOW_RANK in window):
             windows.append(window)
-    return windows
+    return tuple(windows)
 
 
 def _rank_matches_forced(forced_rank: int, window_rank: int) -> bool:
@@ -327,6 +340,7 @@ def _has_straight_from_present(present: set[int]) -> bool:
 
 
 def _bounded_count_vectors(bounds: list[int], total: int) -> Iterable[list[int]]:
+    """Yield count-vectors with per-index bounds that sum to `total`."""
     if total < 0:
         return []
 
@@ -339,3 +353,8 @@ def _bounded_count_vectors(bounds: list[int], total: int) -> Iterable[list[int]]
             yield from rec(i + 1, remaining - take, current + [take])
 
     return rec(0, total, [])
+
+
+_STRAIGHT_WINDOWS: tuple[tuple[int, ...], ...] = tuple(
+    tuple(range(start, start + 5)) for start in range(ACE_LOW_RANK, 11)
+)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import functools
 from collections.abc import Mapping
 from typing import Any
 
@@ -180,19 +181,25 @@ def _straight_flush_possible(cards: list[dict]) -> bool:
 
 
 def _best_straight_ranks(ranks: list[int]) -> list[int]:
+    return list(_best_straight_ranks_cached(tuple(ranks)))
+
+
+@functools.lru_cache(maxsize=4096)
+def _best_straight_ranks_cached(ranks: tuple[int, ...]) -> tuple[int, ...]:
     unique = sorted({rank for rank in ranks if rank > 0})
     if not unique:
-        return []
+        return ()
     if 14 in unique:
         unique.append(1)
         unique = sorted(set(unique))
-    best: list[int] = []
+    best: tuple[int, ...] = ()
+    best_high = 0
     for start in unique:
         end = start + 4
-        window = [rank for rank in range(start, end + 1)]
-        if all(rank in unique for rank in window):
-            if not best or end > max(best):
-                best = window
+        window = tuple(range(start, end + 1))
+        if all(rank in unique for rank in window) and end > best_high:
+            best = window
+            best_high = end
     return best
 
 
