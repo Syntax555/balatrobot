@@ -372,6 +372,37 @@ class TestPackEndpointSelection:
         after = assert_gamestate_response(result)
         assert before["jokers"]["count"] + 1 == after["jokers"]["count"]
 
+    def test_pack_celestial_black_hole(self, client: httpx.Client) -> None:
+        """Test selecting Black Hole from a celestial mega pack levels up all hands.
+
+        Black Hole is a special planet card that levels up all poker hands by 1.
+        Mega packs allow 2 selections, so we also select a second planet card.
+        """
+        load_fixture(
+            client,
+            "pack",
+            "seed-7IDNRIV--state-SMODS_BOOSTER_OPENED--pack.cards[2].key-c_black_hole",
+        )
+        before = api(client, "gamestate", {})["result"]
+
+        # First selection: Black Hole at index 2
+        result = api(client, "pack", {"card": 2})
+        after_first = assert_gamestate_response(result, state="SMODS_BOOSTER_OPENED")
+
+        # Black Hole levels up ALL hands by 1
+        for hand_name in before["hands"]:
+            assert (
+                after_first["hands"][hand_name]["level"]
+                == before["hands"][hand_name]["level"] + 1
+            )
+
+        # Second selection: any planet card at index 0
+        result = api(client, "pack", {"card": 0})
+        after_second = assert_gamestate_response(result, state="SHOP")
+
+        # Pack should be closed after second selection
+        assert "pack" not in after_second
+
 
 # =============================================================================
 # Mega Pack Multi-Selection Tests
