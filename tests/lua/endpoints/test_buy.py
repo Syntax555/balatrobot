@@ -49,7 +49,7 @@ class TestBuyEndpoint:
             "No jokers/consumables/cards in the shop. Reroll to restock the shop",
         )
 
-    def test_buy_invalid_index(self, client: httpx.Client) -> None:
+    def test_buy_invalid_card_index(self, client: httpx.Client) -> None:
         """Test buy endpoint with invalid card index."""
         gamestate = load_fixture(client, "buy", "state-SHOP--shop.cards[0].set-JOKER")
         assert gamestate["state"] == "SHOP"
@@ -58,6 +58,34 @@ class TestBuyEndpoint:
             api(client, "buy", {"card": 999}),
             "BAD_REQUEST",
             "Card index out of range. Index: 999, Available cards: 2",
+        )
+
+    def test_buy_invalid_voucher_index(self, client: httpx.Client) -> None:
+        """Test buy endpoint with invalid voucher index."""
+        gamestate = load_fixture(
+            client, "buy", "state-SHOP--voucher.cards[0].set-VOUCHER"
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["vouchers"]["cards"][0]["set"] == "VOUCHER"
+        assert_error_response(
+            api(client, "buy", {"voucher": 999}),
+            "BAD_REQUEST",
+            "Voucher index out of range. Index: 999, Available: 1",
+        )
+
+    def test_buy_invalid_pack_index(self, client: httpx.Client) -> None:
+        """Test buy endpoint with invalid pack index."""
+        gamestate = load_fixture(
+            client,
+            "buy",
+            "state-SHOP--packs.cards[0].label-Buffoon+Pack--packs.cards[1].label-Standard+Pack",
+        )
+        assert gamestate["state"] == "SHOP"
+        assert gamestate["packs"]["cards"][0]["label"] == "Buffoon Pack"
+        assert_error_response(
+            api(client, "buy", {"pack": 999}),
+            "BAD_REQUEST",
+            "Pack index out of range. Index: 999, Available: 2",
         )
 
     def test_buy_insufficient_funds(self, client: httpx.Client) -> None:
