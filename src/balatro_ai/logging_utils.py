@@ -3,6 +3,18 @@ from __future__ import annotations
 import logging
 
 
+class _DefaultFieldsFilter(logging.Filter):
+    def __init__(self, defaults: dict[str, object]) -> None:
+        super().__init__()
+        self._defaults = defaults
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        for key, value in self._defaults.items():
+            if not hasattr(record, key):
+                setattr(record, key, value)
+        return True
+
+
 def configure_logging(log_level: str) -> None:
     """Configure standard logging for the bot."""
     level = getattr(logging, log_level.upper(), logging.INFO)
@@ -13,16 +25,6 @@ def configure_logging(log_level: str) -> None:
         "money": -1,
         "action_kind": "NONE",
     }
-    old_factory = logging.getLogRecordFactory()
-
-    def record_factory(*args: object, **kwargs: object) -> logging.LogRecord:
-        record = old_factory(*args, **kwargs)
-        for key, value in defaults.items():
-            if not hasattr(record, key):
-                setattr(record, key, value)
-        return record
-
-    logging.setLogRecordFactory(record_factory)
     logging.basicConfig(
         level=level,
         format=(
@@ -31,3 +33,7 @@ def configure_logging(log_level: str) -> None:
             "money=%(money)s action=%(action_kind)s: %(message)s"
         ),
     )
+    default_filter = _DefaultFieldsFilter(defaults)
+    root = logging.getLogger()
+    for handler in root.handlers:
+        handler.addFilter(default_filter)
