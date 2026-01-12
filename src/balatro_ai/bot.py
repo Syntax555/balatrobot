@@ -8,10 +8,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -126,9 +128,18 @@ def _nonnegative_float(name: str):
     return parse
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(*, defaults: dict[str, Any] | None = None) -> argparse.ArgumentParser:
     """Build the CLI argument parser for the bot."""
+    defaults = defaults or {}
     parser = argparse.ArgumentParser(description="Run a BalatroBot client.")
+    parser.add_argument(
+        "--params-json",
+        default=None,
+        help=(
+            "Optional JSON produced by autotune/learn (e.g. logs/learn/.../best.json). "
+            "Values inside become CLI defaults (explicit flags still win)."
+        ),
+    )
     parser.add_argument("--host", default="127.0.0.1", help="BalatroBot host")
     parser.add_argument(
         "--port", default=12346, type=_positive_int("--port"), help="BalatroBot port"
@@ -161,14 +172,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-level", default="INFO", help="Logging level")
     parser.add_argument(
         "--rollout-k",
-        default=30,
+        default=defaults.get("rollout_k", 30),
         type=_positive_int("--rollout-k"),
         help="Rollout depth",
     )
     parser.add_argument(
         "--hand-rollout",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=defaults.get("hand_rollout", True),
         help="If enabled, use save/load rollouts to choose play/discard in SELECTING_HAND.",
     )
     parser.add_argument(
@@ -184,37 +195,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--rollout-time-budget-s",
-        default=None,
+        default=defaults.get("rollout_time_budget_s", None),
         type=_nonnegative_float("--rollout-time-budget-s"),
         help="Per-step rollout evaluation time budget seconds (default: env BALATRO_AI_ROLLOUT_TIME_BUDGET_S).",
     )
     parser.add_argument(
         "--discard-m",
-        default=12,
+        default=defaults.get("discard_m", 12),
         type=_nonnegative_int("--discard-m"),
         help="Discard candidates",
     )
     parser.add_argument(
         "--reserve-early",
-        default=10,
+        default=defaults.get("reserve_early", 10),
         type=_nonnegative_int("--reserve-early"),
         help="Early reserve",
     )
     parser.add_argument(
         "--reserve-mid",
-        default=20,
+        default=defaults.get("reserve_mid", 20),
         type=_nonnegative_int("--reserve-mid"),
         help="Mid reserve",
     )
     parser.add_argument(
         "--reserve-late",
-        default=25,
+        default=defaults.get("reserve_late", 25),
         type=_nonnegative_int("--reserve-late"),
         help="Late reserve",
     )
     parser.add_argument(
         "--max-rerolls-per-shop",
-        default=1,
+        default=defaults.get("max_rerolls_per_shop", 1),
         type=_nonnegative_int("--max-rerolls-per-shop"),
         help="Maximum rerolls per shop",
     )
@@ -232,30 +243,30 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--shop-rollout",
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=defaults.get("shop_rollout", False),
         help="If enabled, use save/load lookahead for SHOP decisions (slower, but can be stronger).",
     )
     parser.add_argument(
         "--shop-rollout-candidates",
-        default=10,
+        default=defaults.get("shop_rollout_candidates", 10),
         type=_positive_int("--shop-rollout-candidates"),
         help="Max number of SHOP candidate sequences to evaluate when --shop-rollout is enabled.",
     )
     parser.add_argument(
         "--shop-rollout-time-budget-s",
-        default=None,
+        default=defaults.get("shop_rollout_time_budget_s", None),
         type=_nonnegative_float("--shop-rollout-time-budget-s"),
         help="Per-SHOP rollout evaluation time budget seconds.",
     )
     parser.add_argument(
         "--pack-rollout",
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=defaults.get("pack_rollout", False),
         help="If enabled, use save/load evaluation for pack selection (slower, but can be stronger).",
     )
     parser.add_argument(
         "--pack-rollout-time-budget-s",
-        default=None,
+        default=defaults.get("pack_rollout_time_budget_s", None),
         type=_nonnegative_float("--pack-rollout-time-budget-s"),
         help="Per-pack rollout evaluation time budget seconds.",
     )
@@ -267,7 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--intent-trials",
-        default=200,
+        default=defaults.get("intent_trials", 200),
         type=_positive_int("--intent-trials"),
         help="Intent evaluation Monte Carlo trials (higher = more stable, slower).",
     )
@@ -288,8 +299,34 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the bot with CLI-provided configuration."""
-    args = build_parser().parse_args(argv)
+    argv_list = list(argv) if argv is not None else sys.argv[1:]
+    params_path = _find_flag_value(argv_list, "--params-json")
+    params: dict[str, Any] = {}
+    if params_path:
+        params = _load_params_json(Path(params_path))
+
+    args = build_parser(defaults=params).parse_args(argv)
     base_url = f"http://{args.host}:{args.port}"
+
+    extra: dict[str, Any] = {}
+    for key in (
+        "buy_threshold_early",
+        "buy_threshold_mid",
+        "buy_threshold_late",
+        "reroll_threshold_early",
+        "reroll_threshold_mid",
+        "reroll_threshold_late",
+        "cost_weight_early",
+        "cost_weight_mid",
+        "cost_weight_late",
+        "joker_score_xmult",
+        "joker_score_mult",
+        "joker_score_chips",
+        "joker_score_econ",
+        "joker_score_default",
+    ):
+        if key in params:
+            extra[key] = params[key]
     config = Config(
         deck=args.deck,
         stake=args.stake,
@@ -318,11 +355,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         intent_trials=args.intent_trials,
         pause_at_menu=args.pause_at_menu,
         auto_start=args.auto_start,
+        **extra,
     )
     configure_logging(config.log_level)
     logger.debug("Starting BotRunner base_url=%s config=%s", base_url, config)
     runner = BotRunner(config=config, base_url=base_url)
     return runner.run()
+
+
+def _find_flag_value(argv: Sequence[str], flag: str) -> str | None:
+    for i, token in enumerate(argv):
+        if token == flag and i + 1 < len(argv):
+            return argv[i + 1]
+        if isinstance(token, str) and token.startswith(flag + "="):
+            return token.split("=", 1)[1]
+    return None
+
+
+def _load_params_json(path: Path) -> dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"--params-json must contain an object, got: {type(raw).__name__}")
+    if isinstance(raw.get("best"), dict) and isinstance(raw["best"].get("params"), dict):
+        return dict(raw["best"]["params"])
+    if isinstance(raw.get("params"), dict):
+        return dict(raw["params"])
+    return dict(raw)
 
 
 if __name__ == "__main__":

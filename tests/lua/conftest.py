@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import random
+import re
 import tempfile
 import uuid
 from pathlib import Path
@@ -58,6 +59,13 @@ def pytest_configure(config):
     global _USE_CACHE_DEFAULT
     if config.getoption("--no-caches", default=False):
         _USE_CACHE_DEFAULT = False
+
+    if os.environ.get("BALATROBOT_SKIP_STARTUP", "").strip() in {"1", "true", "TRUE"}:
+        return
+
+    markexpr = str(getattr(config.option, "markexpr", "") or "")
+    if re.search(r"\bnot\s+integration\b", markexpr):
+        return
 
     # Skip if running as xdist worker (master handles startup)
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")

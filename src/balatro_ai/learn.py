@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from balatro_ai.asha_tune import main as asha_tune_main
 from balatro_ai.autotune import main as autotune_main
 from balatro_ai.logging_utils import configure_logging
 from balatro_ai.rpc import BalatroRPC
@@ -25,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "One-command workflow: ensure BalatroBot is running, generate seed sets, "
-            "run autotune, and write outputs to a fresh run directory."
+            "run learning, and write outputs to a fresh run directory."
         )
     )
     parser.add_argument("--host", default="127.0.0.1")
@@ -69,6 +70,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-count", type=int, default=15)
     parser.add_argument("--generations", type=int, default=5)
     parser.add_argument("--trials", type=int, default=25)
+    parser.add_argument(
+        "--strategy",
+        choices=("asha", "autotune"),
+        default="asha",
+        help="Learning strategy: asha is single-instance friendly; autotune is random search.",
+    )
+    parser.add_argument("--asha-candidates", type=int, default=40)
+    parser.add_argument("--asha-eta", type=int, default=3)
+    parser.add_argument("--asha-rungs", type=int, default=4)
+    parser.add_argument("--asha-min-seeds", type=int, default=6)
+    parser.add_argument("--asha-max-seeds", type=int, default=0)
     parser.add_argument("--rng-seed", default="learn")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--timeout", type=float, default=20.0)
@@ -178,7 +190,45 @@ def main(argv: list[str] | None = None) -> int:
     best_path = run_dir / "best.json"
 
     try:
-        autotune_args = [
+        if args.strategy == "autotune":
+            autotune_args = [
+                "--host",
+                args.host,
+                "--port",
+                str(args.port),
+                "--deck",
+                args.deck,
+                "--stake",
+                args.stake,
+                "--train-count",
+                str(args.train_count),
+                "--eval-count",
+                str(args.eval_count),
+                "--train-prefix",
+                train_prefix,
+                "--eval-prefix",
+                eval_prefix,
+                "--generations",
+                str(args.generations),
+                "--trials",
+                str(args.trials),
+                "--rng-seed",
+                str(args.rng_seed),
+                "--max-steps",
+                str(args.max_steps),
+                "--timeout",
+                str(args.timeout),
+                "--log-level",
+                args.log_level,
+                "--out",
+                str(best_path),
+            ]
+            return autotune_main(autotune_args)
+
+        max_seeds = int(args.asha_max_seeds)
+        if max_seeds <= 0:
+            max_seeds = int(args.train_count)
+        asha_args = [
             "--host",
             args.host,
             "--port",
@@ -187,18 +237,20 @@ def main(argv: list[str] | None = None) -> int:
             args.deck,
             "--stake",
             args.stake,
-            "--train-count",
-            str(args.train_count),
-            "--eval-count",
-            str(args.eval_count),
-            "--train-prefix",
+            "--seed-prefix",
             train_prefix,
-            "--eval-prefix",
-            eval_prefix,
-            "--generations",
-            str(args.generations),
-            "--trials",
-            str(args.trials),
+            "--count",
+            str(args.train_count),
+            "--candidates",
+            str(args.asha_candidates),
+            "--eta",
+            str(args.asha_eta),
+            "--rungs",
+            str(args.asha_rungs),
+            "--min-seeds",
+            str(args.asha_min_seeds),
+            "--max-seeds",
+            str(max_seeds),
             "--rng-seed",
             str(args.rng_seed),
             "--max-steps",
@@ -210,7 +262,7 @@ def main(argv: list[str] | None = None) -> int:
             "--out",
             str(best_path),
         ]
-        return autotune_main(autotune_args)
+        return asha_tune_main(asha_args)
     finally:
         if server is not None and os.environ.get("BALATRO_AI_LEARN_KEEP_SERVER") != "1":
             _stop_server(server)
@@ -218,4 +270,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

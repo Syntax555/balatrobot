@@ -43,6 +43,22 @@ class Config:
     determinism_check: bool = True
     # Intent evaluation Monte Carlo trials (higher = more stable, slower).
     intent_trials: int = 200
+    # Shop policy thresholds/weights (tunable).
+    buy_threshold_early: int = 30
+    buy_threshold_mid: int = 35
+    buy_threshold_late: int = 40
+    reroll_threshold_early: int = 20
+    reroll_threshold_mid: int = 25
+    reroll_threshold_late: int = 30
+    cost_weight_early: float = 1.8
+    cost_weight_mid: float = 1.2
+    cost_weight_late: float = 0.9
+    # Joker category base scores (tunable).
+    joker_score_xmult: int = 100
+    joker_score_mult: int = 50
+    joker_score_chips: int = 20
+    joker_score_econ: int = 0
+    joker_score_default: int = 0
     # If True, block forever at MENU (Option A) until the script is restarted.
     pause_at_menu: bool = True
     # If True, attempt to call RPC "start" from MENU using deck/stake/seed.

@@ -23,7 +23,7 @@ from balatro_ai.gs import (
     gs_state,
     safe_get,
 )
-from balatro_ai.joker_rules import JOKER_CATEGORY_BASE_SCORES, joker_rule
+from balatro_ai.joker_rules import joker_rule
 from balatro_ai.token_utils import has_x_token
 
 if TYPE_CHECKING:
@@ -79,18 +79,6 @@ PACK_SCORE_LATE = 3
 PACK_SCORE_NONE = 0
 
 COMBO_SEARCH_WIDTH = 8
-
-BUY_THRESHOLD_EARLY = 30
-BUY_THRESHOLD_MID = 35
-BUY_THRESHOLD_LATE = 40
-
-REROLL_THRESHOLD_EARLY = 20
-REROLL_THRESHOLD_MID = 25
-REROLL_THRESHOLD_LATE = 30
-
-COST_WEIGHT_EARLY = 1.8
-COST_WEIGHT_MID = 1.2
-COST_WEIGHT_LATE = 0.9
 
 RESERVE_OVERRIDE_SCORE = 120
 
@@ -408,6 +396,7 @@ class ShopPolicy:
             raise ValueError(f"ShopPolicy used outside SHOP state: {gs_state(gs)}")
         shop_mem = _shop_memory(ctx)
         intent = _intent(ctx) or _INTENT_HIGH_CARD
+        category_scores = _joker_category_scores(cfg)
         trace_base: dict[str, Any] = {
             "intent": intent,
             "ante": gs_ante(gs),
@@ -418,7 +407,9 @@ class ShopPolicy:
         }
         pending_actions = shop_mem.get("pending_actions")
         if isinstance(pending_actions, list) and pending_actions:
-            action = _next_pending_action(pending_actions, gs, intent=intent)
+            action = _next_pending_action(
+                pending_actions, gs, intent=intent, category_scores=category_scores
+            )
             if action is not None:
                 ctx.round_memory["shop_trace"] = {
                     **trace_base,
@@ -451,7 +442,7 @@ class ShopPolicy:
             shop_mem.get("rerolls_used", REROLL_USED_DEFAULT),
         )
         shop_candidates = _collect_shop_candidates(
-            gs, ante, money, reserve, intent, budget
+            gs, ante, money, reserve, intent, budget, category_scores=category_scores
         )
         candidates_sorted = sorted(
             shop_candidates, key=lambda item: item.score, reverse=True
@@ -478,7 +469,9 @@ class ShopPolicy:
         if plan and plan_score >= budget.buy_threshold:
             if plan[0].kind == "card" and _jokers_full(gs):
                 _set_pending_buys(shop_mem, plan)
-                worst_index = _worst_joker_index(gs, ante, intent)
+                worst_index = _worst_joker_index(
+                    gs, ante, intent, category_scores=category_scores
+                )
                 if worst_index is not None:
                     ctx.round_memory["shop_trace"] = {
                         **trace_base,
@@ -603,6 +596,7 @@ def generate_shop_rollout_candidates(
     max_items = max(1, int(limit))
     intent = _intent(ctx) or _INTENT_HIGH_CARD
     shop_mem = _shop_memory(ctx)
+    category_scores = _joker_category_scores(cfg)
 
     candidates: list[ShopRolloutCandidate] = []
 
@@ -638,7 +632,13 @@ def generate_shop_rollout_candidates(
 
     budget = _budget(cfg, gs, intent, _reserve(cfg, ante))
     shop_candidates = _collect_shop_candidates(
-        gs, ante, money, budget.reserve, intent, budget
+        gs,
+        ante,
+        money,
+        budget.reserve,
+        intent,
+        budget,
+        category_scores=category_scores,
     )
     shop_candidates = sorted(shop_candidates, key=lambda c: c.score, reverse=True)
     pack_candidates = _collect_pack_candidates(
@@ -674,7 +674,7 @@ def generate_shop_rollout_candidates(
             )
             continue
         if cand.kind == "card" and _jokers_full(gs):
-            worst = _worst_joker_index(gs, ante, intent)
+            worst = _worst_joker_index(gs, ante, intent, category_scores=category_scores)
             if worst is not None:
                 candidates.append(
                     ShopRolloutCandidate(
@@ -733,6 +733,8 @@ def _collect_shop_candidates(
     reserve: int,
     intent: str,
     budget: _Budget,
+    *,
+    category_scores: Mapping[str, int],
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
     jokers = gs_jokers(gs)
@@ -780,7 +782,13 @@ def _collect_shop_candidates(
     for index, card in enumerate(gs_shop_cards(gs)):
         cost = _item_cost(card)
         score = _score_shop_card(
-            card, intent=intent, ante=ante, cost=cost, budget=budget, gs=gs
+            card,
+            intent=intent,
+            ante=ante,
+            cost=cost,
+            budget=budget,
+            gs=gs,
+            category_scores=category_scores,
         )
         if not _affordable(money, reserve, cost, score=score):
             if logger.isEnabledFor(logging.DEBUG):
@@ -903,6 +911,7 @@ def _next_pending_action(
     gs: Mapping[str, Any],
     *,
     intent: str,
+    category_scores: Mapping[str, int],
 ) -> Action | None:
     if not pending_actions:
         return None
@@ -924,7 +933,9 @@ def _next_pending_action(
         pending_actions.clear()
         return None
     if item_kind == "card" and _jokers_full(gs):
-        worst_index = _worst_joker_index(gs, gs_ante(gs), intent)
+        worst_index = _worst_joker_index(
+            gs, gs_ante(gs), intent, category_scores=category_scores
+        )
         if worst_index is not None:
             return Action(kind="sell", params={"joker": worst_index})
     pending_actions.pop(0)
@@ -955,16 +966,28 @@ def _joker_slots(gs: Mapping[str, Any]) -> int | None:
     return None
 
 
-def _worst_joker_index(gs: Mapping[str, Any], ante: int, intent: str) -> int | None:
+def _worst_joker_index(
+    gs: Mapping[str, Any], ante: int, intent: str, *, category_scores: Mapping[str, int]
+) -> int | None:
     jokers = gs_jokers(gs)
     if not jokers:
         return None
     worst_index = INDEX_INITIAL
     worst_score = _score_joker(
-        jokers[INDEX_INITIAL], ante=ante, intent=intent, existing_jokers=jokers
+        jokers[INDEX_INITIAL],
+        ante=ante,
+        intent=intent,
+        existing_jokers=jokers,
+        category_scores=category_scores,
     )
     for index, joker in enumerate(jokers[ENUMERATE_START:], start=ENUMERATE_START):
-        score = _score_joker(joker, ante=ante, intent=intent, existing_jokers=jokers)
+        score = _score_joker(
+            joker,
+            ante=ante,
+            intent=intent,
+            existing_jokers=jokers,
+            category_scores=category_scores,
+        )
         if score < worst_score:
             worst_score = score
             worst_index = index
@@ -1139,6 +1162,7 @@ def _score_joker(
     ante: int,
     intent: str,
     existing_jokers: list[dict],
+    category_scores: Mapping[str, int],
 ) -> int:
     key = card_key(joker)
     text = _item_text(joker)
@@ -1147,7 +1171,7 @@ def _score_joker(
 
     score = SCORE_NONE
     if rule is not None:
-        score += rule.resolved_base_score(category_scores=JOKER_CATEGORY_BASE_SCORES)
+        score += rule.resolved_base_score(category_scores=category_scores)
         if rule.category == "econ" and ante >= ANTE_ECON_PENALTY_MIN:
             xmult = bool(tokens & _XMULT_TOKENS) or _has_x_token(tokens)
             mult = bool(tokens & _MULT_TOKENS)
@@ -1163,14 +1187,18 @@ def _score_joker(
     mult = bool(tokens & _MULT_TOKENS)
     chips = bool(tokens & _CHIPS_TOKENS)
     econ = "$" in text or bool(tokens & _ECON_TOKENS)
+
     if xmult:
-        score += JOKER_CATEGORY_BASE_SCORES["xmult"]
-    if mult:
-        score += JOKER_CATEGORY_BASE_SCORES["mult"]
-    if chips:
-        score += JOKER_CATEGORY_BASE_SCORES["chips"]
-    if econ:
-        score += 10
+        score += category_scores.get("xmult", 0)
+    elif mult:
+        score += category_scores.get("mult", 0)
+    elif chips:
+        score += category_scores.get("chips", 0)
+    elif econ:
+        score += category_scores.get("econ", 0)
+    else:
+        score += category_scores.get("default", 0)
+
     if econ and ante >= ANTE_ECON_PENALTY_MIN and not (xmult or mult or chips):
         score -= JOKER_ECON_LATE_PENALTY
     score += _intent_adjust_for_joker(
@@ -1214,10 +1242,14 @@ def _has_x_token(tokens: set[str]) -> bool:
     return has_x_token(tokens, slice_after_first_char=SLICE_AFTER_FIRST_CHAR)
 
 
-def _score_from_category(category: str) -> int:
-    return JOKER_CATEGORY_BASE_SCORES.get(
-        category, JOKER_CATEGORY_BASE_SCORES["default"]
-    )
+def _joker_category_scores(cfg: Config) -> dict[str, int]:
+    return {
+        "xmult": int(cfg.joker_score_xmult),
+        "mult": int(cfg.joker_score_mult),
+        "chips": int(cfg.joker_score_chips),
+        "econ": int(cfg.joker_score_econ),
+        "default": int(cfg.joker_score_default),
+    }
 
 
 def _item_identity(item: Mapping[str, Any]) -> dict[str, str]:
@@ -1290,17 +1322,17 @@ def _budget(
     blind_score = gs_blind_score(gs) or 0
 
     if ante <= ANTE_EARLY_MAX:
-        buy_threshold = BUY_THRESHOLD_EARLY
-        reroll_threshold = REROLL_THRESHOLD_EARLY
-        cost_weight = COST_WEIGHT_EARLY
+        buy_threshold = cfg.buy_threshold_early
+        reroll_threshold = cfg.reroll_threshold_early
+        cost_weight = cfg.cost_weight_early
     elif ante <= ANTE_MID_MAX:
-        buy_threshold = BUY_THRESHOLD_MID
-        reroll_threshold = REROLL_THRESHOLD_MID
-        cost_weight = COST_WEIGHT_MID
+        buy_threshold = cfg.buy_threshold_mid
+        reroll_threshold = cfg.reroll_threshold_mid
+        cost_weight = cfg.cost_weight_mid
     else:
-        buy_threshold = BUY_THRESHOLD_LATE
-        reroll_threshold = REROLL_THRESHOLD_LATE
-        cost_weight = COST_WEIGHT_LATE
+        buy_threshold = cfg.buy_threshold_late
+        reroll_threshold = cfg.reroll_threshold_late
+        cost_weight = cfg.cost_weight_late
 
     boss_soon = round_num % 3 == 2
     tough_blind = blind_score > 0 and blind_score >= 1_000 * max(1, ante)
@@ -1353,15 +1385,28 @@ def _score_shop_card(
     cost: int,
     budget: _Budget,
     gs: Mapping[str, Any],
+    category_scores: Mapping[str, int],
 ) -> int:
     key = card_key(card) or ""
     jokers = gs_jokers(gs)
     if key.startswith("j_"):
-        base = _score_joker(card, ante=ante, intent=intent, existing_jokers=jokers)
+        base = _score_joker(
+            card,
+            ante=ante,
+            intent=intent,
+            existing_jokers=jokers,
+            category_scores=category_scores,
+        )
     elif key.startswith("c_"):
         base = _score_consumable(card, intent=intent)
     else:
-        base = _score_joker(card, ante=ante, intent=intent, existing_jokers=jokers)
+        base = _score_joker(
+            card,
+            ante=ante,
+            intent=intent,
+            existing_jokers=jokers,
+            category_scores=category_scores,
+        )
     base += _synergy_bonus_with_existing(card, intent=intent, existing_jokers=jokers)
     base += _cost_adjust(base, cost=cost, budget=budget, ante=ante)
     return base
