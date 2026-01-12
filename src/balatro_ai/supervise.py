@@ -39,7 +39,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument("--out", default="logs/autotune/play.jsonl")
-    parser.add_argument("--poll-s", type=float, default=2.0, help="Reload best.json every N seconds")
+    parser.add_argument(
+        "--poll-s", type=float, default=2.0, help="Reload best.json every N seconds"
+    )
     return parser
 
 

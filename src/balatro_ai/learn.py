@@ -8,7 +8,6 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from balatro_ai.asha_tune import main as asha_tune_main
 from balatro_ai.autotune import main as autotune_main
@@ -112,7 +111,9 @@ def _wait_for_health(*, base_url: str, timeout_s: float = 30.0) -> bool:
         rpc.close()
 
 
-def _start_server(*, host: str, port: int, fast: bool, headless: bool) -> _ServerProcess:
+def _start_server(
+    *, host: str, port: int, fast: bool, headless: bool
+) -> _ServerProcess:
     cmd: list[str] = ["uvx", "balatrobot", "--host", host, "--port", str(port)]
     if fast:
         cmd.append("--fast")

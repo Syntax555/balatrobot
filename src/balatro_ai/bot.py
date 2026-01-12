@@ -375,8 +375,12 @@ def _find_flag_value(argv: Sequence[str], flag: str) -> str | None:
 def _load_params_json(path: Path) -> dict[str, Any]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
-        raise ValueError(f"--params-json must contain an object, got: {type(raw).__name__}")
-    if isinstance(raw.get("best"), dict) and isinstance(raw["best"].get("params"), dict):
+        raise ValueError(
+            f"--params-json must contain an object, got: {type(raw).__name__}"
+        )
+    if isinstance(raw.get("best"), dict) and isinstance(
+        raw["best"].get("params"), dict
+    ):
         return dict(raw["best"]["params"])
     if isinstance(raw.get("params"), dict):
         return dict(raw["params"])

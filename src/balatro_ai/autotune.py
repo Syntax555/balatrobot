@@ -136,7 +136,9 @@ def _mutate(best: Params, rng: random.Random) -> Params:
         max_rerolls_per_shop=bump(best.max_rerolls_per_shop, 0, 5, scale=1),
         rollout_k=bump(best.rollout_k, 8, 80, scale=8),
         discard_m=bump(best.discard_m, 4, 28, scale=4),
-        hand_rollout=best.hand_rollout if rng.random() < 0.85 else not best.hand_rollout,
+        hand_rollout=best.hand_rollout
+        if rng.random() < 0.85
+        else not best.hand_rollout,
         rollout_time_budget_s=best.rollout_time_budget_s
         if rng.random() < 0.75
         else rng.choice([None, 0.15, 0.3, 0.6]),
@@ -149,7 +151,9 @@ def _mutate(best: Params, rng: random.Random) -> Params:
         pack_rollout_time_budget_s=best.pack_rollout_time_budget_s
         if rng.random() < 0.75
         else rng.choice([None, 0.5, 1.0, 2.0]),
-        intent_trials=max(25, min(400, int(best.intent_trials) + rng.choice([-50, -25, 0, 25, 50]))),
+        intent_trials=max(
+            25, min(400, int(best.intent_trials) + rng.choice([-50, -25, 0, 25, 50]))
+        ),
     )
 
 
@@ -178,7 +182,9 @@ def _format_bot_flags(params: Params) -> list[str]:
     if params.pack_rollout:
         flags.append("--pack-rollout")
         if params.pack_rollout_time_budget_s is not None:
-            flags.append(f"--pack-rollout-time-budget-s={params.pack_rollout_time_budget_s}")
+            flags.append(
+                f"--pack-rollout-time-budget-s={params.pack_rollout_time_budget_s}"
+            )
     else:
         flags.append("--no-pack-rollout")
     return flags
@@ -284,7 +290,11 @@ def main(argv: list[str] | None = None) -> int:
 
             score = _objective(runs)
             result = TrialResult(
-                generation=generation, trial=trial, score=score, params=params, runs=runs
+                generation=generation,
+                trial=trial,
+                score=score,
+                params=params,
+                runs=runs,
             )
             history.append(
                 {

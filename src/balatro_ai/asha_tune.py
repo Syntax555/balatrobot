@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
@@ -66,14 +67,29 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--port", type=int, default=12346)
     parser.add_argument("--deck", default="RED")
     parser.add_argument("--stake", default="WHITE")
-    parser.add_argument("--seed", action="append", default=[], help="Seed (repeatable).")
-    parser.add_argument("--count", type=int, default=50, help="Generate N seeds (ASHA-0001...).")
+    parser.add_argument(
+        "--seed", action="append", default=[], help="Seed (repeatable)."
+    )
+    parser.add_argument(
+        "--count", type=int, default=50, help="Generate N seeds (ASHA-0001...)."
+    )
     parser.add_argument("--seed-prefix", default="ASHA")
-    parser.add_argument("--candidates", type=int, default=40, help="Initial candidate configs.")
+    parser.add_argument(
+        "--candidates", type=int, default=40, help="Initial candidate configs."
+    )
     parser.add_argument("--eta", type=int, default=3, help="Pruning factor per rung.")
-    parser.add_argument("--rungs", type=int, default=4, help="Number of successive-halving rungs.")
-    parser.add_argument("--min-seeds", type=int, default=6, help="Seeds evaluated in rung 0.")
-    parser.add_argument("--max-seeds", type=int, default=50, help="Max seeds per candidate in final rung.")
+    parser.add_argument(
+        "--rungs", type=int, default=4, help="Number of successive-halving rungs."
+    )
+    parser.add_argument(
+        "--min-seeds", type=int, default=6, help="Seeds evaluated in rung 0."
+    )
+    parser.add_argument(
+        "--max-seeds",
+        type=int,
+        default=50,
+        help="Max seeds per candidate in final rung.",
+    )
     parser.add_argument("--rng-seed", default="asha")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--timeout", type=float, default=20.0)
@@ -173,7 +189,7 @@ def _sample_params(rng: random.Random) -> Params:
 def _candidate_key(params: Params) -> str:
     payload = json.dumps(asdict(params), sort_keys=True, separators=(",", ":"))
     # Stable, short-ish key; collisions are unlikely for our purposes.
-    return str(abs(hash(payload)))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 def _build_cfg(args: argparse.Namespace, params: Params) -> Config:
@@ -248,9 +264,7 @@ def _run_seeds(
     return runs
 
 
-def _rung_seed_budget(
-    rung: int, *, min_seeds: int, max_seeds: int, rungs: int
-) -> int:
+def _rung_seed_budget(rung: int, *, min_seeds: int, max_seeds: int, rungs: int) -> int:
     if rungs <= 1:
         return max(1, max_seeds)
     rung = max(0, min(int(rung), int(rungs) - 1))
@@ -354,4 +368,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

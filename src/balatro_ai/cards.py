@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import re
 from collections.abc import Mapping
 from typing import Any
@@ -58,9 +59,14 @@ def card_key(card: Mapping[str, Any]) -> str | None:
 
 def card_tokens(text: str) -> set[str]:
     """Tokenize a lowercase text string into simple alphanumerics."""
+    return set(_token_tuple(text))
+
+
+@functools.lru_cache(maxsize=8192)
+def _token_tuple(text: str) -> tuple[str, ...]:
     if not text:
-        return set()
-    return set(_TOKEN_RE.findall(text.lower()))
+        return ()
+    return tuple(_TOKEN_RE.findall(text.lower()))
 
 
 def card_rank(card: Mapping[str, Any]) -> int:

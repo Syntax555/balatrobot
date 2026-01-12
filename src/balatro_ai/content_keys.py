@@ -37,7 +37,9 @@ def _default_enums_path() -> Path:
 
 
 def parse_enums_lua(text: str) -> VanillaContentKeys:
-    buckets: dict[str, set[str]] = {name: set() for name in _INTERESTING_ALIASES.values()}
+    buckets: dict[str, set[str]] = {
+        name: set() for name in _INTERESTING_ALIASES.values()
+    }
     active_bucket: str | None = None
 
     for line in text.splitlines():
@@ -66,7 +68,9 @@ def parse_enums_lua(text: str) -> VanillaContentKeys:
 
 
 @lru_cache(maxsize=2)
-def load_vanilla_content_keys(enums_path: str | Path | None = None) -> VanillaContentKeys:
+def load_vanilla_content_keys(
+    enums_path: str | Path | None = None,
+) -> VanillaContentKeys:
     path = Path(enums_path) if enums_path is not None else _default_enums_path()
     try:
         text = path.read_text(encoding="utf-8")
@@ -79,4 +83,3 @@ def load_vanilla_content_keys(enums_path: str | Path | None = None) -> VanillaCo
             vouchers=frozenset(),
         )
     return parse_enums_lua(text)
-

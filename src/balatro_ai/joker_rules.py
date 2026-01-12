@@ -246,7 +246,12 @@ _RULES: dict[str, JokerRule] = {
         effect_type="copy_leftmost",
         base_score=0,
         flat_bonus=45,
-        intent_bonus=(("FLUSH", 20), ("STRAIGHT", 20), ("PAIRS", 20), ("HIGH_CARD", 20)),
+        intent_bonus=(
+            ("FLUSH", 20),
+            ("STRAIGHT", 20),
+            ("PAIRS", 20),
+            ("HIGH_CARD", 20),
+        ),
     ),
     "j_invisible": JokerRule(
         category="econ",
@@ -275,6 +280,7 @@ _RULES: dict[str, JokerRule] = {
     ),
 }
 
+
 def _infer_joker_rule(*, key: str, text: str | None) -> JokerRule:
     raw = (text or "").lower()
     tokens = card_tokens(raw) | card_tokens(key)
@@ -292,7 +298,9 @@ def _infer_joker_rule(*, key: str, text: str | None) -> JokerRule:
 
     if category == "default":
         return DEFAULT_JOKER_RULE
-    return JokerRule(category=category, effect_type="", base_score=None, tags=frozenset())
+    return JokerRule(
+        category=category, effect_type="", base_score=None, tags=frozenset()
+    )
 
 
 def joker_rule(key: str | None, text: str | None = None) -> JokerRule | None:

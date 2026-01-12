@@ -283,6 +283,7 @@ _VOUCHER_RULES: dict[str, dict[str, Any]] = {
     "v_petroglyph": {"base": 40},
 }
 
+
 def _default_consumable_rule() -> dict[str, Any]:
     return {"score": {"*": 0}, "tags": frozenset()}
 
@@ -332,6 +333,7 @@ def voucher_rule(key: str | None) -> Mapping[str, Any] | None:
     if not normalized.startswith("v_"):
         return None
     return _all_voucher_rules().get(normalized, _default_voucher_rule())
+
 
 _JOKER_INTENT_TAG_WEIGHTS: dict[str, dict[str, int]] = {
     _INTENT_FLUSH: {
@@ -674,7 +676,9 @@ def generate_shop_rollout_candidates(
             )
             continue
         if cand.kind == "card" and _jokers_full(gs):
-            worst = _worst_joker_index(gs, ante, intent, category_scores=category_scores)
+            worst = _worst_joker_index(
+                gs, ante, intent, category_scores=category_scores
+            )
             if worst is not None:
                 candidates.append(
                     ShopRolloutCandidate(
