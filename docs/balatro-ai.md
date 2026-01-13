@@ -26,6 +26,17 @@ This starts BalatroBot if needed, generates seed sets, runs an autotune session,
 uv run python -m balatro_ai.learn --deck RED --stake WHITE
 ```
 
+### Learn across many decks/stakes (matrix)
+
+If you want separate tuned parameters per deck/stake (recommended as stakes get harder), run:
+
+```bash
+# Runs sequentially (single-instance friendly). Skips locked decks/stakes by default.
+uv run python -m balatro_ai.learn --matrix --all-decks --all-stakes
+```
+
+Results are written under a single run directory like `logs/learn/matrix-.../`, with one `best.json` per combo plus a `index.json` summary.
+
 ## Run the bot
 
 Common flags:
@@ -36,6 +47,7 @@ Common flags:
 - `--hand-rollout/--shop-rollout/--pack-rollout`: enable save/load lookahead (slower, often stronger)
 - `--determinism-check`: auto-disables rollouts if save/load looks unsafe
 - `--intent-trials`: intent evaluation quality vs speed (higher = stronger, slower)
+- `--params-json`: load tuned parameters from `best.json` produced by `learn`/`autotune`
 
 ## Benchmark the bot (generate data)
 
@@ -94,4 +106,3 @@ Integration tests (starts Balatro instances and requires a working game install)
 ```bash
 uv run pytest -m integration
 ```
-
