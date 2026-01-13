@@ -52,6 +52,46 @@ _VALID_DECKS: tuple[str, ...] = (
     "ERRATIC",
 )
 
+_AUTO_PROFILES: dict[str, dict[str, Any]] = {
+    # "Hands-free" presets for typical users. Advanced users can override any knob explicitly.
+    "fast": {
+        "strategy": "asha",
+        "train_count": 30,
+        "eval_count": 10,
+        "asha_candidates": 30,
+        "asha_rungs": 3,
+        "asha_min_seeds": 6,
+        "asha_max_seeds": 0,
+        "objective": "trimmed_mean_score",
+        "trim_bottom_pct": 0.1,
+        "mutations": 10,
+    },
+    "balanced": {
+        "strategy": "asha",
+        "train_count": 60,
+        "eval_count": 20,
+        "asha_candidates": 50,
+        "asha_rungs": 4,
+        "asha_min_seeds": 8,
+        "asha_max_seeds": 0,
+        "objective": "trimmed_mean_score",
+        "trim_bottom_pct": 0.1,
+        "mutations": 15,
+    },
+    "strong": {
+        "strategy": "asha",
+        "train_count": 120,
+        "eval_count": 40,
+        "asha_candidates": 80,
+        "asha_rungs": 5,
+        "asha_min_seeds": 10,
+        "asha_max_seeds": 0,
+        "objective": "trimmed_mean_score",
+        "trim_bottom_pct": 0.1,
+        "mutations": 25,
+    },
+}
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -113,6 +153,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--asha-min-seeds", type=int, default=6)
     parser.add_argument("--asha-max-seeds", type=int, default=0)
     parser.add_argument(
+        "--baseline-json",
+        default="",
+        help=(
+            "Optional params JSON to warm-start learning (e.g. logs/learn/.../best.json). "
+            "Useful when continuing improvement or switching decks/stakes."
+        ),
+    )
+    parser.add_argument(
+        "--mutations",
+        type=int,
+        default=10,
+        help="When using --baseline-json with strategy=asha, include N mutated candidates.",
+    )
+    parser.add_argument(
         "--objective",
         default="wins_then_ante",
         choices=("wins_then_ante", "mean_score", "trimmed_mean_score"),
@@ -128,6 +182,30 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "For trimmed_mean_score: drop the bottom fraction of per-seed scores before averaging "
             "(e.g. 0.1 ignores the hardest 10%%)."
+        ),
+    )
+    parser.add_argument(
+        "--auto",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "If enabled, apply sensible defaults (profile + baseline auto-detection) unless explicitly overridden. "
+            "Disable for fully manual control."
+        ),
+    )
+    parser.add_argument(
+        "--profile",
+        choices=tuple(_AUTO_PROFILES),
+        default="balanced",
+        help="Auto profile when --auto is enabled (fast/balanced/strong).",
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        help=(
+            "Optional autopilot: run N learning runs back-to-back, using the previous best.json as baseline "
+            "for the next run (single deck/stake only; ignored for --matrix)."
         ),
     )
 
@@ -259,6 +337,65 @@ def _split_csv(value: str) -> list[str]:
     return [p.upper() for p in parts if p]
 
 
+def _has_flag(argv: list[str], flag: str) -> bool:
+    for token in argv:
+        if token == flag:
+            return True
+        if isinstance(token, str) and token.startswith(flag + "="):
+            return True
+    return False
+
+
+def _apply_auto_defaults(args: argparse.Namespace, argv: list[str]) -> None:
+    if not bool(getattr(args, "auto", True)):
+        return
+    profile = str(getattr(args, "profile", "balanced") or "balanced").lower()
+    defaults = _AUTO_PROFILES.get(profile, _AUTO_PROFILES["balanced"])
+
+    def set_if_missing(flag: str, attr: str) -> None:
+        if _has_flag(argv, flag):
+            return
+        if attr in defaults:
+            setattr(args, attr, defaults[attr])
+
+    set_if_missing("--strategy", "strategy")
+    set_if_missing("--train-count", "train_count")
+    set_if_missing("--eval-count", "eval_count")
+    set_if_missing("--asha-candidates", "asha_candidates")
+    set_if_missing("--asha-rungs", "asha_rungs")
+    set_if_missing("--asha-min-seeds", "asha_min_seeds")
+    set_if_missing("--asha-max-seeds", "asha_max_seeds")
+    set_if_missing("--objective", "objective")
+    set_if_missing("--trim-bottom-pct", "trim_bottom_pct")
+    set_if_missing("--mutations", "mutations")
+
+
+def _find_latest_best_json(out_root: Path, *, deck: str, stake: str) -> Path | None:
+    """Find the most recent best.json for deck/stake under logs/learn."""
+    deck = (deck or "").upper()
+    stake = (stake or "").upper()
+    if not deck or not stake or not out_root.exists():
+        return None
+
+    candidates: list[Path] = []
+    # Single-run layout: logs/learn/RED-WHITE-<timestamp>/best.json
+    candidates.extend(out_root.glob(f"{deck}-{stake}-*/best.json"))
+    # Matrix layout: logs/learn/matrix-<timestamp>/RED-WHITE/best.json
+    candidates.extend(out_root.glob(f"matrix-*/{deck}-{stake}/best.json"))
+
+    latest: Path | None = None
+    latest_mtime = -1.0
+    for path in candidates:
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        if mtime > latest_mtime:
+            latest = path
+            latest_mtime = mtime
+    return latest
+
+
 def _matrix_decks(args: argparse.Namespace) -> list[str]:
     if args.all_decks:
         return list(_VALID_DECKS)
@@ -304,6 +441,7 @@ def _run_learn_for_combo(
     deck: str,
     stake: str,
     run_dir: Path,
+    baseline_json: str = "",
 ) -> int:
     train_prefix = f"LEARN-TRAIN-{deck}-{stake}-{_timestamp()}"
     eval_prefix = f"LEARN-EVAL-{deck}-{stake}-{_timestamp()}"
@@ -339,6 +477,8 @@ def _run_learn_for_combo(
             str(args.timeout),
             "--log-level",
             args.log_level,
+            "--baseline-json",
+            str(baseline_json or args.baseline_json or ""),
             "--objective",
             str(args.objective),
             "--trim-bottom-pct",
@@ -374,6 +514,14 @@ def _run_learn_for_combo(
         str(args.asha_min_seeds),
         "--max-seeds",
         str(max_seeds),
+        "--baseline-json",
+        str(baseline_json or args.baseline_json or ""),
+        "--mutations",
+        str(int(args.mutations)),
+        "--eval-count",
+        str(int(args.eval_count)),
+        "--eval-prefix",
+        eval_prefix,
         "--rng-seed",
         str(args.rng_seed),
         "--max-steps",
@@ -393,7 +541,9 @@ def _run_learn_for_combo(
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    argv_list = list(argv) if argv is not None else sys.argv[1:]
+    args = build_parser().parse_args(argv_list)
+    _apply_auto_defaults(args, argv_list)
     configure_logging(args.log_level)
 
     out_root = Path(args.out_dir)
@@ -422,15 +572,36 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     try:
+        runs = max(1, int(getattr(args, "runs", 1) or 1))
+        if bool(getattr(args, "matrix", False)):
+            runs = 1
+
         if not args.matrix:
-            run_dir = out_root / f"{args.deck}-{args.stake}-{_timestamp()}"
-            run_dir.mkdir(parents=True, exist_ok=True)
-            return _run_learn_for_combo(
-                args,
-                deck=str(args.deck).upper(),
-                stake=str(args.stake).upper(),
-                run_dir=run_dir,
-            )
+            deck = str(args.deck).upper()
+            stake = str(args.stake).upper()
+            baseline = str(getattr(args, "baseline_json", "") or "").strip()
+            if not baseline and bool(getattr(args, "auto", True)):
+                found = _find_latest_best_json(out_root, deck=deck, stake=stake)
+                if found is not None:
+                    baseline = str(found)
+
+            exit_code = 0
+            current_baseline = baseline
+            for run_index in range(1, runs + 1):
+                suffix = f"-r{run_index:02d}" if runs > 1 else ""
+                run_dir = out_root / f"{deck}-{stake}-{_timestamp()}{suffix}"
+                run_dir.mkdir(parents=True, exist_ok=True)
+                exit_code = _run_learn_for_combo(
+                    args,
+                    deck=deck,
+                    stake=stake,
+                    run_dir=run_dir,
+                    baseline_json=current_baseline,
+                )
+                if exit_code != 0:
+                    return exit_code
+                current_baseline = str(run_dir / "best.json")
+            return exit_code
 
         run_dir = out_root / f"matrix-{_timestamp()}"
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -455,6 +626,12 @@ def main(argv: list[str] | None = None) -> int:
             combo_key = f"{deck}-{stake}"
             combo_dir = run_dir / combo_key
             combo_dir.mkdir(parents=True, exist_ok=True)
+
+            baseline = str(getattr(args, "baseline_json", "") or "").strip()
+            if not baseline and bool(getattr(args, "auto", True)):
+                found = _find_latest_best_json(out_root, deck=deck, stake=stake)
+                if found is not None:
+                    baseline = str(found)
 
             if args.skip_locked:
                 ok, reason = _preflight_start(
@@ -484,7 +661,11 @@ def main(argv: list[str] | None = None) -> int:
                     continue
 
             exit_code = _run_learn_for_combo(
-                args, deck=deck, stake=stake, run_dir=combo_dir
+                args,
+                deck=deck,
+                stake=stake,
+                run_dir=combo_dir,
+                baseline_json=baseline,
             )
             combos_summary.append(
                 {

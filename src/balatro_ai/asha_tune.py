@@ -78,6 +78,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--seed-prefix", default="ASHA")
     parser.add_argument(
+        "--baseline-json",
+        default="",
+        help=(
+            "Optional params JSON (e.g. logs/learn/.../best.json). If provided, the baseline config "
+            "and its mutations are included in the candidate pool."
+        ),
+    )
+    parser.add_argument(
+        "--mutations",
+        type=int,
+        default=10,
+        help="How many mutated variants of --baseline-json to include (0 disables).",
+    )
+    parser.add_argument(
         "--candidates", type=int, default=40, help="Initial candidate configs."
     )
     parser.add_argument("--eta", type=int, default=3, help="Pruning factor per rung.")
@@ -92,6 +106,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=50,
         help="Max seeds per candidate in final rung.",
+    )
+    parser.add_argument(
+        "--eval-count", type=int, default=0, help="Optional holdout seed count."
+    )
+    parser.add_argument(
+        "--eval-prefix", default="ASHA-EVAL", help="Holdout seed prefix."
     )
     parser.add_argument("--rng-seed", default="asha")
     parser.add_argument("--max-steps", type=int, default=1500)
@@ -129,6 +149,14 @@ def _seeds(args: argparse.Namespace) -> list[str]:
         for i in range(1, args.count + 1):
             seeds.append(f"{args.seed_prefix}-{i:0{width}d}")
     return seeds
+
+
+def _gen_seeds(prefix: str, count: int) -> list[str]:
+    count = max(0, int(count))
+    if count <= 0:
+        return []
+    width = max(4, len(str(count)))
+    return [f"{prefix}-{i:0{width}d}" for i in range(1, count + 1)]
 
 
 def _run_score(run: dict[str, Any]) -> float:
@@ -236,6 +264,153 @@ def _sample_params(rng: random.Random) -> Params:
         joker_score_chips=joker_score_chips,
         joker_score_econ=joker_score_econ,
         joker_score_default=joker_score_default,
+    )
+
+
+def _default_params() -> Params:
+    return Params(
+        reserve_early=10,
+        reserve_mid=20,
+        reserve_late=25,
+        max_rerolls_per_shop=1,
+        rollout_k=30,
+        discard_m=12,
+        hand_rollout=True,
+        rollout_time_budget_s=None,
+        shop_rollout=False,
+        shop_rollout_candidates=10,
+        shop_rollout_time_budget_s=None,
+        pack_rollout=False,
+        pack_rollout_time_budget_s=None,
+        intent_trials=200,
+        buy_threshold_early=30,
+        buy_threshold_mid=35,
+        buy_threshold_late=40,
+        reroll_threshold_early=20,
+        reroll_threshold_mid=25,
+        reroll_threshold_late=30,
+        cost_weight_early=1.8,
+        cost_weight_mid=1.2,
+        cost_weight_late=0.9,
+        joker_score_xmult=100,
+        joker_score_mult=50,
+        joker_score_chips=20,
+        joker_score_econ=0,
+        joker_score_default=0,
+    )
+
+
+def _params_from_partial(partial: dict[str, Any]) -> Params | None:
+    base = asdict(_default_params())
+    for key, value in partial.items():
+        if key in base:
+            base[key] = value
+    try:
+        return Params(**base)
+    except TypeError:
+        return None
+
+
+def _load_params_json(path: Path) -> dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"--baseline-json must contain an object, got: {type(raw).__name__}"
+        )
+    if isinstance(raw.get("best"), dict) and isinstance(
+        raw["best"].get("params"), dict
+    ):
+        return dict(raw["best"]["params"])
+    if isinstance(raw.get("params"), dict):
+        return dict(raw["params"])
+    return dict(raw)
+
+
+def _baseline_params(path: Path) -> Params | None:
+    try:
+        params = _load_params_json(path)
+        if not isinstance(params, dict):
+            return None
+        return _params_from_partial(params)
+    except Exception:
+        return None
+
+
+def _mutate_params(rng: random.Random, base: Params) -> Params:
+    def bump_int(value: int, *, low: int, high: int, scale: int) -> int:
+        return max(low, min(high, int(value) + rng.randint(-scale, scale)))
+
+    def bump_float(value: float, *, low: float, high: float, step: float) -> float:
+        delta = rng.choice([-step, 0.0, step])
+        return max(low, min(high, float(value) + delta))
+
+    reserve_early = bump_int(base.reserve_early, low=0, high=15, scale=4)
+    reserve_mid = bump_int(base.reserve_mid, low=reserve_early, high=35, scale=5)
+    reserve_late = bump_int(base.reserve_late, low=reserve_mid, high=55, scale=6)
+
+    buy_threshold_early = bump_int(base.buy_threshold_early, low=10, high=55, scale=5)
+    buy_threshold_mid = bump_int(
+        base.buy_threshold_mid, low=buy_threshold_early, high=65, scale=6
+    )
+    buy_threshold_late = bump_int(
+        base.buy_threshold_late, low=buy_threshold_mid, high=80, scale=7
+    )
+    reroll_threshold_early = bump_int(
+        base.reroll_threshold_early, low=0, high=45, scale=5
+    )
+    reroll_threshold_mid = bump_int(
+        base.reroll_threshold_mid, low=reroll_threshold_early, high=55, scale=6
+    )
+    reroll_threshold_late = bump_int(
+        base.reroll_threshold_late, low=reroll_threshold_mid, high=70, scale=7
+    )
+
+    return Params(
+        reserve_early=reserve_early,
+        reserve_mid=reserve_mid,
+        reserve_late=reserve_late,
+        max_rerolls_per_shop=bump_int(
+            base.max_rerolls_per_shop, low=0, high=6, scale=1
+        ),
+        rollout_k=bump_int(base.rollout_k, low=8, high=90, scale=10),
+        discard_m=bump_int(base.discard_m, low=4, high=30, scale=4),
+        hand_rollout=base.hand_rollout
+        if rng.random() < 0.85
+        else not base.hand_rollout,
+        rollout_time_budget_s=base.rollout_time_budget_s
+        if rng.random() < 0.75
+        else rng.choice([None, 0.15, 0.3, 0.6, 1.0]),
+        shop_rollout=base.shop_rollout if rng.random() < 0.8 else not base.shop_rollout,
+        shop_rollout_candidates=bump_int(
+            base.shop_rollout_candidates, low=4, high=24, scale=4
+        ),
+        shop_rollout_time_budget_s=base.shop_rollout_time_budget_s
+        if rng.random() < 0.75
+        else rng.choice([None, 0.5, 1.0, 2.0]),
+        pack_rollout=base.pack_rollout if rng.random() < 0.8 else not base.pack_rollout,
+        pack_rollout_time_budget_s=base.pack_rollout_time_budget_s
+        if rng.random() < 0.75
+        else rng.choice([None, 0.5, 1.0, 2.0]),
+        intent_trials=max(
+            25,
+            min(400, int(base.intent_trials) + rng.choice([-50, -25, 0, 25, 50])),
+        ),
+        buy_threshold_early=buy_threshold_early,
+        buy_threshold_mid=buy_threshold_mid,
+        buy_threshold_late=buy_threshold_late,
+        reroll_threshold_early=reroll_threshold_early,
+        reroll_threshold_mid=reroll_threshold_mid,
+        reroll_threshold_late=reroll_threshold_late,
+        cost_weight_early=bump_float(
+            base.cost_weight_early, low=1.0, high=2.6, step=0.1
+        ),
+        cost_weight_mid=bump_float(base.cost_weight_mid, low=0.6, high=1.8, step=0.1),
+        cost_weight_late=bump_float(base.cost_weight_late, low=0.4, high=1.4, step=0.1),
+        joker_score_xmult=bump_int(base.joker_score_xmult, low=50, high=180, scale=10),
+        joker_score_mult=bump_int(base.joker_score_mult, low=10, high=120, scale=10),
+        joker_score_chips=bump_int(base.joker_score_chips, low=0, high=70, scale=8),
+        joker_score_econ=bump_int(base.joker_score_econ, low=-25, high=35, scale=5),
+        joker_score_default=0,
     )
 
 
@@ -355,6 +530,23 @@ def main(argv: list[str] | None = None) -> int:
 
     candidates: list[Candidate] = []
     seen: set[str] = set()
+
+    baseline_json = str(getattr(args, "baseline_json", "") or "").strip()
+    if baseline_json:
+        baseline = _baseline_params(Path(baseline_json))
+        if baseline is not None:
+            key = _candidate_key(baseline)
+            seen.add(key)
+            candidates.append(Candidate(key=key, params=baseline))
+            for _ in range(max(0, int(args.mutations))):
+                mutated = _mutate_params(rng, baseline)
+                key = _candidate_key(mutated)
+                if key in seen:
+                    continue
+                seen.add(key)
+                candidates.append(Candidate(key=key, params=mutated))
+                if len(candidates) >= initial_candidates:
+                    break
     while len(candidates) < initial_candidates:
         params = _sample_params(rng)
         key = _candidate_key(params)
@@ -431,6 +623,34 @@ def main(argv: list[str] | None = None) -> int:
         "best": best,
         "history": history,
     }
+
+    eval_seeds = _gen_seeds(str(args.eval_prefix), int(args.eval_count))
+    if eval_seeds and best is not None and isinstance(best.get("params"), dict):
+        best_params = _params_from_partial(best["params"])
+        if best_params is not None:
+            cfg = _build_cfg(args, best_params)
+            runner = BotRunner(config=cfg, base_url=base_url)
+            try:
+                eval_runs = _run_seeds(
+                    runner,
+                    deck=args.deck,
+                    stake=args.stake,
+                    seeds=eval_seeds,
+                    max_steps=cfg.max_steps,
+                )
+            finally:
+                runner.close()
+            payload["eval_seeds"] = eval_seeds
+            payload["best_eval"] = {
+                "objective": str(args.objective),
+                "trim_bottom_pct": float(args.trim_bottom_pct),
+                "score": _objective(
+                    eval_runs,
+                    objective=str(args.objective),
+                    trim_bottom_pct=float(args.trim_bottom_pct),
+                ),
+                "runs": eval_runs,
+            }
     if args.out:
         out_path = Path(args.out)
         out_path.parent.mkdir(parents=True, exist_ok=True)

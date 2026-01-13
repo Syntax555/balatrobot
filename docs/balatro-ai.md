@@ -20,10 +20,28 @@ uv run python -m balatro_ai.bot --deck RED --stake WHITE --seed TEST-0001 --auto
 
 ## One-command learning (easiest)
 
-This starts BalatroBot if needed, generates seed sets, runs an autotune session, and writes results to `logs/learn/.../best.json`:
+This starts BalatroBot if needed, generates seed sets, runs a learning session (default: ASHA), and writes results to `logs/learn/.../best.json`:
 
 ```bash
 uv run python -m balatro_ai.learn --deck RED --stake WHITE
+```
+
+By default, `learn` runs in `--auto` mode:
+
+- Applies a sensible preset (`--profile balanced`) unless you override flags explicitly
+- Automatically warm-starts from the most recent `logs/learn/.../best.json` for that deck/stake when available
+
+Use a different preset:
+
+```bash
+uv run python -m balatro_ai.learn --deck RED --stake WHITE --profile fast
+uv run python -m balatro_ai.learn --deck RED --stake WHITE --profile strong
+```
+
+Run multiple back-to-back learning runs (autopilot), chaining the previous `best.json` as the next baseline:
+
+```bash
+uv run python -m balatro_ai.learn --deck RED --stake WHITE --runs 5
 ```
 
 ### Learning with unwinnable seeds (more robust)
@@ -33,6 +51,14 @@ Some seed sets include a few runs that are effectively unwinnable. You can make 
 ```bash
 # Ignore the worst 10% of seeds when comparing configs
 uv run python -m balatro_ai.learn --deck RED --stake WHITE --objective trimmed_mean_score --trim-bottom-pct 0.1
+```
+
+### Continue learning (warm start)
+
+You can warm-start learning from a previous `best.json`:
+
+```bash
+uv run python -m balatro_ai.learn --deck RED --stake WHITE --baseline-json logs/learn/<run>/best.json
 ```
 
 ### Learn across many decks/stakes (matrix)

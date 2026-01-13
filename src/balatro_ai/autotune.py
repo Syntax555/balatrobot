@@ -66,6 +66,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument(
+        "--baseline-json",
+        default="",
+        help=(
+            "Optional params JSON (e.g. logs/learn/.../best.json). If provided, the baseline config "
+            "is evaluated once and used as a mutation starting point."
+        ),
+    )
+    parser.add_argument(
         "--objective",
         choices=_OBJECTIVES,
         default=_DEFAULT_OBJECTIVE,
@@ -173,6 +181,61 @@ def _sample_params(rng: random.Random) -> Params:
         pack_rollout_time_budget_s=pack_budget,
         intent_trials=int(intent_trials),
     )
+
+
+def _default_params() -> Params:
+    return Params(
+        reserve_early=10,
+        reserve_mid=20,
+        reserve_late=25,
+        max_rerolls_per_shop=1,
+        rollout_k=30,
+        discard_m=12,
+        hand_rollout=True,
+        rollout_time_budget_s=None,
+        shop_rollout=False,
+        shop_rollout_candidates=10,
+        shop_rollout_time_budget_s=None,
+        pack_rollout=False,
+        pack_rollout_time_budget_s=None,
+        intent_trials=200,
+    )
+
+
+def _params_from_partial(partial: dict[str, Any]) -> Params | None:
+    base = asdict(_default_params())
+    for key, value in partial.items():
+        if key in base:
+            base[key] = value
+    try:
+        return Params(**base)
+    except TypeError:
+        return None
+
+
+def _load_params_json(path: Path) -> dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"--baseline-json must contain an object, got: {type(raw).__name__}"
+        )
+    if isinstance(raw.get("best"), dict) and isinstance(
+        raw["best"].get("params"), dict
+    ):
+        return dict(raw["best"]["params"])
+    if isinstance(raw.get("params"), dict):
+        return dict(raw["params"])
+    return dict(raw)
+
+
+def _baseline_params(path: Path) -> Params | None:
+    try:
+        params = _load_params_json(path)
+        if not isinstance(params, dict):
+            return None
+        return _params_from_partial(params)
+    except Exception:
+        return None
 
 
 def _mutate(best: Params, rng: random.Random) -> Params:
@@ -285,13 +348,30 @@ def main(argv: list[str] | None = None) -> int:
     rng = random.Random(str(args.rng_seed))
     base_url = f"http://{args.host}:{args.port}"
 
+    baseline_first = False
+    baseline_json = str(getattr(args, "baseline_json", "") or "").strip()
+    if best is None and baseline_json:
+        baseline = _baseline_params(Path(baseline_json))
+        if baseline is not None:
+            best = TrialResult(
+                generation=0,
+                trial=0,
+                score=float("-inf"),
+                params=baseline,
+                runs=[],
+            )
+            baseline_first = True
+
     for generation in range(1, max(1, int(args.generations)) + 1):
         for trial in range(1, max(1, int(args.trials)) + 1):
-            params = (
-                _mutate(best.params, rng)
-                if best is not None and rng.random() < 0.7
-                else _sample_params(rng)
-            )
+            if baseline_first and generation == 1 and trial == 1 and best is not None:
+                params = best.params
+            else:
+                params = (
+                    _mutate(best.params, rng)
+                    if best is not None and rng.random() < 0.7
+                    else _sample_params(rng)
+                )
             cfg = Config(
                 deck=args.deck,
                 stake=args.stake,
