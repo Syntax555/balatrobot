@@ -13,6 +13,9 @@ from balatro_ai.gs import gs_ante, gs_money, gs_round_num, gs_state, gs_won
 from balatro_ai.logging_utils import configure_logging
 from balatro_ai.runner import BotRunner
 
+_DEFAULT_OBJECTIVE = "wins_then_ante"
+_OBJECTIVES: tuple[str, ...] = ("wins_then_ante", "mean_score", "trimmed_mean_score")
+
 
 @dataclass(frozen=True)
 class Params:
@@ -63,6 +66,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument(
+        "--objective",
+        choices=_OBJECTIVES,
+        default=_DEFAULT_OBJECTIVE,
+        help=(
+            "Objective function. wins_then_ante matches historical behavior; "
+            "mean_score / trimmed_mean_score are more robust when some seeds are unwinnable."
+        ),
+    )
+    parser.add_argument(
+        "--trim-bottom-pct",
+        type=float,
+        default=0.0,
+        help=(
+            "For trimmed_mean_score: drop the bottom fraction of per-seed scores before averaging "
+            "(e.g. 0.1 ignores the hardest 10%%)."
+        ),
+    )
+    parser.add_argument(
         "--out",
         default="logs/autotune/best.json",
         help="Path to write the best params JSON (and history).",
@@ -78,13 +99,45 @@ def _gen_seeds(prefix: str, count: int) -> list[str]:
     return [f"{prefix}-{i:0{width}d}" for i in range(1, count + 1)]
 
 
-def _objective(runs: list[dict[str, Any]]) -> float:
-    wins = sum(1 for r in runs if r.get("won"))
-    ante_sum = sum(int(r.get("ante") or 0) for r in runs)
-    round_sum = sum(int(r.get("round") or 0) for r in runs)
-    money_sum = sum(int(r.get("money") or 0) for r in runs)
-    steps_sum = sum(int(r.get("steps") or 0) for r in runs)
-    return wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum - steps_sum * 0.1
+def _run_score(run: dict[str, Any]) -> float:
+    won = bool(run.get("won"))
+    ante = int(run.get("ante") or 0)
+    round_num = int(run.get("round") or 0)
+    money = int(run.get("money") or 0)
+    steps = int(run.get("steps") or 0)
+    return (
+        (1_000_000.0 if won else 0.0)
+        + ante * 10_000.0
+        + round_num * 10.0
+        + money
+        - steps * 0.1
+    )
+
+
+def _objective(
+    runs: list[dict[str, Any]], *, objective: str, trim_bottom_pct: float
+) -> float:
+    if objective == "wins_then_ante":
+        wins = sum(1 for r in runs if r.get("won"))
+        ante_sum = sum(int(r.get("ante") or 0) for r in runs)
+        round_sum = sum(int(r.get("round") or 0) for r in runs)
+        money_sum = sum(int(r.get("money") or 0) for r in runs)
+        steps_sum = sum(int(r.get("steps") or 0) for r in runs)
+        return (
+            wins * 1e9 + ante_sum * 1e6 + round_sum * 1e3 + money_sum - steps_sum * 0.1
+        )
+
+    if not runs:
+        return float("-inf")
+    scores = sorted(_run_score(r) for r in runs)
+    if objective == "mean_score":
+        return float(sum(scores)) / float(len(scores))
+    if objective == "trimmed_mean_score":
+        pct = max(0.0, min(float(trim_bottom_pct), 0.49))
+        drop = int(len(scores) * pct)
+        kept = scores[drop:] if drop < len(scores) else scores[-1:]
+        return float(sum(kept)) / float(len(kept))
+    raise ValueError(f"Unknown objective: {objective!r}")
 
 
 def _sample_params(rng: random.Random) -> Params:
@@ -288,7 +341,11 @@ def main(argv: list[str] | None = None) -> int:
             finally:
                 runner.close()
 
-            score = _objective(runs)
+            score = _objective(
+                runs,
+                objective=str(args.objective),
+                trim_bottom_pct=float(args.trim_bottom_pct),
+            )
             result = TrialResult(
                 generation=generation,
                 trial=trial,

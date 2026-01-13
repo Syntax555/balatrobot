@@ -26,6 +26,15 @@ This starts BalatroBot if needed, generates seed sets, runs an autotune session,
 uv run python -m balatro_ai.learn --deck RED --stake WHITE
 ```
 
+### Learning with unwinnable seeds (more robust)
+
+Some seed sets include a few runs that are effectively unwinnable. You can make tuning focus on overall performance by using a robust objective:
+
+```bash
+# Ignore the worst 10% of seeds when comparing configs
+uv run python -m balatro_ai.learn --deck RED --stake WHITE --objective trimmed_mean_score --trim-bottom-pct 0.1
+```
+
 ### Learn across many decks/stakes (matrix)
 
 If you want separate tuned parameters per deck/stake (recommended as stakes get harder), run:

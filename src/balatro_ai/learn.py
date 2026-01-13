@@ -112,6 +112,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--asha-rungs", type=int, default=4)
     parser.add_argument("--asha-min-seeds", type=int, default=6)
     parser.add_argument("--asha-max-seeds", type=int, default=0)
+    parser.add_argument(
+        "--objective",
+        default="wins_then_ante",
+        choices=("wins_then_ante", "mean_score", "trimmed_mean_score"),
+        help=(
+            "Objective function for learning. wins_then_ante matches historical behavior; "
+            "mean_score / trimmed_mean_score are more robust when some seeds are unwinnable."
+        ),
+    )
+    parser.add_argument(
+        "--trim-bottom-pct",
+        type=float,
+        default=0.0,
+        help=(
+            "For trimmed_mean_score: drop the bottom fraction of per-seed scores before averaging "
+            "(e.g. 0.1 ignores the hardest 10%%)."
+        ),
+    )
 
     parser.add_argument(
         "--matrix",
@@ -321,6 +339,10 @@ def _run_learn_for_combo(
             str(args.timeout),
             "--log-level",
             args.log_level,
+            "--objective",
+            str(args.objective),
+            "--trim-bottom-pct",
+            str(args.trim_bottom_pct),
             "--out",
             str(best_path),
         ]
@@ -360,6 +382,10 @@ def _run_learn_for_combo(
         str(args.timeout),
         "--log-level",
         args.log_level,
+        "--objective",
+        str(args.objective),
+        "--trim-bottom-pct",
+        str(args.trim_bottom_pct),
         "--out",
         str(best_path),
     ]

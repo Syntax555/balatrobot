@@ -571,7 +571,14 @@ def _generate_play_candidates(
         finally:
             # Thread/process pools are reused across calls for performance.
             pass
-    candidates.sort(key=lambda candidate: candidate.score, reverse=True)
+    # Prefer smaller plays when the heuristic score is tied.
+    candidates.sort(
+        key=lambda candidate: (
+            candidate.score,
+            -len(candidate.action.params.get("cards", [])),
+        ),
+        reverse=True,
+    )
     selected = candidates[: max(MIN_ROLLOUT_CANDIDATES, rollout_k)]
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(
@@ -586,6 +593,47 @@ def _generate_play_candidates(
                 candidate.score,
             )
     return selected
+
+
+def best_play_action(
+    hand_cards: list[dict],
+    jokers: list[dict],
+    intent: BuildIntent,
+    *,
+    rollout_k: int = 1,
+) -> Action | None:
+    """Return the best heuristic play action (no save/load required).
+
+    This is used when hand rollouts are disabled. It prefers smaller plays by trimming
+    to the scoring subset for the detected hand type (e.g., a pair plays 2 cards).
+    """
+    candidates = _generate_play_candidates(
+        hand_cards, jokers, intent, rollout_k=rollout_k
+    )
+    if not candidates:
+        return None
+    chosen = candidates[FIRST_INDEX].action
+    chosen_indices = chosen.params.get("cards", [])
+    if not isinstance(chosen_indices, list) or not chosen_indices:
+        return chosen
+
+    try:
+        subset = [hand_cards[i] for i in chosen_indices]
+    except Exception:
+        return chosen
+
+    evaluation = evaluate_candidate(subset, jokers)
+    scoring = evaluation.get("scoring_indices", [])
+    if not isinstance(scoring, list) or not scoring:
+        return chosen
+    trimmed = [
+        chosen_indices[i]
+        for i in scoring
+        if isinstance(i, int) and 0 <= i < len(chosen_indices)
+    ]
+    if trimmed:
+        return Action(kind="play", params={"cards": trimmed})
+    return chosen
 
 
 def _generate_discard_candidates(
