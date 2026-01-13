@@ -82,7 +82,9 @@ Common flags:
 - `--hand-rollout/--shop-rollout/--pack-rollout`: enable save/load lookahead (slower, often stronger)
 - `--determinism-check`: auto-disables rollouts if save/load looks unsafe
 - `--intent-trials`: intent evaluation quality vs speed (higher = stronger, slower)
-- `--params-json`: load tuned parameters from `best.json` produced by `learn`/`autotune`
+- `--params-auto/--no-params-auto`: auto-load latest `logs/learn/.../best.json` for `--deck/--stake` (default: enabled)
+- `--params-auto-root`: where to search for learned `best.json` (default: `logs/learn`)
+- `--params-json`: explicitly load tuned parameters from a specific `best.json` produced by `learn`/`autotune`
 
 ## Benchmark the bot (generate data)
 

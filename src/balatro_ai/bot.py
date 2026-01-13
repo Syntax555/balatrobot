@@ -140,6 +140,20 @@ def build_parser(*, defaults: dict[str, Any] | None = None) -> argparse.Argument
             "Values inside become CLI defaults (explicit flags still win)."
         ),
     )
+    parser.add_argument(
+        "--params-auto",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "If enabled and --params-json is not set, automatically load the most recent "
+            "logs/learn/.../best.json for the selected --deck/--stake (if found)."
+        ),
+    )
+    parser.add_argument(
+        "--params-auto-root",
+        default="logs/learn",
+        help="Root directory to search for best.json when --params-auto is enabled.",
+    )
     parser.add_argument("--host", default="127.0.0.1", help="BalatroBot host")
     parser.add_argument(
         "--port", default=12346, type=_positive_int("--port"), help="BalatroBot port"
@@ -300,7 +314,7 @@ def build_parser(*, defaults: dict[str, Any] | None = None) -> argparse.Argument
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the bot with CLI-provided configuration."""
     argv_list = list(argv) if argv is not None else sys.argv[1:]
-    params_path = _find_flag_value(argv_list, "--params-json")
+    params_path, params_path_source = _resolve_params_json_path(argv_list)
     params: dict[str, Any] = {}
     if params_path:
         params = _load_params_json(Path(params_path))
@@ -358,18 +372,80 @@ def main(argv: Sequence[str] | None = None) -> int:
         **extra,
     )
     configure_logging(config.log_level)
+    if params_path and params_path_source == "auto":
+        logger.info("Auto-loaded tuned params from %s", params_path)
+    elif not params_path and params_path_source == "auto":
+        logger.info(
+            "No tuned params found under %s for %s/%s (running with defaults).",
+            args.params_auto_root,
+            args.deck,
+            args.stake,
+        )
     logger.debug("Starting BotRunner base_url=%s config=%s", base_url, config)
     runner = BotRunner(config=config, base_url=base_url)
     return runner.run()
 
 
-def _find_flag_value(argv: Sequence[str], flag: str) -> str | None:
-    for i, token in enumerate(argv):
-        if token == flag and i + 1 < len(argv):
-            return argv[i + 1]
-        if isinstance(token, str) and token.startswith(flag + "="):
-            return token.split("=", 1)[1]
-    return None
+def _build_pre_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--params-json", default=None)
+    parser.add_argument(
+        "--params-auto",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--params-auto-root", default="logs/learn")
+    parser.add_argument(
+        "--deck",
+        default="RED",
+        type=_upper_choice("--deck", _VALID_DECKS),
+    )
+    parser.add_argument(
+        "--stake",
+        default="WHITE",
+        type=_upper_choice("--stake", _VALID_STAKES),
+    )
+    return parser
+
+
+def _find_latest_best_json(out_root: Path, *, deck: str, stake: str) -> Path | None:
+    """Find the most recent best.json for deck/stake under logs/learn."""
+    candidates: list[Path] = []
+    # Single-run layout: logs/learn/RED-WHITE-<timestamp>/best.json
+    candidates.extend(out_root.glob(f"{deck}-{stake}-*/best.json"))
+    # Matrix layout: logs/learn/matrix-<timestamp>/RED-WHITE/best.json
+    candidates.extend(out_root.glob(f"matrix-*/{deck}-{stake}/best.json"))
+
+    latest: Path | None = None
+    latest_mtime = -1.0
+    for path in candidates:
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        if mtime > latest_mtime:
+            latest = path
+            latest_mtime = mtime
+    return latest
+
+
+def _resolve_params_json_path(argv: Sequence[str]) -> tuple[str | None, str]:
+    """
+    Resolve which params JSON to load for defaults.
+
+    Returns (path, source) where source is "explicit", "auto", or "none".
+    """
+    pre, _ = _build_pre_parser().parse_known_args(list(argv))
+    if pre.params_json:
+        return str(pre.params_json), "explicit"
+    if not pre.params_auto:
+        return None, "none"
+    found = _find_latest_best_json(
+        Path(pre.params_auto_root), deck=pre.deck, stake=pre.stake
+    )
+    if found is None:
+        return None, "auto"
+    return str(found), "auto"
 
 
 def _load_params_json(path: Path) -> dict[str, Any]:
