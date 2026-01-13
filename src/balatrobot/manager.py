@@ -17,17 +17,21 @@ HEALTH_TIMEOUT = 30.0
 class BalatroInstance:
     """Context manager for a single Balatro instance."""
 
-    def __init__(self, config: Config | None = None, **overrides) -> None:
+    def __init__(
+        self, config: Config | None = None, session_id: str | None = None, **overrides
+    ) -> None:
         """Initialize a Balatro instance.
 
         Args:
             config: Base configuration. If None, uses Config from environment.
+            session_id: Optional session ID for log directory. If None, generated at start().
             **overrides: Override specific config fields (e.g., port=12347).
         """
         base = config or Config.from_env()
         self._config = replace(base, **overrides) if overrides else base
         self._process: subprocess.Popen | None = None
         self._log_path: Path | None = None
+        self._session_id = session_id
 
     @property
     def port(self) -> int:
@@ -73,8 +77,8 @@ class BalatroInstance:
         if self._process is not None:
             raise RuntimeError("Instance already started")
 
-        # Create session directory
-        timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+        # Create session directory (use provided session_id or generate one)
+        timestamp = self._session_id or datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
         session_dir = Path(self._config.logs_path) / timestamp
         session_dir.mkdir(parents=True, exist_ok=True)
         self._log_path = session_dir / f"{self._config.port}.log"
