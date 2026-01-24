@@ -89,31 +89,33 @@ end
 ---to prevent memory leaks from objects registering in G.I.MOVEABLE
 ---@param nodes table|nil UI node tree (array or single node)
 local function cleanup_ui_nodes(nodes)
-  if not nodes then
-    return
-  end
-
-  -- Handle array of nodes (check if it's an array by looking for numeric keys)
-  if nodes[1] ~= nil or next(nodes) == nil then
-    for _, node in ipairs(nodes) do
-      cleanup_ui_nodes(node)
-    end
+  if type(nodes) ~= "table" then
     return
   end
 
   -- Handle single node with object (DynaText, etc.)
-  -- G.UIT.O is the object node type in Balatro's UI system
-  if nodes.n == G.UIT.O and nodes.config and nodes.config.object then
-    local obj = nodes.config.object
+  local config = nodes.config
+  if config and config.object then
+    local obj = config.object
     if obj and obj.remove then
       obj:remove() -- Removes from G.I.MOVEABLE and other tracking arrays
     end
-    nodes.config.object = nil
+    config.object = nil
   end
 
   -- Recurse into children/nodes
   if nodes.nodes then
     cleanup_ui_nodes(nodes.nodes)
+  end
+  if nodes.children then
+    cleanup_ui_nodes(nodes.children)
+  end
+
+  -- Traverse arrays and maps to avoid missing nodes with holes
+  for key, node in pairs(nodes) do
+    if key ~= "nodes" and key ~= "children" and key ~= "config" and type(node) == "table" then
+      cleanup_ui_nodes(node)
+    end
   end
 end
 
