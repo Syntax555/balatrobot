@@ -16,16 +16,6 @@
 
 BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
-> [!WARNING]
-> **BalatroBot 1.0.0 introduces breaking changes:**
->
-> - Now a CLI to start Balatro (no longer a Python client)
-> - New JSON-RPC 2.0 protocol over HTTP/1.1
-> - Updated endpoints and API structure
-> - Removed game state logging functionality
->
-> BalatroBot is now a Lua mod that exposes an API for programmatic game control.
-
 ## 📚 Documentation
 
 https://coder.github.io/balatrobot/
