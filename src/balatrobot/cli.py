@@ -28,6 +28,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--debug", action="store_const", const=True, help="Enable debug mode")
     parser.add_argument("--no-shaders", action="store_const", const=True, help="Disable shaders")
     parser.add_argument("--no-reduced-motion", action="store_const", const=True, help="Disable reduced motion")
+    parser.add_argument("--pixel-art-smoothing", action="store_const", const=True, help="Enable pixel art smoothing")
 
     # Path args
     parser.add_argument("--balatro-path", help="Path to Balatro executable")

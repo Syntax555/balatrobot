@@ -36,6 +36,9 @@ BalatroBot configure settings in Balatro using the following environment variabl
 
   - BALATROBOT_NO_REDUCED_MOTION: whether to disable reduced motion.
       1 for disable reduced motion, 0 for enable reduced motion (default: 0)
+
+  - BALATROBOT_PIXEL_ART_SMOOTHING: whether to enable pixel art smoothing.
+      1 for enable pixel art smoothing, 0 for disable (default: 0)
 ]]
 
 ---@diagnostic disable: duplicate-set-field
@@ -54,6 +57,7 @@ BB_SETTINGS = {
   gamespeed = tonumber(os.getenv("BALATROBOT_GAMESPEED")) or 4,
   animation_fps = tonumber(os.getenv("BALATROBOT_ANIMATION_FPS")) or 10,
   no_reduced_motion = os.getenv("BALATROBOT_NO_REDUCED_MOTION") == "1" or false,
+  pixel_art_smoothing = os.getenv("BALATROBOT_PIXEL_ART_SMOOTHING") == "1" or false,
 }
 
 ---@type boolean?
@@ -98,7 +102,7 @@ local function configure_settings()
   G.SETTINGS.GRAPHICS.shadows = "Off" -- Always disable shadows
   G.SETTINGS.GRAPHICS.bloom = 0 -- Always disable CRT bloom
   G.SETTINGS.GRAPHICS.crt = 0 -- Always disable CRT
-  G.SETTINGS.GRAPHICS.texture_scaling = 1 -- Always disable pixel art smoothing
+  G.SETTINGS.GRAPHICS.texture_scaling = BB_SETTINGS.pixel_art_smoothing and 2 or 1
 
   -- visuals
   G.SETTINGS.skip_splash = "Yes" -- Skip intro animation

@@ -14,26 +14,27 @@ Start Balatro with the BalatroBot mod loaded and API server running.
 
 All options can be set via CLI flags or environment variables. CLI flags override environment variables.
 
-| CLI Flag                        | Environment Variable           | Default       | Description                                |
-| ------------------------------- | ------------------------------ | ------------- | ------------------------------------------ |
-| `--host HOST`                   | `BALATROBOT_HOST`              | `127.0.0.1`   | Server hostname                            |
-| `--port PORT`                   | `BALATROBOT_PORT`              | `12346`       | Server port                                |
-| `--fast`                        | `BALATROBOT_FAST`              | `0`           | Enable fast mode (10x game speed)          |
-| `--headless`                    | `BALATROBOT_HEADLESS`          | `0`           | Enable headless mode (minimal rendering)   |
-| `--render-on-api`               | `BALATROBOT_RENDER_ON_API`     | `0`           | Render only on API calls                   |
-| `--audio`                       | `BALATROBOT_AUDIO`             | `0`           | Enable audio                               |
-| `--debug`                       | `BALATROBOT_DEBUG`             | `0`           | Enable debug mode (requires DebugPlus mod) |
-| `--no-shaders`                  | `BALATROBOT_NO_SHADERS`        | `0`           | Disable all shaders                        |
-| `--fps-cap FPS_CAP`             | `BALATROBOT_FPS_CAP`           | `60`          | Maximum FPS cap                            |
-| `--gamespeed GAMESPEED`         | `BALATROBOT_GAMESPEED`         | `4`           | Game speed multiplier                      |
-| `--animation-fps ANIMATION_FPS` | `BALATROBOT_ANIMATION_FPS`     | `10`          | Animation FPS                              |
-| `--no-reduced-motion`           | `BALATROBOT_NO_REDUCED_MOTION` | `0`           | Disable reduced motion                     |
-| `--balatro-path BALATRO_PATH`   | `BALATROBOT_BALATRO_PATH`      | auto-detected | Path to Balatro game directory             |
-| `--lovely-path LOVELY_PATH`     | `BALATROBOT_LOVELY_PATH`       | auto-detected | Path to lovely library (dll/so/dylib)      |
-| `--love-path LOVE_PATH`         | `BALATROBOT_LOVE_PATH`         | auto-detected | Path to LOVE executable (native only)      |
-| `--platform PLATFORM`           | `BALATROBOT_PLATFORM`          | auto-detected | Platform: darwin, linux, windows, native   |
-| `--logs-path LOGS_PATH`         | `BALATROBOT_LOGS_PATH`         | `logs`        | Directory for log files                    |
-| `-h, --help`                    | -                              | -             | Show help message and exit                 |
+| CLI Flag                        | Environment Variable             | Default       | Description                                |
+| ------------------------------- | -------------------------------- | ------------- | ------------------------------------------ |
+| `--host HOST`                   | `BALATROBOT_HOST`                | `127.0.0.1`   | Server hostname                            |
+| `--port PORT`                   | `BALATROBOT_PORT`                | `12346`       | Server port                                |
+| `--fast`                        | `BALATROBOT_FAST`                | `0`           | Enable fast mode (10x game speed)          |
+| `--headless`                    | `BALATROBOT_HEADLESS`            | `0`           | Enable headless mode (minimal rendering)   |
+| `--render-on-api`               | `BALATROBOT_RENDER_ON_API`       | `0`           | Render only on API calls                   |
+| `--audio`                       | `BALATROBOT_AUDIO`               | `0`           | Enable audio                               |
+| `--debug`                       | `BALATROBOT_DEBUG`               | `0`           | Enable debug mode (requires DebugPlus mod) |
+| `--no-shaders`                  | `BALATROBOT_NO_SHADERS`          | `0`           | Disable all shaders                        |
+| `--fps-cap FPS_CAP`             | `BALATROBOT_FPS_CAP`             | `60`          | Maximum FPS cap                            |
+| `--gamespeed GAMESPEED`         | `BALATROBOT_GAMESPEED`           | `4`           | Game speed multiplier                      |
+| `--animation-fps ANIMATION_FPS` | `BALATROBOT_ANIMATION_FPS`       | `10`          | Animation FPS                              |
+| `--no-reduced-motion`           | `BALATROBOT_NO_REDUCED_MOTION`   | `0`           | Disable reduced motion                     |
+| `--pixel-art-smoothing`         | `BALATROBOT_PIXEL_ART_SMOOTHING` | `0`           | Enable pixel art smoothing                 |
+| `--balatro-path BALATRO_PATH`   | `BALATROBOT_BALATRO_PATH`        | auto-detected | Path to Balatro game directory             |
+| `--lovely-path LOVELY_PATH`     | `BALATROBOT_LOVELY_PATH`         | auto-detected | Path to lovely library (dll/so/dylib)      |
+| `--love-path LOVE_PATH`         | `BALATROBOT_LOVE_PATH`           | auto-detected | Path to LOVE executable (native only)      |
+| `--platform PLATFORM`           | `BALATROBOT_PLATFORM`            | auto-detected | Platform: darwin, linux, windows, native   |
+| `--logs-path LOGS_PATH`         | `BALATROBOT_LOGS_PATH`           | `logs`        | Directory for log files                    |
+| `-h, --help`                    | -                                | -             | Show help message and exit                 |
 
 **Note:** Boolean flags (`--fast`, `--headless`, etc.) use `1` for enabled and `0` for disabled when set via environment variables.
 

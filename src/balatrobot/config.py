@@ -18,6 +18,7 @@ ENV_MAP: dict[str, str] = {
     "gamespeed": "BALATROBOT_GAMESPEED",
     "animation_fps": "BALATROBOT_ANIMATION_FPS",
     "no_reduced_motion": "BALATROBOT_NO_REDUCED_MOTION",
+    "pixel_art_smoothing": "BALATROBOT_PIXEL_ART_SMOOTHING",
     "balatro_path": "BALATROBOT_BALATRO_PATH",
     "lovely_path": "BALATROBOT_LOVELY_PATH",
     "love_path": "BALATROBOT_LOVE_PATH",
@@ -34,6 +35,7 @@ BOOL_FIELDS = frozenset(
         "debug",
         "no_shaders",
         "no_reduced_motion",
+        "pixel_art_smoothing",
     }
 )
 INT_FIELDS = frozenset({"port", "fps_cap", "gamespeed", "animation_fps"})
@@ -67,6 +69,7 @@ class Config:
     gamespeed: int = 4
     animation_fps: int = 10
     no_reduced_motion: bool = False
+    pixel_art_smoothing: bool = False
 
     # Launcher
     balatro_path: str | None = None
