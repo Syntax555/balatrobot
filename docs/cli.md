@@ -24,6 +24,7 @@ All options can be set via CLI flags or environment variables. CLI flags overrid
 | `--audio`                     | `BALATROBOT_AUDIO`         | `0`           | Enable audio                               |
 | `--debug`                     | `BALATROBOT_DEBUG`         | `0`           | Enable debug mode (requires DebugPlus mod) |
 | `--no-shaders`                | `BALATROBOT_NO_SHADERS`    | `0`           | Disable all shaders                        |
+| `--fps-cap FPS_CAP`           | `BALATROBOT_FPS_CAP`       | `60`          | Maximum FPS cap                            |
 | `--balatro-path BALATRO_PATH` | `BALATROBOT_BALATRO_PATH`  | auto-detected | Path to Balatro game directory             |
 | `--lovely-path LOVELY_PATH`   | `BALATROBOT_LOVELY_PATH`   | auto-detected | Path to lovely library (dll/so/dylib)      |
 | `--love-path LOVE_PATH`       | `BALATROBOT_LOVE_PATH`     | auto-detected | Path to LOVE executable (native only)      |

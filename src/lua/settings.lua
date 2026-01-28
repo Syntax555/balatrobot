@@ -24,6 +24,9 @@ BalatroBot configure settings in Balatro using the following environment variabl
 
   - BALATROBOT_NO_SHADERS: whether to disable all shaders for better performance.
       1 for disable shaders, 0 for enable shaders (default: 0)
+
+  - BALATROBOT_FPS_CAP: the maximum FPS cap for the game.
+      Type number (default: 60)
 ]]
 
 ---@diagnostic disable: duplicate-set-field
@@ -38,6 +41,7 @@ BB_SETTINGS = {
   audio = os.getenv("BALATROBOT_AUDIO") == "1" or false,
   debug = os.getenv("BALATROBOT_DEBUG") == "1" or false,
   no_shaders = os.getenv("BALATROBOT_NO_SHADERS") == "1" or false,
+  fps_cap = tonumber(os.getenv("BALATROBOT_FPS_CAP")) or 60,
 }
 
 ---@type boolean?
@@ -67,7 +71,7 @@ local function configure_settings()
   G.F_MUTE = true
 
   -- performance
-  G.FPS_CAP = 60
+  G.FPS_CAP = BB_SETTINGS.fps_cap
   G.SETTINGS.GAMESPEED = 4
   G.ANIMATION_FPS = 10
 

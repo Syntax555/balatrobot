@@ -275,6 +275,7 @@
 ---@field audio boolean Whether to play audio (enables sound thread and sets volume levels)
 ---@field debug boolean Whether debug mode is enabled (requires DebugPlus mod)
 ---@field no_shaders boolean Whether to disable all shaders for better performance (causes visual glitches)
+---@field fps_cap integer Maximum FPS cap for the game (default: 60)
 ---@field setup fun()? Initialize and apply all BalatroBot settings
 
 ---@class Debug

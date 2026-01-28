@@ -15,6 +15,7 @@ def create_parser() -> argparse.ArgumentParser:
     # No defaults - env vars and dataclass defaults handle it
     parser.add_argument("--host", help="Server hostname (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, help="Server port (default: 12346)")
+    parser.add_argument("--fps-cap", type=int, help="Maximum FPS cap (default: 60)")
     parser.add_argument("--logs-path", help="Directory for log files (default: logs)")
 
     # Boolean flags - store_const so None means "not provided" -> check env var
