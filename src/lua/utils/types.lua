@@ -276,6 +276,9 @@
 ---@field debug boolean Whether debug mode is enabled (requires DebugPlus mod)
 ---@field no_shaders boolean Whether to disable all shaders for better performance (causes visual glitches)
 ---@field fps_cap integer Maximum FPS cap for the game (default: 60)
+---@field gamespeed integer Game speed multiplier (default: 4)
+---@field animation_fps integer Animation FPS (default: 10)
+---@field no_reduced_motion boolean Whether to disable reduced motion for faster animations
 ---@field setup fun()? Initialize and apply all BalatroBot settings
 
 ---@class Debug

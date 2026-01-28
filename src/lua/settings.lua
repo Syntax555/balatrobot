@@ -27,6 +27,15 @@ BalatroBot configure settings in Balatro using the following environment variabl
 
   - BALATROBOT_FPS_CAP: the maximum FPS cap for the game.
       Type number (default: 60)
+
+  - BALATROBOT_GAMESPEED: the game speed multiplier.
+      Type number (default: 4)
+
+  - BALATROBOT_ANIMATION_FPS: the animation FPS.
+      Type number (default: 10)
+
+  - BALATROBOT_NO_REDUCED_MOTION: whether to disable reduced motion.
+      1 for disable reduced motion, 0 for enable reduced motion (default: 0)
 ]]
 
 ---@diagnostic disable: duplicate-set-field
@@ -42,6 +51,9 @@ BB_SETTINGS = {
   debug = os.getenv("BALATROBOT_DEBUG") == "1" or false,
   no_shaders = os.getenv("BALATROBOT_NO_SHADERS") == "1" or false,
   fps_cap = tonumber(os.getenv("BALATROBOT_FPS_CAP")) or 60,
+  gamespeed = tonumber(os.getenv("BALATROBOT_GAMESPEED")) or 4,
+  animation_fps = tonumber(os.getenv("BALATROBOT_ANIMATION_FPS")) or 10,
+  no_reduced_motion = os.getenv("BALATROBOT_NO_REDUCED_MOTION") == "1" or false,
 }
 
 ---@type boolean?
@@ -72,8 +84,8 @@ local function configure_settings()
 
   -- performance
   G.FPS_CAP = BB_SETTINGS.fps_cap
-  G.SETTINGS.GAMESPEED = 4
-  G.ANIMATION_FPS = 10
+  G.SETTINGS.GAMESPEED = BB_SETTINGS.gamespeed
+  G.ANIMATION_FPS = BB_SETTINGS.animation_fps
 
   -- features
   G.F_SKIP_TUTORIAL = true
@@ -90,7 +102,7 @@ local function configure_settings()
 
   -- visuals
   G.SETTINGS.skip_splash = "Yes" -- Skip intro animation
-  G.SETTINGS.reduced_motion = true -- Always enable reduced motion
+  G.SETTINGS.reduced_motion = not BB_SETTINGS.no_reduced_motion
   G.SETTINGS.screenshake = false
   G.SETTINGS.rumble = nil
 

@@ -16,6 +16,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--host", help="Server hostname (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, help="Server port (default: 12346)")
     parser.add_argument("--fps-cap", type=int, help="Maximum FPS cap (default: 60)")
+    parser.add_argument("--gamespeed", type=int, help="Game speed multiplier (default: 4)")
+    parser.add_argument("--animation-fps", type=int, help="Animation FPS (default: 10)")
     parser.add_argument("--logs-path", help="Directory for log files (default: logs)")
 
     # Boolean flags - store_const so None means "not provided" -> check env var
@@ -25,6 +27,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--audio", action="store_const", const=True, help="Enable audio")
     parser.add_argument("--debug", action="store_const", const=True, help="Enable debug mode")
     parser.add_argument("--no-shaders", action="store_const", const=True, help="Disable shaders")
+    parser.add_argument("--no-reduced-motion", action="store_const", const=True, help="Disable reduced motion")
 
     # Path args
     parser.add_argument("--balatro-path", help="Path to Balatro executable")

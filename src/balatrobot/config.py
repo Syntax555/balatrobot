@@ -15,6 +15,9 @@ ENV_MAP: dict[str, str] = {
     "debug": "BALATROBOT_DEBUG",
     "no_shaders": "BALATROBOT_NO_SHADERS",
     "fps_cap": "BALATROBOT_FPS_CAP",
+    "gamespeed": "BALATROBOT_GAMESPEED",
+    "animation_fps": "BALATROBOT_ANIMATION_FPS",
+    "no_reduced_motion": "BALATROBOT_NO_REDUCED_MOTION",
     "balatro_path": "BALATROBOT_BALATRO_PATH",
     "lovely_path": "BALATROBOT_LOVELY_PATH",
     "love_path": "BALATROBOT_LOVE_PATH",
@@ -23,9 +26,17 @@ ENV_MAP: dict[str, str] = {
 }
 
 BOOL_FIELDS = frozenset(
-    {"fast", "headless", "render_on_api", "audio", "debug", "no_shaders"}
+    {
+        "fast",
+        "headless",
+        "render_on_api",
+        "audio",
+        "debug",
+        "no_shaders",
+        "no_reduced_motion",
+    }
 )
-INT_FIELDS = frozenset({"port", "fps_cap"})
+INT_FIELDS = frozenset({"port", "fps_cap", "gamespeed", "animation_fps"})
 
 
 def _parse_env_value(field: str, value: str) -> str | int | bool:
@@ -53,6 +64,9 @@ class Config:
     debug: bool = False
     no_shaders: bool = False
     fps_cap: int = 60
+    gamespeed: int = 4
+    animation_fps: int = 10
+    no_reduced_motion: bool = False
 
     # Launcher
     balatro_path: str | None = None
