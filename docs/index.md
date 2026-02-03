@@ -13,13 +13,13 @@
       <img src="assets/balatrobot.svg" alt="BalatroBot" width="120">
     </a>
     <figcaption>
-      <a href="https://coder.github.io/balatrobot/">BalatroBot</a><br>
+      <a href="https://coder.github.io/balatrbot/"><span style="text-decoration: underline; text-underline-offset: 8px;">BalatroBot</span></a><br>
       <small>API for developing Balatro bots</small>
     </figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
     <a href="...">
-      <img src="assets/balatrollm.svg" alt="BalatroLLM" width="80">
+      <img src="assets/balatrollm.svg" alt="BalatroLLM" width="120">
     </a>
     <figcaption>
       <a href="...">BalatroLLM</a><br>
@@ -28,7 +28,7 @@
   </figure>
   <figure style="text-align: center; margin: 0;">
     <a href="...">
-      <img src="assets/balatrobench.svg" alt="BalatroBench" width="80">
+      <img src="assets/balatrobench.svg" alt="BalatroBench" width="120">
     </a>
     <figcaption>
       <a href="...">BalatroBench</a><br>
@@ -39,7 +39,7 @@
 
 ---
 
-BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
+**BalatroBot** is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing game state and controls for external program interaction. The API provides endpoints for complete game control, including card selection, shop transactions, blind selection, and state management. External clients connect via HTTP POST to execute game actions programmatically.
 
 <div class="grid cards" markdown>
 
