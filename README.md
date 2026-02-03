@@ -20,6 +20,12 @@ BalatroBot is a mod for Balatro that serves a JSON-RPC 2.0 HTTP API, exposing ga
 
 https://coder.github.io/balatrobot/
 
+## 🚀 Related Projects
+
+- [**BalatroBot**](https://github.com/coder/balatrobot): API for developing Balatro bots
+- [**BalatroLLM**](https://github.com/coder/balatrollm): Play Balatro with LLMs (coming soon)
+- [**BalatroBench**](https://github.com/coder/balatrobench): Benchmark LLMs playing Balatro (coming soon)
+
 ## 🙏 Acknowledgments
 
 This project is a fork of the original [balatrobot](https://github.com/besteon/balatrobot) repository. We would like to acknowledge and thank the original contributors who laid the foundation for this framework:
@@ -29,9 +35,3 @@ This project is a fork of the original [balatrobot](https://github.com/besteon/b
 - [@giewev](https://github.com/giewev)
 
 The original repository provided the initial API and botting framework that this project has evolved from. We appreciate their work in creating the foundation for Balatro bot development.
-
-## 🚀 Related Projects
-
-- [**BalatroBot**](https://github.com/coder/balatrobot): API for developing Balatro bots
-- [**BalatroLLM**](https://github.com/coder/balatrollm): Play Balatro with LLMs (coming soon)
-- [**BalatroBench**](https://github.com/coder/balatrobench): Benchmark LLMs playing Balatro (coming soon)
