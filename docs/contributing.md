@@ -159,7 +159,7 @@ source .venv/bin/activate
 Start with debug and fast mode for development:
 
 ```bash
-balatrobot --debug --fast
+balatrobot serve --debug --fast
 ```
 
 For detailed CLI options, see the [CLI Reference](cli.md).

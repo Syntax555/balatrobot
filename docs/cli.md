@@ -51,6 +51,10 @@ All options can be set via CLI flags or environment variables. CLI flags overrid
 | `--logs-path LOGS_PATH`         | `BALATROBOT_LOGS_PATH`           | `logs`        | Directory for log files                    |
 | `-h, --help`                    | -                                | -             | Show help message and exit                 |
 
+!!! note "Mutually Exclusive Flags"
+
+    `--headless` and `--render-on-api` are mutually exclusive.
+
 **Note:** Boolean flags (`--fast`, `--headless`, etc.) use `1` for enabled and `0` for disabled when set via environment variables.
 
 ## api Command

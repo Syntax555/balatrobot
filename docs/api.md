@@ -201,6 +201,8 @@ Start a new game run.
 
 **Errors:** `BAD_REQUEST`, `INVALID_STATE`, `INTERNAL_ERROR`
 
+**Required State:** `MENU`
+
 **Example:**
 
 ```bash

@@ -82,7 +82,7 @@ if __name__ == "__main__":
 1. Start Balatro with the mod:
 
     ```bash
-    uvx balatrobot
+    uvx balatrobot serve
     ```
 
 2. In another terminal, run the bot:

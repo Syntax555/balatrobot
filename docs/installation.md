@@ -31,19 +31,21 @@ Mods/
 
 **Mods directory location:**
 
-| Platform       | Path                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------- |
-| Windows        | `%AppData%/Balatro/Mods/balatrobot/`                                                                          |
-| macOS          | `~/Library/Application Support/Balatro/Mods/balatrobot/`                                                      |
-| Linux (Steam)  | `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/` |
-| Linux (Native) | `~/.config/love/Mods/balatrobot/`                                                                             |
+| Platform             | Path                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Windows              | `%AppData%/Balatro/Mods/balatrobot/`                                                                          |
+| macOS                | `~/Library/Application Support/Balatro/Mods/balatrobot/`                                                      |
+| Linux (Steam/Proton) | `~/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/` |
+| Linux (Native)       | `~/.config/love/Mods/balatrobot/`                                                                             |
+
+> Steam/Proton launcher not supported yet. Track progress in [#128](https://github.com/coder/balatrobot/issues/128)
 
 ### 3. Launch Balatro
 
 Start Balatro with the BalatroBot CLI:
 
 ```bash
-uvx balatrobot
+uvx balatrobot serve
 ```
 
 For detailed CLI options and usage, see the [CLI Reference](cli.md).
@@ -68,6 +70,6 @@ Expected response:
 
 - **Connection refused**: Ensure Balatro is running and the mod loaded successfully
 - **Mod not loading**: Check that Lovely and Steamodded are installed correctly
-- **Port in use**: Use `balatrobot --port PORT` to specify a different port
+- **Port in use**: Use `uvx balatrobot serve --port PORT` to specify a different port
 
 For more troubleshooting help, see the [CLI Reference](cli.md).
