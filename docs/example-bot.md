@@ -97,7 +97,7 @@ The bot will automatically start a new game and play until it wins or loses.
 
 Looking for more advanced examples? Check out these bots created by the community:
 
-- No other bots yet :(
+- [polina4096/Ballad]: LLMs play balatro through Anthropic-compatible APIs
 
 !!! tip "Share Your Bot"
 
