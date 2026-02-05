@@ -23,8 +23,8 @@ https://coder.github.io/balatrobot/
 ## 🚀 Related Projects
 
 - [**BalatroBot**](https://github.com/coder/balatrobot): API for developing Balatro bots
-- [**BalatroLLM**](https://github.com/coder/balatrollm): Play Balatro with LLMs (coming soon)
-- [**BalatroBench**](https://github.com/coder/balatrobench): Benchmark LLMs playing Balatro (coming soon)
+- [**BalatroLLM**](https://github.com/coder/balatrollm): Play Balatro with LLMs
+- [**BalatroBench**](https://github.com/coder/balatrobench): Benchmark LLMs playing Balatro
 
 ## 🙏 Acknowledgments
 
